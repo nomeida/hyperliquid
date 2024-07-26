@@ -1,5 +1,5 @@
 {
-  "name": "hyperliquid-api",
+  "name": "hyperliquid",
   "version": "1.0.0",
   "description": "SDK for Hyperliquid API",
   "main": "dist/index.js",
@@ -33,5 +33,9 @@
   },
   "directories": {
     "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nomeida/hyperliquid-api"
   }
 }
