@@ -1,6 +1,6 @@
 // test_exchange_api.ts
 
-const { HyperliquidSDK } = require('./dist/index');
+const { Hyperliquid } = require('../dist/index');
 const readline = require('readline');
 
 const rl = readline.createInterface({
@@ -20,7 +20,7 @@ async function testCustomExchangeAPI() {
   // Initialize the SDK (replace with your actual private key and other necessary parameters)
   const private_key = "";
   const user_address = "";
-  const sdk = new HyperliquidSDK(private_key, false); // false for mainnet, true for testnet
+  const sdk = new Hyperliquid(private_key, false); // false for mainnet, true for testnet
 
   try {
     const cancelResponse = await sdk.custom.cancelAllOrders();
@@ -36,7 +36,7 @@ async function testExchangeAPI() {
   // Initialize the SDK (replace with your actual private key and other necessary parameters)
 const private_key = "";
 const user_address = "";
-const sdk = new HyperliquidSDK(private_key, false); // false for mainnet, true for testnet
+const sdk = new Hyperliquid(private_key, false); // false for mainnet, true for testnet
 
 try {
 

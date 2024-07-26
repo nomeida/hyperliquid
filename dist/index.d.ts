@@ -8,6 +8,7 @@ export declare class Hyperliquid {
     exchange: ExchangeAPI;
     ws: WebSocketClient;
     subscriptions: WebSocketSubscriptions;
+    custom: CustomOperations;
     private rateLimiter;
     private assetToIndexMap;
     private refreshInterval;
@@ -15,8 +16,10 @@ export declare class Hyperliquid {
     private initializationPromise;
     private exchangeToInternalNameMap;
     private httpApi;
-    custom: CustomOperations;
-    constructor(privateKey: string, testnet?: boolean);
+    private isValidPrivateKey;
+    constructor(privateKey?: string | null, testnet?: boolean);
+    private createAuthenticatedProxy;
+    private initializeWithPrivateKey;
     private refreshAssetToIndexMap;
     getInternalName(exchangeName: string): string | undefined;
     getExchangeName(internalName: string): string | undefined;
@@ -28,6 +31,7 @@ export declare class Hyperliquid {
         perp: string[];
         spot: string[];
     };
+    isAuthenticated(): boolean;
     connect(): Promise<void>;
     disconnect(): void;
 }
