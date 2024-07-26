@@ -20,8 +20,9 @@ import { HyperliquidSDK } from 'hyperliquid';
 const sdk = new HyperliquidSDK('private_key_here');
 
 // Use the SDK methods
-const allMids = await sdk.info.getAllMids();
-console.log(allMids);
+sdk.info.getAllMids().then(allMids => {
+  console.log(allMids);
+});
 ```
 **Note:** You don't have to provide your private key, but it is required if you want to 
 use the exchange API to place, cancel or modify orders or access your accounts assets.
