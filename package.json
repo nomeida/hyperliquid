@@ -1,0 +1,37 @@
+{
+  "name": "hyperliquid-api",
+  "version": "1.0.0",
+  "description": "SDK for Hyperliquid API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "hyperliquid",
+    "api",
+    "sdk",
+    "rest",
+    "websocket",
+    "trading",
+    "crypto",
+    "blockchain",
+    "arbitrum",
+    "dex"
+  ],
+  "author": "Nomeida",
+  "license": "MIT",
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0-beta2",
+    "@types/ws": "^8.5.11",
+    "axios": "^1.7.2",
+    "ethers": "^6.13.2",
+    "typescript": "^5.5.4",
+    "ws": "^8.18.0"
+  },
+  "directories": {
+    "test": "tests"
+  }
+}

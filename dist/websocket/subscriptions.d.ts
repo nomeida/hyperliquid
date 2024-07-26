@@ -1,0 +1,31 @@
+import { WebSocketClient } from './connection';
+import { AllMids, WsTrade, WsBook, WsOrder, WsUserEvent, Notification, WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates } from '../types/index';
+export declare class WebSocketSubscriptions {
+    private ws;
+    constructor(ws: WebSocketClient);
+    private subscribe;
+    private unsubscribe;
+    subscribeToAllMids(callback: (data: AllMids) => void): void;
+    subscribeToNotification(user: string, callback: (data: Notification) => void): void;
+    subscribeToWebData2(user: string, callback: (data: WebData2) => void): void;
+    subscribeToCandle(coin: string, interval: string, callback: (data: Candle[]) => void): void;
+    subscribeToL2Book(coin: string, callback: (data: WsBook) => void): void;
+    subscribeToTrades(coin: string, callback: (data: WsTrade[]) => void): void;
+    subscribeToOrderUpdates(user: string, callback: (data: WsOrder[]) => void): void;
+    subscribeToUserEvents(user: string, callback: (data: WsUserEvent) => void): void;
+    subscribeToUserFills(user: string, callback: (data: WsUserFills) => void): void;
+    subscribeToUserFundings(user: string, callback: (data: WsUserFundings) => void): void;
+    subscribeToUserNonFundingLedgerUpdates(user: string, callback: (data: WsUserNonFundingLedgerUpdates) => void): void;
+    postRequest(requestType: 'info' | 'action', payload: any): Promise<any>;
+    unsubscribeFromAllMids(): void;
+    unsubscribeFromNotification(user: string): void;
+    unsubscribeFromWebData2(user: string): void;
+    unsubscribeFromCandle(coin: string, interval: string): void;
+    unsubscribeFromL2Book(coin: string): void;
+    unsubscribeFromTrades(coin: string): void;
+    unsubscribeFromOrderUpdates(user: string): void;
+    unsubscribeFromUserEvents(user: string): void;
+    unsubscribeFromUserFills(user: string): void;
+    unsubscribeFromUserFundings(user: string): void;
+    unsubscribeFromUserNonFundingLedgerUpdates(user: string): void;
+}
