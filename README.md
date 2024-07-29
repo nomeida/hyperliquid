@@ -1,13 +1,13 @@
 # Hyperliquid API SDK
 
-This SDK is meant to make it easier to interact with the Hyperliquid API.
+Typescript SDK to more easily interact with Hyperliquid's API
 
 All info on the Hyperliquid API can be found here: [HyperLiquid API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs)
 
 ## Installation
 
 ```bash
-npm install hyperliquid
+npm install --save hyperliquid
 ```
 
 
