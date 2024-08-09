@@ -15,9 +15,9 @@ npm install --save hyperliquid
 ## Usage
 
 ```typescript
-import { HyperliquidSDK } from 'hyperliquid';
+const { Hyperliquid } = require('hyperliquid');
 
-const sdk = new HyperliquidSDK('private_key_here');
+const sdk = new Hyperliquid('private_key_here');
 
 // Use the SDK methods
 sdk.info.getAllMids().then(allMids => {
@@ -109,6 +109,46 @@ sdk.info.getL2Book('BTC-PERP').then(l2Book => {
 
 All methods supported can be found here: [Hyperliquid Info Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 
+
+### WebSocket Methods
+
+```typescript
+const { Hyperliquid } = require('hyperliquid');
+
+async function testWebSocket() {
+    // Create a new Hyperliquid instance
+    // You can pass a private key here if you need authenticated access
+    const sdk = new Hyperliquid();
+
+    try {
+        // Connect to the WebSocket
+        await sdk.connect();
+        console.log('Connected to WebSocket');
+
+        // Subscribe to get latest prices for all coins
+        sdk.subscriptions.subscribeToAllMids((data) => {
+            console.log('Received trades data:', data);
+        });
+        
+        // Get updates anytime the user gets new fills
+        sdk.subscriptions.subscribeToUserFills("<wallet_address_here>", (data) => {
+            console.log('Received user fills data:', data);
+        });
+        
+        // Get updates on 1 minute ETH-PERP candles
+        sdk.subscriptions.subscribeToCandle("BTC-PERP", "1m", (data) => {
+            console.log('Received candle data:', data);
+        });
+
+        // Keep the script running
+        await new Promise(() => {});
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+testWebSocket();
+```
 
 
 ### Spot Info Methods
