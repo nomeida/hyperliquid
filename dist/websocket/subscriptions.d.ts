@@ -1,31 +1,55 @@
 import { WebSocketClient } from './connection';
-import { AllMids, WsTrade, WsBook, WsOrder, WsUserEvent, Notification, WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates } from '../types/index';
+import { AllMids, WsBook, WsOrder, WsUserEvent, Notification, WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates } from '../types/index';
 export declare class WebSocketSubscriptions {
     private ws;
-    constructor(ws: WebSocketClient);
+    private exchangeToInternalNameMap;
+    private initializationPromise;
+    constructor(ws: WebSocketClient, exchangeToInternalNameMap: Map<string, string>, initializationPromise: Promise<void>);
+    private ensureInitialized;
+    private convertSymbol;
+    private convertSymbolsInObject;
+    private convertToNumber;
     private subscribe;
     private unsubscribe;
-    subscribeToAllMids(callback: (data: AllMids) => void): void;
-    subscribeToNotification(user: string, callback: (data: Notification) => void): void;
-    subscribeToWebData2(user: string, callback: (data: WebData2) => void): void;
-    subscribeToCandle(coin: string, interval: string, callback: (data: Candle[]) => void): void;
-    subscribeToL2Book(coin: string, callback: (data: WsBook) => void): void;
-    subscribeToTrades(coin: string, callback: (data: WsTrade[]) => void): void;
-    subscribeToOrderUpdates(user: string, callback: (data: WsOrder[]) => void): void;
-    subscribeToUserEvents(user: string, callback: (data: WsUserEvent) => void): void;
-    subscribeToUserFills(user: string, callback: (data: WsUserFills) => void): void;
-    subscribeToUserFundings(user: string, callback: (data: WsUserFundings) => void): void;
-    subscribeToUserNonFundingLedgerUpdates(user: string, callback: (data: WsUserNonFundingLedgerUpdates) => void): void;
+    private handleMessage;
+    subscribeToAllMids(callback: (data: AllMids) => void): Promise<void>;
+    subscribeToNotification(user: string, callback: (data: Notification & {
+        user: string;
+    }) => void): Promise<void>;
+    subscribeToWebData2(user: string, callback: (data: WebData2) => void): Promise<void>;
+    subscribeToCandle(coin: string, interval: string, callback: (data: Candle[] & {
+        coin: string;
+        interval: string;
+    }) => void): Promise<void>;
+    subscribeToL2Book(coin: string, callback: (data: WsBook & {
+        coin: string;
+    }) => void): Promise<void>;
+    subscribeToTrades(coin: string, callback: (data: any) => void): Promise<void>;
+    subscribeToOrderUpdates(user: string, callback: (data: WsOrder[] & {
+        user: string;
+    }) => void): Promise<void>;
+    subscribeToUserEvents(user: string, callback: (data: WsUserEvent & {
+        user: string;
+    }) => void): Promise<void>;
+    subscribeToUserFills(user: string, callback: (data: WsUserFills & {
+        user: string;
+    }) => void): Promise<void>;
+    subscribeToUserFundings(user: string, callback: (data: WsUserFundings & {
+        user: string;
+    }) => void): Promise<void>;
+    subscribeToUserNonFundingLedgerUpdates(user: string, callback: (data: WsUserNonFundingLedgerUpdates & {
+        user: string;
+    }) => void): Promise<void>;
     postRequest(requestType: 'info' | 'action', payload: any): Promise<any>;
-    unsubscribeFromAllMids(): void;
-    unsubscribeFromNotification(user: string): void;
-    unsubscribeFromWebData2(user: string): void;
-    unsubscribeFromCandle(coin: string, interval: string): void;
-    unsubscribeFromL2Book(coin: string): void;
-    unsubscribeFromTrades(coin: string): void;
-    unsubscribeFromOrderUpdates(user: string): void;
-    unsubscribeFromUserEvents(user: string): void;
-    unsubscribeFromUserFills(user: string): void;
-    unsubscribeFromUserFundings(user: string): void;
-    unsubscribeFromUserNonFundingLedgerUpdates(user: string): void;
+    unsubscribeFromAllMids(): Promise<void>;
+    unsubscribeFromNotification(user: string): Promise<void>;
+    unsubscribeFromWebData2(user: string): Promise<void>;
+    unsubscribeFromCandle(coin: string, interval: string): Promise<void>;
+    unsubscribeFromL2Book(coin: string): Promise<void>;
+    unsubscribeFromTrades(coin: string): Promise<void>;
+    unsubscribeFromOrderUpdates(user: string): Promise<void>;
+    unsubscribeFromUserEvents(user: string): Promise<void>;
+    unsubscribeFromUserFills(user: string): Promise<void>;
+    unsubscribeFromUserFundings(user: string): Promise<void>;
+    unsubscribeFromUserNonFundingLedgerUpdates(user: string): Promise<void>;
 }

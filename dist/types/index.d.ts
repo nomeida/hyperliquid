@@ -127,8 +127,11 @@ export interface WsOrder {
     };
     status: string;
     statusTimestamp: number;
+    user: string;
 }
-export type WsUserEvent = WsFill[] | WsUserFunding | WsLiquidation | WsNonUserCancel[];
+export type WsUserEvent = (WsFill[] | WsUserFunding | WsLiquidation | WsNonUserCancel[]) & {
+    user: string;
+};
 export interface WsFill {
     coin: string;
     px: string;
@@ -361,6 +364,7 @@ export interface Signature {
 }
 export interface Notification {
     notification: string;
+    user: string;
 }
 export interface WebData2 {
     [key: string]: any;
@@ -376,6 +380,8 @@ export interface Candle {
     l: string;
     v: string;
     n: number;
+    coin: string;
+    interval: string;
 }
 export interface WsUserFill {
     coin: string;
@@ -395,6 +401,7 @@ export interface WsUserFill {
 export type WsUserFills = {
     isSnapshot: boolean;
     fills: WsUserFill[];
+    user: string;
 };
 export interface WsUserFunding {
     time: number;
@@ -406,6 +413,7 @@ export interface WsUserFunding {
 export type WsUserFundings = {
     isSnapshot: boolean;
     fundings: WsUserFunding[];
+    user: string;
 };
 export interface WsUserNonFundingLedgerUpdate {
     time: number;
@@ -416,4 +424,5 @@ export interface WsUserNonFundingLedgerUpdate {
 export type WsUserNonFundingLedgerUpdates = {
     isSnapshot: boolean;
     updates: WsUserNonFundingLedgerUpdate[];
+    user: string;
 };
