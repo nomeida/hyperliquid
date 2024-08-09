@@ -1,13 +1,13 @@
 # Hyperliquid API SDK
 
-This SDK is meant to make it easier to interact with the Hyperliquid API.
+Typescript SDK to more easily interact with Hyperliquid's API
 
 All info on the Hyperliquid API can be found here: [HyperLiquid API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs)
 
 ## Installation
 
 ```bash
-npm install hyperliquid
+npm install --save hyperliquid
 ```
 
 
@@ -47,26 +47,36 @@ This convention makes it easier to distinguish between spot and perpetual market
 
 ```typescript
 // Place an order
-const placeOrderResult = await sdk.exchange.placeOrder({
+sdk.exchange.placeOrder({
   coin: 'BTC-PERP',
   is_buy: true,
   sz: 1,
   limit_px: 30000,
   order_type: { limit: { tif: 'Gtc' } },
   reduce_only: false
+}).then(placeOrderResult => {
+  console.log(placeOrderResult);
+}).catch(error => {
+  console.error('Error placing order:', error);
 });
-console.log(placeOrderResult);
 
 // Cancel an order
-const cancelOrderResult = await sdk.exchange.cancelOrder({
+sdk.exchange.cancelOrder({
   coin: 'BTC-PERP',
   o: 123456 // order ID
+}).then(cancelOrderResult => {
+  console.log(cancelOrderResult);
+}).catch(error => {
+  console.error('Error cancelling order:', error);
 });
-console.log(cancelOrderResult);
 
 // Transfer between perpetual and spot accounts
-const transferResult = await sdk.exchange.transferBetweenSpotAndPerp(100, true); // Transfer 100 USDC from spot to perp
-console.log(transferResult);
+sdk.exchange.transferBetweenSpotAndPerp(100, true) // Transfer 100 USDC from spot to perp
+  .then(transferResult => {
+    console.log(transferResult);
+  }).catch(error => {
+    console.error('Error transferring funds:', error);
+  });
 ```
 All methods supported can be found here: [Hyperliquid Exchange Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)
 
@@ -76,16 +86,25 @@ All methods supported can be found here: [Hyperliquid Exchange Endpoint API Docu
 
 ```typescript
 // Get all mids
-const allMids = await sdk.info.getAllMids();
-console.log(allMids);
+sdk.info.getAllMids().then(allMids => {
+  console.log(allMids);
+}).catch(error => {
+  console.error('Error getting all mids:', error);
+});
 
 // Get user open orders
-const userOpenOrders = await sdk.info.getUserOpenOrders('user_address_here');
-console.log(userOpenOrders);
+sdk.info.getUserOpenOrders('user_address_here').then(userOpenOrders => {
+  console.log(userOpenOrders);
+}).catch(error => {
+  console.error('Error getting user open orders:', error);
+});
 
 // Get L2 order book
-const l2Book = await sdk.info.getL2Book('BTC-PERP');
-console.log(l2Book);
+sdk.info.getL2Book('BTC-PERP').then(l2Book => {
+  console.log(l2Book);
+}).catch(error => {
+  console.error('Error getting L2 book:', error);
+});
 ```
 
 All methods supported can be found here: [Hyperliquid Info Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
@@ -95,13 +114,19 @@ All methods supported can be found here: [Hyperliquid Info Endpoint API Document
 ### Spot Info Methods
 
 ```typescript
-// Get spot metadata
-const spotMeta = await sdk.info.spot.getSpotMeta();
-console.log(spotMeta);
+//Get spot metadata
+sdk.info.spot.getSpotMeta().then(spotMeta => {
+  console.log(spotMeta);
+}).catch(error => {
+  console.error('Error getting spot metadata:', error);
+});
 
 // Get spot clearinghouse state
-const spotClearinghouseState = await sdk.info.spot.getSpotClearinghouseState('user_address_here');
-console.log(spotClearinghouseState);
+sdk.info.spot.getSpotClearinghouseState('user_address_here').then(spotClearinghouseState => {
+  console.log(spotClearinghouseState);
+}).catch(error => {
+  console.error('Error getting spot clearinghouse state:', error);
+});
 ```
 All methods supported can be found here: [Hyperliquid Spot Info Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot)
 
@@ -111,12 +136,18 @@ All methods supported can be found here: [Hyperliquid Spot Info Endpoint API Doc
 
 ```typescript
 // Get perpetuals metadata
-const perpsMeta = await sdk.info.perpetuals.getMeta();
-console.log(perpsMeta);
+sdk.info.perpetuals.getMeta().then(perpsMeta => {
+  console.log(perpsMeta);
+}).catch(error => {
+  console.error('Error getting perpetuals metadata:', error);
+});
 
 // Get user's perpetuals account summary
-const clearinghouseState = await sdk.info.perpetuals.getClearinghouseState('user_address_here');
-console.log(clearinghouseState);
+sdk.info.perpetuals.getClearinghouseState('user_address_here').then(clearinghouseState => {
+  console.log(clearinghouseState);
+}).catch(error => {
+  console.error('Error getting clearinghouse state:', error);
+});
 ```
 All methods supported can be found here: [Hyperliquid Perpetuals Info Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
 
@@ -125,12 +156,18 @@ All methods supported can be found here: [Hyperliquid Perpetuals Info Endpoint A
 
 ```typescript
 // Cancel all orders
-const cancelAllResult = await sdk.custom.cancelAllOrders();
-console.log(cancelAllResult);
+sdk.custom.cancelAllOrders().then(cancelAllResult => {
+  console.log(cancelAllResult);
+}).catch(error => {
+  console.error('Error cancelling all orders:', error);
+});
 
 // Cancel all orders for a specific symbol
-const cancelAllBTCResult = await sdk.custom.cancelAllOrders('BTC-PERP');
-console.log(cancelAllBTCResult);
+sdk.custom.cancelAllOrders('BTC-PERP').then(cancelAllBTCResult => {
+  console.log(cancelAllBTCResult);
+}).catch(error => {
+  console.error('Error cancelling all BTC-PERP orders:', error);
+});
 
 // Get all tradable assets
 const allAssets = sdk.custom.getAllAssets();
