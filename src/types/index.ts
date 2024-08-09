@@ -1,5 +1,3 @@
-
-
 export type Tif = 'Alo' | 'Ioc' | 'Gtc';
 export type Tpsl = 'tp' | 'sl';
 export type LimitOrderType = { tif: Tif };
@@ -127,9 +125,10 @@ export interface WsOrder {
     };
     status: string;
     statusTimestamp: number;
+    user: string;
 }
 
-export type WsUserEvent = WsFill[] | WsUserFunding | WsLiquidation | WsNonUserCancel[];
+export type WsUserEvent = (WsFill[] | WsUserFunding | WsLiquidation | WsNonUserCancel[]) & { user: string };
 
 export interface WsFill {
     coin: string;
@@ -403,6 +402,7 @@ export interface Signature {
 
 export interface Notification {
     notification: string;
+    user: string;
 }
 
 // As flexible as possible 
@@ -421,6 +421,8 @@ export interface Candle {
     l: string;  // low
     v: string;  // volume
     n: number;  // number of trades
+    coin: string;
+    interval: string;
 }
 
 export interface WsUserFill {
@@ -442,6 +444,7 @@ export interface WsUserFill {
 export type WsUserFills = {
     isSnapshot: boolean;
     fills: WsUserFill[];
+    user: string;
 };
 
 export interface WsUserFunding {
@@ -455,6 +458,7 @@ export interface WsUserFunding {
 export type WsUserFundings = {
     isSnapshot: boolean;
     fundings: WsUserFunding[];
+    user: string;
 };
 
 export interface WsUserNonFundingLedgerUpdate {
@@ -467,4 +471,5 @@ export interface WsUserNonFundingLedgerUpdate {
 export type WsUserNonFundingLedgerUpdates = {
     isSnapshot: boolean;
     updates: WsUserNonFundingLedgerUpdate[];
+    user: string;
 };

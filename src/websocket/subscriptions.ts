@@ -5,195 +5,321 @@ import {
 } from '../types/index';
 
 export class WebSocketSubscriptions {
-private ws: WebSocketClient;
+    private ws: WebSocketClient;
+    private exchangeToInternalNameMap: Map<string, string>;
+    private initializationPromise: Promise<void>;
 
-constructor(ws: WebSocketClient) {
-    this.ws = ws;
-}
-
-private subscribe(subscription: any): void {
-    this.ws.sendMessage({ method: 'subscribe', subscription });
-}
-
-private unsubscribe(subscription: any): void {
-    this.ws.sendMessage({ method: 'unsubscribe', subscription });
-}
-
-subscribeToAllMids(callback: (data: AllMids) => void): void {
-    this.subscribe({ type: 'allMids' });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'allMids') {
-        callback(message.data);
+    constructor(ws: WebSocketClient, exchangeToInternalNameMap: Map<string, string>, initializationPromise: Promise<void>) {
+        this.ws = ws;
+        this.exchangeToInternalNameMap = exchangeToInternalNameMap;
+        this.initializationPromise = initializationPromise;
     }
-    });
-}
 
-subscribeToNotification(user: string, callback: (data: Notification) => void): void {
-    this.subscribe({ type: 'notification', user });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'notification' && message.data.user === user) {
-        callback(message.data);
+    private async ensureInitialized() {
+        await this.initializationPromise;
     }
-    });
-}
 
-subscribeToWebData2(user: string, callback: (data: WebData2) => void): void {
-    this.subscribe({ type: 'webData2', user });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'webData2' && message.data.user === user) {
-        callback(message.data);
-    }
-    });
-}
-
-subscribeToCandle(coin: string, interval: string, callback: (data: Candle[]) => void): void {
-    this.subscribe({ type: 'candle', coin, interval });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'candle' && message.data.coin === coin && message.data.interval === interval) {
-        callback(message.data);
-    }
-    });
-}
-
-subscribeToL2Book(coin: string, callback: (data: WsBook) => void): void {
-    this.subscribe({ type: 'l2Book', coin });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'l2Book' && message.data.coin === coin) {
-        callback(message.data);
-    }
-    });
-}
-
-subscribeToTrades(coin: string, callback: (data: WsTrade[]) => void): void {
-    this.subscribe({ type: 'trades', coin });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'trades' && message.data.coin === coin) {
-        callback(message.data);
-    }
-    });
-}
-
-subscribeToOrderUpdates(user: string, callback: (data: WsOrder[]) => void): void {
-    this.subscribe({ type: 'orderUpdates', user });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'orderUpdates' && message.data.user === user) {
-        callback(message.data);
-    }
-    });
-}
-
-subscribeToUserEvents(user: string, callback: (data: WsUserEvent) => void): void {
-    this.subscribe({ type: 'userEvents', user });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'userEvents' && message.data.user === user) {
-        callback(message.data);
-    }
-    });
-}
-
-subscribeToUserFills(user: string, callback: (data: WsUserFills) => void): void {
-    this.subscribe({ type: 'userFills', user });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'userFills' && message.data.user === user) {
-        callback(message.data);
-    }
-    });
-}
-
-subscribeToUserFundings(user: string, callback: (data: WsUserFundings) => void): void {
-    this.subscribe({ type: 'userFundings', user });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'userFundings' && message.data.user === user) {
-        callback(message.data);
-    }
-    });
-}
-
-subscribeToUserNonFundingLedgerUpdates(user: string, callback: (data: WsUserNonFundingLedgerUpdates) => void): void {
-    this.subscribe({ type: 'userNonFundingLedgerUpdates', user });
-    this.ws.on('message', (message: any) => {
-    if (message.channel === 'userNonFundingLedgerUpdates' && message.data.user === user) {
-        callback(message.data);
-    }
-    });
-}
-
-// Method to handle post requests via WebSocket
-postRequest(requestType: 'info' | 'action', payload: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-    const id = Date.now(); 
-    this.ws.sendMessage({
-        method: 'post',
-        id,
-        request: {
-        type: requestType,
-        payload
-        }
-    });
-
-    const responseHandler = (message: any) => {
-        if (message.channel === 'post' && message.data.id === id) {
-        this.ws.removeListener('message', responseHandler);
-        if (message.data.response.type === 'error') {
-            reject(new Error(message.data.response.payload));
+    private convertSymbol(symbol: string, mode: string = "", symbolMode: string = ""): string {
+        let rSymbol;
+        if (mode === "reverse") {
+            for (const [key, value] of this.exchangeToInternalNameMap.entries()) {
+                if (value === symbol) {
+                    return key;
+                }
+            }
+            rSymbol = symbol;
         } else {
-            resolve(message.data.response.payload);
+            rSymbol = this.exchangeToInternalNameMap.get(symbol) || symbol;
         }
+
+        if (symbolMode === "SPOT") {
+            if (!rSymbol.endsWith("-SPOT")) {
+                rSymbol = symbol + "-SPOT";
+            }
+        } else if (symbolMode === "PERP") {
+            if (!rSymbol.endsWith("-PERP")) {
+                rSymbol = symbol + "-PERP";
+            }
         }
-    };
 
-    this.ws.on('message', responseHandler);
+        return rSymbol;
+    }
 
-    // Set a timeout for the request
-    setTimeout(() => {
-        this.ws.removeListener('message', responseHandler);
-        reject(new Error('Request timeout'));
-    }, 30000); // 30 seconds timeout
-    });
-}
+    private convertSymbolsInObject(obj: any, symbolsFields: Array<string> = ["coin", "symbol"], symbolMode: string = ""): any {
+        if (typeof obj !== 'object' || obj === null) {
+            return this.convertToNumber(obj);   
+        }
+    
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.convertSymbolsInObject(item, symbolsFields, symbolMode));
+        }
+    
+        const convertedObj: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+            if (symbolsFields.includes(key)) {
+                convertedObj[key] = this.convertSymbol(value as string, symbolMode);
+            } else if (key === 'side') {
+                convertedObj[key] = value === 'A' ? 'sell' : value === 'B' ? 'buy' : value;
+            } else {
+                convertedObj[key] = this.convertSymbolsInObject(value, symbolsFields, symbolMode);
+            }
+        }
+        return convertedObj;
+    }
 
-// Unsubscribe methods
-unsubscribeFromAllMids(): void {
-    this.unsubscribe({ type: 'allMids' });
-}
+    private convertToNumber(value: any): any {
+        if (typeof value === 'string') {
+            if (/^-?\d+$/.test(value)) {
+                return parseInt(value, 10);
+            } else if (/^-?\d*\.\d+$/.test(value)) {
+                return parseFloat(value);
+            }
+        }
+        return value;
+    }
 
-unsubscribeFromNotification(user: string): void {
-    this.unsubscribe({ type: 'notification', user });
-}
+    private subscribe(subscription: { type: string; [key: string]: any }): void {
 
-unsubscribeFromWebData2(user: string): void {
-    this.unsubscribe({ type: 'webData2', user });
-}
+        this.ws.sendMessage({ method: 'subscribe', subscription: subscription });
+    }
 
-unsubscribeFromCandle(coin: string, interval: string): void {
-    this.unsubscribe({ type: 'candle', coin, interval });
-}
+    private unsubscribe(subscription: { type: string; [key: string]: any }): void {
+        const convertedSubscription = this.convertSymbolsInObject(subscription);
+        this.ws.sendMessage({ method: 'unsubscribe', subscription: convertedSubscription });
+    }
 
-unsubscribeFromL2Book(coin: string): void {
-    this.unsubscribe({ type: 'l2Book', coin });
-}
+    private handleMessage(message: any, callback: (data: any) => void, channel: string, additionalChecks: (data: any) => boolean = () => true) {
+        if (typeof message !== 'object' || message === null) {
+            console.warn('Received invalid message format:', message);
+            return;
+        }
 
-unsubscribeFromTrades(coin: string): void {
-    this.unsubscribe({ type: 'trades', coin });
-}
+        let data = message.data || message;
+        if (data.channel === channel && additionalChecks(data)) {
+            const convertedData = this.convertSymbolsInObject(data);
+            callback(convertedData);
+        }
+    }
 
-unsubscribeFromOrderUpdates(user: string): void {
-    this.unsubscribe({ type: 'orderUpdates', user });
-}
+    async subscribeToAllMids(callback: (data: AllMids) => void): Promise<void> {
+        await this.ensureInitialized();
+        this.subscribe({ type: 'allMids' });
 
-unsubscribeFromUserEvents(user: string): void {
-    this.unsubscribe({ type: 'userEvents', user });
-}
+        this.ws.on('message', (message: any) => {
+            this.handleMessage(message, callback, 'allMids', (data) => {
+                if (data.mids) {
+                    const convertedData: AllMids = {};
+                    for (const [key, value] of Object.entries(data.mids)) {
+                        const convertedKey = this.convertSymbol(key);
+                        const convertedValue = this.convertToNumber(value);
+                        convertedData[convertedKey] = convertedValue;
+                    }
+                    callback(convertedData);
+                    return false; // Prevent default handling
+                }
+                return true;
+            });
+        });
+    }
 
-unsubscribeFromUserFills(user: string): void {
-    this.unsubscribe({ type: 'userFills', user });
-}
+    async subscribeToNotification(user: string, callback: (data: Notification & { user: string }) => void): Promise<void> {
+        await this.ensureInitialized();
+        this.subscribe({ type: 'notification', user: user });
+        this.ws.on('message', (message: any) => {
+            if (message.channel === 'notification') {
+                message = this.convertSymbolsInObject(message)
+                callback(message)
+            }
+        });
+    }
 
-unsubscribeFromUserFundings(user: string): void {
-    this.unsubscribe({ type: 'userFundings', user });
-}
+    async subscribeToWebData2(user: string, callback: (data: WebData2) => void): Promise<void> {
+        await this.ensureInitialized();
+        this.subscribe({ type: 'webData2', user: user });
+        this.ws.on('message', (message: any) => {
+            if (message.channel === 'webData2') {
+                message = this.convertSymbolsInObject(message)
+                callback(message)
+            }
+        });
+    }
 
-unsubscribeFromUserNonFundingLedgerUpdates(user: string): void {
-    this.unsubscribe({ type: 'userNonFundingLedgerUpdates', user });
-}
+    async subscribeToCandle(coin: string, interval: string, callback: (data: Candle[] & { coin: string; interval: string }) => void): Promise<void> {
+        await this.ensureInitialized();
+        const convertedCoin = this.convertSymbol(coin, "reverse");
+        this.subscribe({ type: 'candle', coin: convertedCoin, interval: interval });
+        this.ws.on('message', (message: any) => {
+            if (message.channel === 'candle' && message.data.s === convertedCoin && message.data.i === interval) {
+                message = this.convertSymbolsInObject(message, ["s"])
+                callback(message)
+            }
+        });
+    }
+
+    async subscribeToL2Book(coin: string, callback: (data: WsBook & { coin: string }) => void): Promise<void> {
+        await this.ensureInitialized();
+        const convertedCoin = this.convertSymbol(coin, "reverse");
+        this.subscribe({ type: 'l2Book', coin: convertedCoin });
+        this.ws.on('message', (message: any) => {
+            if (message.channel === 'l2Book' && message.data.coin === convertedCoin) {
+                message = this.convertSymbolsInObject(message, ["coin"])
+                callback(message)
+            }
+        });
+    }
+
+    async subscribeToTrades(coin: string, callback: (data: any) => void): Promise<void> {
+        await this.ensureInitialized();
+        const convertedCoin = this.convertSymbol(coin, "reverse");
+        this.subscribe({ type: 'trades', coin: convertedCoin });
+        this.ws.on('message', (message: any) => {
+            if (message.channel === 'trades' && message.data[0].coin === convertedCoin) {
+                message = this.convertSymbolsInObject(message, ["coin"])
+                callback(message)
+            }
+        });
+    }
+
+    async subscribeToOrderUpdates(user: string, callback: (data: WsOrder[] & { user: string }) => void): Promise<void> {
+        await this.ensureInitialized();
+        this.subscribe({ type: 'orderUpdates', user: user });
+        this.ws.on('message', (message: any) => {
+
+            if (message.channel === 'orderUpdates') {
+                message = this.convertSymbolsInObject(message)
+                callback(message)
+            }
+        });
+    }
+
+    async subscribeToUserEvents(user: string, callback: (data: WsUserEvent & { user: string }) => void): Promise<void> {
+        await this.ensureInitialized();
+        this.subscribe({ type: 'userEvents', user: user });
+        this.ws.on('message', (message: any) => {
+
+            if (message.channel === 'userEvents') {
+                message = this.convertSymbolsInObject(message)
+                callback(message)
+            }
+        });
+    }
+
+    async subscribeToUserFills(user: string, callback: (data: WsUserFills & { user: string }) => void): Promise<void> {
+        await this.ensureInitialized();
+        this.subscribe({ type: 'userFills', user: user });
+        this.ws.on('message', (message: any) => {
+
+            if (message.channel === 'userFills') {
+                message = this.convertSymbolsInObject(message)
+                callback(message)
+            }
+        });
+    }
+
+    async subscribeToUserFundings(user: string, callback: (data: WsUserFundings & { user: string }) => void): Promise<void> {
+        await this.ensureInitialized();
+        this.subscribe({ type: 'userFundings', user: user });
+        this.ws.on('message', (message: any) => {
+            if (message.channel === 'userFundings') {
+                message = this.convertSymbolsInObject(message)
+                callback(message)
+            }
+        });
+    }
+
+    async subscribeToUserNonFundingLedgerUpdates(user: string, callback: (data: WsUserNonFundingLedgerUpdates & { user: string }) => void): Promise<void> {
+        await this.ensureInitialized();
+        this.subscribe({ type: 'userNonFundingLedgerUpdates', user: user });
+        this.ws.on('message', (message: any) => {
+            if (message.channel === 'userNonFundingLedgerUpdates') {
+                message = this.convertSymbolsInObject(message)
+                callback(message)
+            }
+        });
+    }
+
+    async postRequest(requestType: 'info' | 'action', payload: any): Promise<any> {
+        await this.ensureInitialized();
+        return new Promise((resolve, reject) => {
+            const id = Date.now();
+            const convertedPayload = this.convertSymbolsInObject(payload);
+            this.ws.sendMessage({
+                method: 'post',
+                id: id,
+                request: {
+                    type: requestType,
+                    payload: convertedPayload
+                }
+            });
+
+            const responseHandler = (message: any) => {
+                if (typeof message === 'object' && message !== null) {
+                    const data = message.data || message;
+                    if (data.channel === 'post' && data.id === id) {
+                        this.ws.removeListener('message', responseHandler);
+                        if (data.response && data.response.type === 'error') {
+                            reject(new Error(data.response.payload));
+                        } else {
+                            const convertedResponse = this.convertSymbolsInObject(data.response ? data.response.payload : data);
+                            resolve(convertedResponse);
+                        }
+                    }
+                }
+            };
+
+            this.ws.on('message', responseHandler);
+
+            setTimeout(() => {
+                this.ws.removeListener('message', responseHandler);
+                reject(new Error('Request timeout'));
+            }, 30000);
+        });
+    }
+
+    async unsubscribeFromAllMids(): Promise<void> {
+        this.unsubscribe({ type: 'allMids' });
+    }
+
+    async unsubscribeFromNotification(user: string): Promise<void> {
+        this.unsubscribe({ type: 'notification', user: user });
+    }
+
+    async unsubscribeFromWebData2(user: string): Promise<void> {
+        this.unsubscribe({ type: 'webData2', user: user });
+    }
+
+    async unsubscribeFromCandle(coin: string, interval: string): Promise<void> {
+        await this.ensureInitialized();
+        this.unsubscribe({ type: 'candle', coin: coin, interval: interval });
+    }
+
+    async unsubscribeFromL2Book(coin: string): Promise<void> {
+        await this.ensureInitialized();
+        this.unsubscribe({ type: 'l2Book', coin: coin });
+    }
+
+    async unsubscribeFromTrades(coin: string): Promise<void> {
+        await this.ensureInitialized();
+        this.unsubscribe({ type: 'trades', coin: coin });
+    }
+
+    async unsubscribeFromOrderUpdates(user: string): Promise<void> {
+        this.unsubscribe({ type: 'orderUpdates', user: user });
+    }
+
+    async unsubscribeFromUserEvents(user: string): Promise<void> {
+        this.unsubscribe({ type: 'userEvents', user: user });
+    }
+
+    async unsubscribeFromUserFills(user: string): Promise<void> {
+        this.unsubscribe({ type: 'userFills', user: user });
+    }
+
+    async unsubscribeFromUserFundings(user: string): Promise<void> {
+        this.unsubscribe({ type: 'userFundings', user: user });
+    }
+
+    async unsubscribeFromUserNonFundingLedgerUpdates(user: string): Promise<void> {
+        this.unsubscribe({ type: 'userNonFundingLedgerUpdates', user: user });
+    }
 }
