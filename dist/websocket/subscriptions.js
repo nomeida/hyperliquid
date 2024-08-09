@@ -87,21 +87,22 @@ class WebSocketSubscriptions {
     }
     async subscribeToAllMids(callback) {
         await this.ensureInitialized();
+        if (typeof callback !== 'function') {
+            throw new Error('Callback must be a function');
+        }
         this.subscribe({ type: 'allMids' });
         this.ws.on('message', (message) => {
-            this.handleMessage(message, callback, 'allMids', (data) => {
-                if (data.mids) {
+            if (message.channel === 'allMids') {
+                if (message.data.mids) {
                     const convertedData = {};
-                    for (const [key, value] of Object.entries(data.mids)) {
+                    for (const [key, value] of Object.entries(message.data.mids)) {
                         const convertedKey = this.convertSymbol(key);
                         const convertedValue = this.convertToNumber(value);
                         convertedData[convertedKey] = convertedValue;
                     }
                     callback(convertedData);
-                    return false; // Prevent default handling
                 }
-                return true;
-            });
+            }
         });
     }
     async subscribeToNotification(user, callback) {
