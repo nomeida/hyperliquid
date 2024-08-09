@@ -56,7 +56,7 @@ class Hyperliquid {
         this.initializationPromise = this.initialize();
         this.info = new info_1.InfoAPI(baseURL, this.rateLimiter, this.assetToIndexMap, this.exchangeToInternalNameMap, this.initializationPromise);
         this.ws = new connection_1.WebSocketClient(testnet);
-        this.subscriptions = new subscriptions_1.WebSocketSubscriptions(this.ws);
+        this.subscriptions = new subscriptions_1.WebSocketSubscriptions(this.ws, this.exchangeToInternalNameMap, this.initializationPromise);
         //Create proxy objects for exchange and custom
         this.exchange = this.createAuthenticatedProxy(exchange_1.ExchangeAPI);
         this.custom = this.createAuthenticatedProxy(custom_1.CustomOperations);

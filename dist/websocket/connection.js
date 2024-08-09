@@ -77,7 +77,7 @@ class WebSocketClient extends events_1.EventEmitter {
     startPingInterval() {
         this.pingInterval = setInterval(() => {
             this.sendMessage({ method: 'ping' });
-        }, 30000); // Send ping every 30 seconds
+        }, 15000); // Send ping every 15 seconds
     }
     stopPingInterval() {
         if (this.pingInterval) {
