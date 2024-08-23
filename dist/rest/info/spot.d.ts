@@ -1,14 +1,11 @@
 import { SpotMeta, SpotClearinghouseState, SpotMetaAndAssetCtxs } from '../../types';
 import { HttpApi } from '../../utils/helpers';
+import { SymbolConversion } from '../../utils/symbolConversion';
 export declare class SpotInfoAPI {
     private httpApi;
-    private exchangeToInternalNameMap;
-    private initializationPromise;
-    constructor(httpApi: HttpApi, exchangeToInternalNameMap: Map<string, string>, initializationPromise: Promise<void>);
-    private convertSymbol;
-    private convertSymbolsInObject;
-    private convertToNumber;
-    getSpotMeta(raw_response?: boolean): Promise<SpotMeta>;
-    getSpotClearinghouseState(user: string, raw_response?: boolean): Promise<SpotClearinghouseState>;
-    getSpotMetaAndAssetCtxs(raw_response?: boolean): Promise<SpotMetaAndAssetCtxs>;
+    private symbolConversion;
+    constructor(httpApi: HttpApi, symbolConversion: SymbolConversion);
+    getSpotMeta(rawResponse?: boolean): Promise<SpotMeta>;
+    getSpotClearinghouseState(user: string, rawResponse?: boolean): Promise<SpotClearinghouseState>;
+    getSpotMetaAndAssetCtxs(rawResponse?: boolean): Promise<SpotMetaAndAssetCtxs>;
 }

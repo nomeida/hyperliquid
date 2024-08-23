@@ -1,57 +1,25 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExchangeAPI = void 0;
 const ethers_1 = require("ethers");
 const helpers_1 = require("../utils/helpers");
 const signing_1 = require("../utils/signing");
-const CONSTANTS = __importStar(require("../types/constants"));
+const constants_1 = require("../types/constants");
 const IS_MAINNET = true; // Make sure this matches the IS_MAINNET in signing.ts
 class ExchangeAPI {
-    constructor(baseURL, privateKey, info, rateLimiter, assetToIndexMap, exchangeToInternalNameMap, initializationPromise) {
+    constructor(baseURL, privateKey, info, rateLimiter, symbolConversion) {
         this.info = info;
-        this.httpApi = new helpers_1.HttpApi(baseURL, CONSTANTS.ENDPOINTS.EXCHANGE, rateLimiter);
+        this.httpApi = new helpers_1.HttpApi(baseURL, constants_1.ENDPOINTS.EXCHANGE, rateLimiter);
         this.wallet = new ethers_1.ethers.Wallet(privateKey);
-        this.assetToIndexMap = assetToIndexMap;
-        this.exchangeToInternalNameMap = exchangeToInternalNameMap;
-        this.initializationPromise = initializationPromise;
+        this.symbolConversion = symbolConversion;
     }
-    updateAssetMaps(assetToIndexMap, exchangeToInternalNameMap) {
-        this.assetToIndexMap = assetToIndexMap;
-        this.exchangeToInternalNameMap = exchangeToInternalNameMap;
-    }
-    //Get the asset index for a given symbol i.e BTC-PERP -> 1
     async getAssetIndex(symbol) {
-        await this.initializationPromise;
-        const index = this.assetToIndexMap.get(symbol);
+        const index = await this.symbolConversion.getAssetIndex(symbol);
         if (index === undefined) {
             throw new Error(`Unknown asset: ${symbol}`);
         }
         return index;
     }
-    //Create an order/place an order
     async placeOrder(orderRequest) {
         try {
             const assetIndex = await this.getAssetIndex(orderRequest.coin);
@@ -76,7 +44,7 @@ class ExchangeAPI {
                 a: await this.getAssetIndex(req.coin)
             })));
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.CANCEL,
+                type: constants_1.ExchangeType.CANCEL,
                 cancels: cancelsWithIndices.map(({ a, o }) => ({ a, o }))
             };
             const nonce = Date.now();
@@ -93,7 +61,7 @@ class ExchangeAPI {
         try {
             const assetIndex = await this.getAssetIndex(symbol);
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.CANCEL_BY_CLOID,
+                type: constants_1.ExchangeType.CANCEL_BY_CLOID,
                 cancels: [{ asset: assetIndex, cloid }]
             };
             const nonce = Date.now();
@@ -111,7 +79,7 @@ class ExchangeAPI {
             const assetIndex = await this.getAssetIndex(orderRequest.coin);
             const orderWire = (0, signing_1.orderRequestToOrderWire)(orderRequest, assetIndex);
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.MODIFY,
+                type: constants_1.ExchangeType.MODIFY,
                 oid,
                 order: orderWire
             };
@@ -130,11 +98,13 @@ class ExchangeAPI {
             // First, get all asset indices in parallel
             const assetIndices = await Promise.all(modifies.map(m => this.getAssetIndex(m.order.coin)));
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.BATCH_MODIFY,
-                modifies: modifies.map((m, index) => ({
-                    oid: m.oid,
-                    order: (0, signing_1.orderRequestToOrderWire)(m.order, assetIndices[index])
-                }))
+                type: constants_1.ExchangeType.BATCH_MODIFY,
+                modifies: modifies.map((m, index) => {
+                    return {
+                        oid: m.oid,
+                        order: (0, signing_1.orderRequestToOrderWire)(m.order, assetIndices[index])
+                    };
+                })
             };
             const nonce = Date.now();
             const signature = await (0, signing_1.signL1Action)(this.wallet, action, null, nonce);
@@ -150,7 +120,7 @@ class ExchangeAPI {
         try {
             const assetIndex = await this.getAssetIndex(symbol);
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.UPDATE_LEVERAGE,
+                type: constants_1.ExchangeType.UPDATE_LEVERAGE,
                 asset: assetIndex,
                 isCross: leverageMode === "cross",
                 leverage: leverage
@@ -169,7 +139,7 @@ class ExchangeAPI {
         try {
             const assetIndex = await this.getAssetIndex(symbol);
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.UPDATE_ISOLATED_MARGIN,
+                type: constants_1.ExchangeType.UPDATE_ISOLATED_MARGIN,
                 asset: assetIndex,
                 isBuy,
                 ntli
@@ -187,7 +157,7 @@ class ExchangeAPI {
     async usdTransfer(destination, amount) {
         try {
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.USD_SEND,
+                type: constants_1.ExchangeType.USD_SEND,
                 hyperliquidChain: IS_MAINNET ? 'Mainnet' : 'Testnet',
                 signatureChainId: '0xa4b1',
                 destination: destination,
@@ -206,7 +176,7 @@ class ExchangeAPI {
     async spotTransfer(destination, token, amount) {
         try {
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.SPOT_SEND,
+                type: constants_1.ExchangeType.SPOT_SEND,
                 hyperliquidChain: IS_MAINNET ? 'Mainnet' : 'Testnet',
                 signatureChainId: '0xa4b1',
                 destination,
@@ -232,7 +202,7 @@ class ExchangeAPI {
     async initiateWithdrawal(destination, amount) {
         try {
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.WITHDRAW,
+                type: constants_1.ExchangeType.WITHDRAW,
                 hyperliquidChain: IS_MAINNET ? 'Mainnet' : 'Testnet',
                 signatureChainId: '0xa4b1',
                 destination: destination,
@@ -251,7 +221,7 @@ class ExchangeAPI {
     async transferBetweenSpotAndPerp(usdc, toPerp) {
         try {
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.SPOT_USER,
+                type: constants_1.ExchangeType.SPOT_USER,
                 classTransfer: {
                     usdc: usdc * 1e6,
                     toPerp: toPerp
@@ -269,7 +239,7 @@ class ExchangeAPI {
     //Schedule a cancel for a given time (in ms) //Note: Only available once you've traded $1 000 000 in volume
     async scheduleCancel(time) {
         try {
-            const action = { type: CONSTANTS.EXCHANGE_TYPES.SCHEDULE_CANCEL, time };
+            const action = { type: constants_1.ExchangeType.SCHEDULE_CANCEL, time };
             const nonce = Date.now();
             const signature = await (0, signing_1.signL1Action)(this.wallet, action, null, nonce);
             const payload = { action, nonce, signature };
@@ -283,7 +253,7 @@ class ExchangeAPI {
     async vaultTransfer(vaultAddress, isDeposit, usd) {
         try {
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.VAULT_TRANSFER,
+                type: constants_1.ExchangeType.VAULT_TRANSFER,
                 vaultAddress,
                 isDeposit,
                 usd
@@ -300,7 +270,7 @@ class ExchangeAPI {
     async setReferrer(code) {
         try {
             const action = {
-                type: CONSTANTS.EXCHANGE_TYPES.SET_REFERRER,
+                type: constants_1.ExchangeType.SET_REFERRER,
                 code
             };
             const nonce = Date.now();

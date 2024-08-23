@@ -2,15 +2,13 @@ import { RateLimiter } from '../utils/rateLimiter';
 import { InfoAPI } from './info';
 import { CancelOrderResponse } from '../utils/signing';
 import { CancelOrderRequest, OrderRequest } from '../types/index';
+import { SymbolConversion } from '../utils/symbolConversion';
 export declare class ExchangeAPI {
     private info;
     private wallet;
     private httpApi;
-    private assetToIndexMap;
-    private exchangeToInternalNameMap;
-    private initializationPromise;
-    constructor(baseURL: string, privateKey: string, info: InfoAPI, rateLimiter: RateLimiter, assetToIndexMap: Map<string, number>, exchangeToInternalNameMap: Map<string, string>, initializationPromise: Promise<void>);
-    updateAssetMaps(assetToIndexMap: Map<string, number>, exchangeToInternalNameMap: Map<string, string>): void;
+    private symbolConversion;
+    constructor(baseURL: string, privateKey: string, info: InfoAPI, rateLimiter: RateLimiter, symbolConversion: SymbolConversion);
     private getAssetIndex;
     placeOrder(orderRequest: OrderRequest): Promise<any>;
     cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse>;

@@ -15,17 +15,16 @@ exports.cancelOrderToAction = cancelOrderToAction;
 exports.orderWiresToOrderAction = orderWiresToOrderAction;
 const msgpack_1 = require("@msgpack/msgpack");
 const ethers_1 = require("ethers");
-const IS_MAINNET = true; // switch this to false to sign for testnet
 const phantomDomain = {
-    name: "Exchange",
-    version: "1",
+    name: 'Exchange',
+    version: '1',
     chainId: 1337,
-    verifyingContract: "0x0000000000000000000000000000000000000000"
+    verifyingContract: '0x0000000000000000000000000000000000000000',
 };
 const agentTypes = {
     Agent: [
-        { name: "source", type: "string" },
-        { name: "connectionId", type: "bytes32" },
+        { name: 'source', type: 'string' },
+        { name: 'connectionId', type: 'bytes32' },
     ],
 };
 function orderTypeToWire(orderType) {
@@ -35,20 +34,19 @@ function orderTypeToWire(orderType) {
     else if (orderType.trigger) {
         return {
             trigger: {
-                triggerPx: parseFloat(floatToWire(orderType.trigger.triggerPx)),
+                triggerPx: floatToWire(Number(orderType.trigger.triggerPx)),
                 isMarket: orderType.trigger.isMarket,
-                tpsl: orderType.trigger.tpsl
-            }
+                tpsl: orderType.trigger.tpsl,
+            },
         };
     }
-    throw new Error("Invalid order type");
+    throw new Error('Invalid order type');
 }
 function addressToBytes(address) {
-    return ethers_1.ethers.getBytes(address);
+    return (0, ethers_1.getBytes)(address);
 }
 function actionHash(action, vaultAddress, nonce) {
     const msgPackBytes = (0, msgpack_1.encode)(action);
-    // console.log("action hash", Buffer.from(msgPackBytes).toString("base64"));
     const additionalBytesLength = vaultAddress === null ? 9 : 29;
     const data = new Uint8Array(msgPackBytes.length + additionalBytesLength);
     data.set(msgPackBytes);
@@ -61,31 +59,31 @@ function actionHash(action, vaultAddress, nonce) {
         view.setUint8(msgPackBytes.length + 8, 1);
         data.set(addressToBytes(vaultAddress), msgPackBytes.length + 9);
     }
-    return ethers_1.ethers.keccak256(data);
+    return (0, ethers_1.keccak256)(data);
 }
 function constructPhantomAgent(hash, isMainnet) {
-    return { source: isMainnet ? "a" : "b", connectionId: hash };
+    return { source: isMainnet ? 'a' : 'b', connectionId: hash };
 }
 async function signL1Action(wallet, action, activePool, nonce) {
     const hash = actionHash(action, activePool, nonce);
-    const phantomAgent = constructPhantomAgent(hash, IS_MAINNET);
+    const phantomAgent = constructPhantomAgent(hash, true);
     const data = {
         domain: phantomDomain,
         types: agentTypes,
-        primaryType: "Agent",
+        primaryType: 'Agent',
         message: phantomAgent,
     };
     return signInner(wallet, data);
 }
 async function signUserSignedAction(wallet, action, payloadTypes, primaryType) {
-    action.signatureChainId = "0x66eee";
-    action.hyperliquidChain = IS_MAINNET ? "Mainnet" : "Testnet";
+    action.signatureChainId = '0x66eee';
+    action.hyperliquidChain = true ? 'Mainnet' : 'Testnet';
     const data = {
         domain: {
-            name: "HyperliquidSignTransaction",
-            version: "1",
+            name: 'HyperliquidSignTransaction',
+            version: '1',
             chainId: 421614,
-            verifyingContract: "0x0000000000000000000000000000000000000000"
+            verifyingContract: '0x0000000000000000000000000000000000000000',
         },
         types: {
             [primaryType]: payloadTypes,
@@ -97,27 +95,27 @@ async function signUserSignedAction(wallet, action, payloadTypes, primaryType) {
 }
 async function signUsdTransferAction(wallet, action) {
     return signUserSignedAction(wallet, action, [
-        { name: "hyperliquidChain", type: "string" },
-        { name: "destination", type: "string" },
-        { name: "amount", type: "string" },
-        { name: "time", type: "uint64" },
-    ], "HyperliquidTransaction:UsdSend");
+        { name: 'hyperliquidChain', type: 'string' },
+        { name: 'destination', type: 'string' },
+        { name: 'amount', type: 'string' },
+        { name: 'time', type: 'uint64' },
+    ], 'HyperliquidTransaction:UsdSend');
 }
 async function signWithdrawFromBridgeAction(wallet, action) {
     return signUserSignedAction(wallet, action, [
-        { name: "hyperliquidChain", type: "string" },
-        { name: "destination", type: "string" },
-        { name: "amount", type: "string" },
-        { name: "time", type: "uint64" },
-    ], "HyperliquidTransaction:Withdraw");
+        { name: 'hyperliquidChain', type: 'string' },
+        { name: 'destination', type: 'string' },
+        { name: 'amount', type: 'string' },
+        { name: 'time', type: 'uint64' },
+    ], 'HyperliquidTransaction:Withdraw');
 }
 async function signAgent(wallet, action) {
     return signUserSignedAction(wallet, action, [
-        { name: "hyperliquidChain", type: "string" },
-        { name: "agentAddress", type: "address" },
-        { name: "agentName", type: "string" },
-        { name: "nonce", type: "uint64" },
-    ], "HyperliquidTransaction:ApproveAgent");
+        { name: 'hyperliquidChain', type: 'string' },
+        { name: 'agentAddress', type: 'address' },
+        { name: 'agentName', type: 'string' },
+        { name: 'nonce', type: 'uint64' },
+    ], 'HyperliquidTransaction:ApproveAgent');
 }
 async function signInner(wallet, data) {
     const signature = await wallet.signTypedData(data.domain, data.types, data.message);
@@ -160,7 +158,7 @@ function orderRequestToOrderWire(order, asset) {
         p: floatToWire(order.limit_px),
         s: floatToWire(order.sz),
         r: order.reduce_only,
-        t: orderTypeToWire(order.order_type)
+        t: orderTypeToWire(order.order_type),
     };
     if (order.cloid !== undefined) {
         orderWire.c = order.cloid;
@@ -175,9 +173,9 @@ function cancelOrderToAction(cancelRequest) {
 }
 function orderWiresToOrderAction(orderWires) {
     return {
-        type: "order",
+        type: 'order',
         orders: orderWires,
-        grouping: "na",
+        grouping: 'na',
     };
 }
 //# sourceMappingURL=signing.js.map

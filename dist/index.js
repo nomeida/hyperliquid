@@ -32,32 +32,21 @@ const exchange_1 = require("./rest/exchange");
 const connection_1 = require("./websocket/connection");
 const subscriptions_1 = require("./websocket/subscriptions");
 const rateLimiter_1 = require("./utils/rateLimiter");
-const helpers_1 = require("./utils/helpers");
 const CONSTANTS = __importStar(require("./types/constants"));
 const custom_1 = require("./rest/custom");
 const ethers_1 = require("ethers");
-class AuthenticationError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'AuthenticationError';
-    }
-}
+const symbolConversion_1 = require("./utils/symbolConversion");
+const errors_1 = require("./utils/errors");
 class Hyperliquid {
     constructor(privateKey = null, testnet = false) {
-        this.refreshInterval = null;
-        this.refreshIntervalMs = 60000;
         this.isValidPrivateKey = false;
         const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
-        this.refreshIntervalMs = 60000;
         this.rateLimiter = new rateLimiter_1.RateLimiter();
-        this.assetToIndexMap = new Map();
-        this.exchangeToInternalNameMap = new Map();
-        this.httpApi = new helpers_1.HttpApi(baseURL, CONSTANTS.ENDPOINTS.INFO, this.rateLimiter);
-        this.initializationPromise = this.initialize();
-        this.info = new info_1.InfoAPI(baseURL, this.rateLimiter, this.assetToIndexMap, this.exchangeToInternalNameMap, this.initializationPromise);
+        this.symbolConversion = new symbolConversion_1.SymbolConversion(baseURL, this.rateLimiter);
+        this.info = new info_1.InfoAPI(baseURL, this.rateLimiter, this.symbolConversion);
         this.ws = new connection_1.WebSocketClient(testnet);
-        this.subscriptions = new subscriptions_1.WebSocketSubscriptions(this.ws, this.exchangeToInternalNameMap, this.initializationPromise);
-        //Create proxy objects for exchange and custom
+        this.subscriptions = new subscriptions_1.WebSocketSubscriptions(this.ws, this.symbolConversion);
+        // Create proxy objects for exchange and custom
         this.exchange = this.createAuthenticatedProxy(exchange_1.ExchangeAPI);
         this.custom = this.createAuthenticatedProxy(custom_1.CustomOperations);
         if (privateKey) {
@@ -68,7 +57,7 @@ class Hyperliquid {
         return new Proxy({}, {
             get: (target, prop) => {
                 if (!this.isValidPrivateKey) {
-                    throw new AuthenticationError('Invalid or missing private key. This method requires authentication.');
+                    throw new errors_1.AuthenticationError('Invalid or missing private key. This method requires authentication.');
                 }
                 return target[prop];
             }
@@ -77,99 +66,15 @@ class Hyperliquid {
     initializeWithPrivateKey(privateKey, baseURL) {
         try {
             const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
-            new ethers_1.ethers.Wallet(formattedPrivateKey); //Validate the private key
-            this.exchange = new exchange_1.ExchangeAPI(baseURL, formattedPrivateKey, this.info, this.rateLimiter, this.assetToIndexMap, this.exchangeToInternalNameMap, this.initializationPromise);
-            this.custom = new custom_1.CustomOperations(this.exchange, this.info, formattedPrivateKey, this.exchangeToInternalNameMap, this.assetToIndexMap, this.initializationPromise);
+            new ethers_1.ethers.Wallet(formattedPrivateKey); // Validate the private key
+            this.exchange = new exchange_1.ExchangeAPI(baseURL, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion);
+            this.custom = new custom_1.CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion);
             this.isValidPrivateKey = true;
         }
         catch (error) {
             console.warn("Invalid private key provided. Some functionalities will be limited.");
             this.isValidPrivateKey = false;
         }
-    }
-    async refreshAssetToIndexMap() {
-        try {
-            const [perpMeta, spotMeta] = await Promise.all([
-                (async () => {
-                    const result = await this.httpApi.makeRequest({
-                        "type": CONSTANTS.INFO_TYPES.PERPS_META_AND_ASSET_CTXS
-                    });
-                    return result;
-                })(),
-                (async () => {
-                    const result = await this.httpApi.makeRequest({
-                        "type": CONSTANTS.INFO_TYPES.SPOT_META_AND_ASSET_CTXS
-                    });
-                    return result;
-                })()
-            ]);
-            this.assetToIndexMap.clear();
-            this.exchangeToInternalNameMap.clear();
-            //Handle perpetual assets
-            perpMeta[0].universe.forEach((asset, index) => {
-                const internalName = `${asset.name}-PERP`;
-                this.assetToIndexMap.set(internalName, index);
-                this.exchangeToInternalNameMap.set(asset.name, internalName);
-            });
-            //Handle spot assets
-            spotMeta[0].tokens.forEach((token) => {
-                const universeItem = spotMeta[0].universe.find((item) => item.tokens[0] === token.index);
-                if (universeItem) {
-                    const internalName = `${token.name}-SPOT`;
-                    const exchangeName = universeItem.name;
-                    const index = spotMeta[0].universe.indexOf(universeItem);
-                    this.assetToIndexMap.set(internalName, 10000 + index);
-                    this.exchangeToInternalNameMap.set(exchangeName, internalName);
-                }
-            });
-        }
-        catch (error) {
-            console.error('Failed to refresh asset maps:', error);
-        }
-        finally {
-        }
-    }
-    getInternalName(exchangeName) {
-        return this.exchangeToInternalNameMap.get(exchangeName);
-    }
-    getExchangeName(internalName) {
-        for (const [exchangeName, name] of this.exchangeToInternalNameMap.entries()) {
-            if (name === internalName) {
-                return exchangeName;
-            }
-        }
-        return undefined;
-    }
-    async initialize() {
-        await this.refreshAssetToIndexMap();
-        this.startPeriodicRefresh();
-    }
-    async ensureInitialized() {
-        if (!this.initializationPromise) {
-            this.initializationPromise = this.initialize();
-        }
-        return this.initializationPromise;
-    }
-    startPeriodicRefresh() {
-        this.refreshInterval = setInterval(() => {
-            this.refreshAssetToIndexMap();
-        }, this.refreshIntervalMs); //Refresh every minute
-    }
-    getAssetIndex(assetSymbol) {
-        return this.assetToIndexMap.get(assetSymbol);
-    }
-    getAllAssets() {
-        const perp = [];
-        const spot = [];
-        for (const [asset, index] of this.assetToIndexMap.entries()) {
-            if (asset.endsWith('-PERP')) {
-                perp.push(asset);
-            }
-            else if (asset.endsWith('-SPOT')) {
-                spot.push(asset);
-            }
-        }
-        return { perp, spot };
     }
     isAuthenticated() {
         return this.isValidPrivateKey;
@@ -182,10 +87,6 @@ class Hyperliquid {
     }
     disconnect() {
         this.ws.close();
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
-        }
     }
 }
 exports.Hyperliquid = Hyperliquid;

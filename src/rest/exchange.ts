@@ -17,7 +17,9 @@ import {
   OrderRequest
 } from '../types/index';
 
-import * as CONSTANTS from '../types/constants';
+import { ExchangeType, ENDPOINTS } from '../types/constants';
+import { SymbolConversion } from '../utils/symbolConversion';
+import { floatToWire } from '../utils/signing';
 
 
 const IS_MAINNET = true; // Make sure this matches the IS_MAINNET in signing.ts
@@ -25,56 +27,43 @@ const IS_MAINNET = true; // Make sure this matches the IS_MAINNET in signing.ts
 export class ExchangeAPI {
   private wallet: ethers.Wallet;
   private httpApi: HttpApi;
-  private assetToIndexMap: Map<string, number>;
-  private exchangeToInternalNameMap: Map<string, string>;
-  private initializationPromise: Promise<void>;
+  private symbolConversion: SymbolConversion;
 
   constructor(
     baseURL: string, 
     privateKey: string, 
     private info: InfoAPI,
     rateLimiter: RateLimiter,
-    assetToIndexMap: Map<string, number>,
-    exchangeToInternalNameMap: Map<string, string>,
-    initializationPromise: Promise<void>,
+    symbolConversion: SymbolConversion,
   ) {
-    this.httpApi = new HttpApi(baseURL, CONSTANTS.ENDPOINTS.EXCHANGE, rateLimiter);
+    this.httpApi = new HttpApi(baseURL, ENDPOINTS.EXCHANGE, rateLimiter);
     this.wallet = new ethers.Wallet(privateKey);
-    this.assetToIndexMap = assetToIndexMap;
-    this.exchangeToInternalNameMap = exchangeToInternalNameMap;
-    this.initializationPromise = initializationPromise;
+    this.symbolConversion = symbolConversion;
   }
 
-  updateAssetMaps(assetToIndexMap: Map<string, number>, exchangeToInternalNameMap: Map<string, string>) {
-    this.assetToIndexMap = assetToIndexMap;
-    this.exchangeToInternalNameMap = exchangeToInternalNameMap;
-  }
-
-  //Get the asset index for a given symbol i.e BTC-PERP -> 1
   private async getAssetIndex(symbol: string): Promise<number> {
-    await this.initializationPromise;
-    const index = this.assetToIndexMap.get(symbol);
+    const index = await this.symbolConversion.getAssetIndex(symbol);
     if (index === undefined) {
       throw new Error(`Unknown asset: ${symbol}`);
     }
-    return index;
+      return index;
   }
 
-  //Create an order/place an order
   async placeOrder(orderRequest: OrderRequest): Promise<any> {
     try {
-      const assetIndex = await this.getAssetIndex(orderRequest.coin);
-      const orderWire = orderRequestToOrderWire(orderRequest, assetIndex);
-      const action = orderWiresToOrderAction([orderWire]);
-      const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce);
+        const assetIndex = await this.getAssetIndex(orderRequest.coin);
 
-      const payload = { action, nonce, signature };
-      return this.httpApi.makeRequest(payload, 1);
+        const orderWire = orderRequestToOrderWire(orderRequest, assetIndex);
+        const action = orderWiresToOrderAction([orderWire]);
+        const nonce = Date.now();
+        const signature = await signL1Action(this.wallet, action, null, nonce);
+
+        const payload = { action, nonce, signature };
+        return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
-      throw error;
+        throw error;
     }
-  }
+}
 
   //Cancel using order id (oid)
   async cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse> {
@@ -88,7 +77,7 @@ export class ExchangeAPI {
       })));
   
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.CANCEL,
+        type: ExchangeType.CANCEL,
         cancels: cancelsWithIndices.map(({ a, o }) => ({ a, o }))
       };
       
@@ -107,7 +96,7 @@ export class ExchangeAPI {
     try {
       const assetIndex = await this.getAssetIndex(symbol);
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.CANCEL_BY_CLOID,
+        type: ExchangeType.CANCEL_BY_CLOID,
         cancels: [{ asset: assetIndex, cloid }]
       };
       const nonce = Date.now();
@@ -124,9 +113,10 @@ export class ExchangeAPI {
   async modifyOrder(oid: number, orderRequest: OrderRequest): Promise<any> {
     try {
       const assetIndex = await this.getAssetIndex(orderRequest.coin);
+
       const orderWire = orderRequestToOrderWire(orderRequest, assetIndex);
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.MODIFY,
+        type: ExchangeType.MODIFY,
         oid,
         order: orderWire
       };
@@ -149,11 +139,14 @@ export class ExchangeAPI {
       );
   
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.BATCH_MODIFY,
-        modifies: modifies.map((m, index) => ({
-          oid: m.oid,
-          order: orderRequestToOrderWire(m.order, assetIndices[index])
-        }))
+        type: ExchangeType.BATCH_MODIFY,
+        modifies: modifies.map((m, index) => {
+
+          return {
+            oid: m.oid,
+            order: orderRequestToOrderWire(m.order, assetIndices[index])
+          };
+        })
       };
   
       const nonce = Date.now();
@@ -171,7 +164,7 @@ export class ExchangeAPI {
     try {
       const assetIndex = await this.getAssetIndex(symbol);
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.UPDATE_LEVERAGE,
+        type: ExchangeType.UPDATE_LEVERAGE,
         asset: assetIndex,
         isCross: leverageMode === "cross",
         leverage: leverage
@@ -191,7 +184,7 @@ export class ExchangeAPI {
     try {
       const assetIndex = await this.getAssetIndex(symbol);
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.UPDATE_ISOLATED_MARGIN,
+        type: ExchangeType.UPDATE_ISOLATED_MARGIN,
         asset: assetIndex,
         isBuy,
         ntli
@@ -210,7 +203,7 @@ export class ExchangeAPI {
   async usdTransfer(destination: string, amount: number): Promise<any> {
     try {
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.USD_SEND,
+        type: ExchangeType.USD_SEND,
         hyperliquidChain: IS_MAINNET ? 'Mainnet' : 'Testnet',
         signatureChainId: '0xa4b1',
         destination: destination,
@@ -230,7 +223,7 @@ export class ExchangeAPI {
   async spotTransfer(destination: string, token: string, amount: string): Promise<any> {
     try {
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.SPOT_SEND,
+        type: ExchangeType.SPOT_SEND,
         hyperliquidChain: IS_MAINNET ? 'Mainnet' : 'Testnet',
         signatureChainId: '0xa4b1',
         destination,
@@ -262,7 +255,7 @@ export class ExchangeAPI {
   async initiateWithdrawal(destination: string, amount: number): Promise<any> {
     try {
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.WITHDRAW,
+        type: ExchangeType.WITHDRAW,
         hyperliquidChain: IS_MAINNET ? 'Mainnet' : 'Testnet',
         signatureChainId: '0xa4b1',
         destination: destination,
@@ -282,7 +275,7 @@ export class ExchangeAPI {
   async transferBetweenSpotAndPerp(usdc: number, toPerp: boolean): Promise<any> {
     try {
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.SPOT_USER,
+        type: ExchangeType.SPOT_USER,
         classTransfer: {
           usdc: usdc * 1e6,
           toPerp: toPerp
@@ -301,7 +294,7 @@ export class ExchangeAPI {
   //Schedule a cancel for a given time (in ms) //Note: Only available once you've traded $1 000 000 in volume
   async scheduleCancel(time: number | null): Promise<any> {
     try {
-      const action = { type: CONSTANTS.EXCHANGE_TYPES.SCHEDULE_CANCEL, time };
+      const action = { type: ExchangeType.SCHEDULE_CANCEL, time };
       const nonce = Date.now();
       const signature = await signL1Action(this.wallet, action, null, nonce);
 
@@ -316,7 +309,7 @@ export class ExchangeAPI {
   async vaultTransfer(vaultAddress: string, isDeposit: boolean, usd: number): Promise<any> {
     try {
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.VAULT_TRANSFER,
+        type: ExchangeType.VAULT_TRANSFER,
         vaultAddress,
         isDeposit,
         usd
@@ -334,7 +327,7 @@ export class ExchangeAPI {
   async setReferrer(code: string): Promise<any> {
     try {
       const action = {
-        type: CONSTANTS.EXCHANGE_TYPES.SET_REFERRER,
+        type: ExchangeType.SET_REFERRER,
         code
       };
       const nonce = Date.now();

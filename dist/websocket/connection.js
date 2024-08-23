@@ -38,6 +38,8 @@ class WebSocketClient extends events_1.EventEmitter {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 5000;
+        this.initialReconnectDelay = 1000;
+        this.maxReconnectDelay = 30000;
         this.url = testnet ? CONSTANTS.WSS_URLS.TESTNET : CONSTANTS.WSS_URLS.PRODUCTION;
     }
     connect() {
@@ -67,11 +69,13 @@ class WebSocketClient extends events_1.EventEmitter {
     reconnect() {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-            setTimeout(() => this.connect(), this.reconnectDelay);
+            const delay = Math.min(this.initialReconnectDelay * Math.pow(2, this.reconnectAttempts - 1), this.maxReconnectDelay);
+            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`);
+            setTimeout(() => this.connect(), delay);
         }
         else {
             console.error('Max reconnection attempts reached. Please reconnect manually.');
+            this.emit('maxReconnectAttemptsReached');
         }
     }
     startPingInterval() {
