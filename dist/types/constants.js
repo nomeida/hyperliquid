@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WEBSOCKET = exports.EXCHANGE_TYPES = exports.INFO_TYPES = exports.ENDPOINTS = exports.WSS_URLS = exports.BASE_URLS = void 0;
+exports.WEBSOCKET = exports.ExchangeType = exports.InfoType = exports.ENDPOINTS = exports.WSS_URLS = exports.BASE_URLS = void 0;
 exports.BASE_URLS = {
     PRODUCTION: 'https://api.hyperliquid.xyz',
     TESTNET: 'https://api.hyperliquid-testnet.xyz'
@@ -13,42 +13,44 @@ exports.ENDPOINTS = {
     INFO: '/info',
     EXCHANGE: '/exchange'
 };
-exports.INFO_TYPES = {
-    ALL_MIDS: 'allMids',
-    META: 'meta',
-    OPEN_ORDERS: 'openOrders',
-    FRONTEND_OPEN_ORDERS: 'frontendOpenOrders',
-    USER_FILLS: 'userFills',
-    USER_FILLS_BY_TIME: 'userFillsByTime',
-    USER_RATE_LIMIT: 'userRateLimit',
-    ORDER_STATUS: 'orderStatus',
-    L2_BOOK: 'l2Book',
-    CANDLE_SNAPSHOT: 'candleSnapshot',
-    PERPS_META_AND_ASSET_CTXS: 'metaAndAssetCtxs',
-    PERPS_CLEARINGHOUSE_STATE: 'clearinghouseState',
-    USER_FUNDING: 'userFunding',
-    USER_NON_FUNDING_LEDGER_UPDATES: 'userNonFundingLedgerUpdates',
-    FUNDING_HISTORY: 'fundingHistory',
-    SPOT_META: 'spotMeta',
-    SPOT_CLEARINGHOUSE_STATE: 'spotClearinghouseState',
-    SPOT_META_AND_ASSET_CTXS: 'spotMetaAndAssetCtxs'
-};
-exports.EXCHANGE_TYPES = {
-    ORDER: 'order',
-    CANCEL: 'cancel',
-    CANCEL_BY_CLOID: 'cancelByCloid',
-    SCHEDULE_CANCEL: 'scheduleCancel',
-    MODIFY: 'modify',
-    BATCH_MODIFY: 'batchModify',
-    UPDATE_LEVERAGE: 'updateLeverage',
-    UPDATE_ISOLATED_MARGIN: 'updateIsolatedMargin',
-    USD_SEND: 'usdSend',
-    SPOT_SEND: 'spotSend',
-    WITHDRAW: 'withdraw3',
-    SPOT_USER: 'spotUser',
-    VAULT_TRANSFER: 'vaultTransfer',
-    SET_REFERRER: 'setReferrer'
-};
+var InfoType;
+(function (InfoType) {
+    InfoType["ALL_MIDS"] = "allMids";
+    InfoType["META"] = "meta";
+    InfoType["OPEN_ORDERS"] = "openOrders";
+    InfoType["FRONTEND_OPEN_ORDERS"] = "frontendOpenOrders";
+    InfoType["USER_FILLS"] = "userFills";
+    InfoType["USER_FILLS_BY_TIME"] = "userFillsByTime";
+    InfoType["USER_RATE_LIMIT"] = "userRateLimit";
+    InfoType["ORDER_STATUS"] = "orderStatus";
+    InfoType["L2_BOOK"] = "l2Book";
+    InfoType["CANDLE_SNAPSHOT"] = "candleSnapshot";
+    InfoType["PERPS_META_AND_ASSET_CTXS"] = "metaAndAssetCtxs";
+    InfoType["PERPS_CLEARINGHOUSE_STATE"] = "clearinghouseState";
+    InfoType["USER_FUNDING"] = "userFunding";
+    InfoType["USER_NON_FUNDING_LEDGER_UPDATES"] = "userNonFundingLedgerUpdates";
+    InfoType["FUNDING_HISTORY"] = "fundingHistory";
+    InfoType["SPOT_META"] = "spotMeta";
+    InfoType["SPOT_CLEARINGHOUSE_STATE"] = "spotClearinghouseState";
+    InfoType["SPOT_META_AND_ASSET_CTXS"] = "spotMetaAndAssetCtxs";
+})(InfoType || (exports.InfoType = InfoType = {}));
+var ExchangeType;
+(function (ExchangeType) {
+    ExchangeType["ORDER"] = "order";
+    ExchangeType["CANCEL"] = "cancel";
+    ExchangeType["CANCEL_BY_CLOID"] = "cancelByCloid";
+    ExchangeType["SCHEDULE_CANCEL"] = "scheduleCancel";
+    ExchangeType["MODIFY"] = "modify";
+    ExchangeType["BATCH_MODIFY"] = "batchModify";
+    ExchangeType["UPDATE_LEVERAGE"] = "updateLeverage";
+    ExchangeType["UPDATE_ISOLATED_MARGIN"] = "updateIsolatedMargin";
+    ExchangeType["USD_SEND"] = "usdSend";
+    ExchangeType["SPOT_SEND"] = "spotSend";
+    ExchangeType["WITHDRAW"] = "withdraw3";
+    ExchangeType["SPOT_USER"] = "spotUser";
+    ExchangeType["VAULT_TRANSFER"] = "vaultTransfer";
+    ExchangeType["SET_REFERRER"] = "setReferrer";
+})(ExchangeType || (exports.ExchangeType = ExchangeType = {}));
 exports.WEBSOCKET = {
     MAINNET_URL: 'wss://api.hyperliquid.xyz/ws',
     TESTNET_URL: 'wss://api.hyperliquid-testnet.xyz/ws'

@@ -12,95 +12,27 @@ import {
     CandleSnapshot 
 } from '../../types';
 import { HttpApi } from '../../utils/helpers';
-import * as CONSTANTS from '../../types/constants';
+import { SymbolConversion } from '../../utils/symbolConversion';
+import { InfoType } from '../../types/constants';
 
 export class GeneralInfoAPI {
     private httpApi: HttpApi;
-    private exchangeToInternalNameMap: Map<string, string>;
-    private initializationPromise: Promise<void>;
+    private symbolConversion: SymbolConversion;
 
-    constructor(httpApi: HttpApi, exchangeToInternalNameMap: Map<string, string>, initializationPromise: Promise<void>) {
+    constructor(httpApi: HttpApi, symbolConversion: SymbolConversion) {
         this.httpApi = httpApi;
-        this.exchangeToInternalNameMap = exchangeToInternalNameMap;
-        this.initializationPromise = initializationPromise;
+        this.symbolConversion = symbolConversion;
     }
 
-    async ensureInitialized() {
-        await this.initializationPromise;
-    }
+    async getAllMids(rawResponse: boolean = false): Promise<AllMids> {
+        const response = await this.httpApi.makeRequest({ type: InfoType.ALL_MIDS });
 
-    private convertSymbol(symbol: string, mode: string = "", symbolMode: string = ""): string {
-        let rSymbol;
-        if (mode=="reverse") {
-            for (const [key, value] of this.exchangeToInternalNameMap.entries()) {
-                if (value === symbol) {
-                    return key;
-                }
-            }
-            rSymbol = symbol;
-        } else {
-            rSymbol = this.exchangeToInternalNameMap.get(symbol) || symbol;
-        }
-
-
-        if (symbolMode == "SPOT") {
-            if (!rSymbol.endsWith("-SPOT")) {
-
-                rSymbol = symbol + "-SPOT";
-            }
-        } else if (symbolMode == "PERP") {
-            if (!rSymbol.endsWith("-PERP")) {
-                rSymbol = symbol + "-PERP";
-            }
-        }
-
-        return rSymbol;
-    }
-
-    private convertSymbolsInObject(obj: any, symbolsFields: Array<string> = ["coin", "symbol"], symbolMode: string = ""): any {
-
-        if (typeof obj !== 'object' || obj === null) {
-            return this.convertToNumber(obj);   
-        }
-    
-        if (Array.isArray(obj)) {
-            return obj.map(item => this.convertSymbolsInObject(item, symbolsFields, symbolMode));
-        }
-    
-        const convertedObj: any = {};
-        for (const [key, value] of Object.entries(obj)) {
-            if (symbolsFields.includes(key)) {
-                convertedObj[key] = this.convertSymbol(value as string, "", symbolMode);
-
-            } else if (key === 'side') {
-                convertedObj[key] = value === 'A' ? 'sell' : value === 'B' ? 'buy' : value;
-            } else {
-                convertedObj[key] = this.convertSymbolsInObject(value, symbolsFields, symbolMode);
-            }
-        }
-        return convertedObj;
-    }
-    private convertToNumber(value: any): any {
-        if (typeof value === 'string') {
-            if (/^-?\d+$/.test(value)) {
-                return parseInt(value, 10);
-            } else if (/^-?\d*\.\d+$/.test(value)) {
-                return parseFloat(value);
-            }
-        }
-        return value;
-    }
-
-    async getAllMids(raw_response: boolean = false): Promise<AllMids> {
-        if (!raw_response) await this.ensureInitialized();
-        const response = await this.httpApi.makeRequest({ type: CONSTANTS.INFO_TYPES.ALL_MIDS });
-
-        if (raw_response) {
+        if (rawResponse) {
             return response;
         } else {
             const convertedResponse: any = {};
             for (const [key, value] of Object.entries(response)) {
-                const convertedKey = this.convertSymbol(key);
+                const convertedKey = await this.symbolConversion.convertSymbol(key);
                 const convertedValue = parseFloat(value as string);
                 convertedResponse[convertedKey] = convertedValue;
             }
@@ -108,31 +40,26 @@ export class GeneralInfoAPI {
         }
     }
 
-    async getUserOpenOrders(user: string, raw_response: boolean = false): Promise<UserOpenOrders> {
-        if (!raw_response) await this.ensureInitialized();
-        const response = await this.httpApi.makeRequest({ type: CONSTANTS.INFO_TYPES.OPEN_ORDERS, user: user });
-        return raw_response ? response : this.convertSymbolsInObject(response);
+    async getUserOpenOrders(user: string, rawResponse: boolean = false): Promise<UserOpenOrders> {
+        const response = await this.httpApi.makeRequest({ type: InfoType.OPEN_ORDERS, user: user });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getFrontendOpenOrders(user: string, raw_response: boolean = false): Promise<FrontendOpenOrders> {
-        if (!raw_response) await this.ensureInitialized();
-        const response = await this.httpApi.makeRequest({ type: CONSTANTS.INFO_TYPES.FRONTEND_OPEN_ORDERS, user: user }, 20);
-        return raw_response ? response : this.convertSymbolsInObject(response);
+    async getFrontendOpenOrders(user: string, rawResponse: boolean = false): Promise<FrontendOpenOrders> {
+        const response = await this.httpApi.makeRequest({ type: InfoType.FRONTEND_OPEN_ORDERS, user: user }, 20);
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getUserFills(user: string, raw_response: boolean = false): Promise<UserFills> {
-        if (!raw_response) await this.ensureInitialized();
-        const response = await this.httpApi.makeRequest({ type: CONSTANTS.INFO_TYPES.USER_FILLS, user: user }, 20);
-        return raw_response ? response : this.convertSymbolsInObject(response);
+    async getUserFills(user: string, rawResponse: boolean = false): Promise<UserFills> {
+        const response = await this.httpApi.makeRequest({ type: InfoType.USER_FILLS, user: user }, 20);
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getUserFillsByTime(user: string, startTime: number, endTime?: number, raw_response: boolean = false): Promise<UserFills> {
-        if (!raw_response) await this.ensureInitialized();
-
+    async getUserFillsByTime(user: string, startTime: number, endTime?: number, rawResponse: boolean = false): Promise<UserFills> {
         let params: { user: string; startTime: number; type: string; endTime?: number } = {
             user: user,
             startTime: Math.round(startTime),
-            type: CONSTANTS.INFO_TYPES.USER_FILLS_BY_TIME
+            type: InfoType.USER_FILLS_BY_TIME
         };
         
         if (endTime) {
@@ -140,34 +67,30 @@ export class GeneralInfoAPI {
         }
 
         const response = await this.httpApi.makeRequest(params, 20);
-        return raw_response ? response : this.convertSymbolsInObject(response);
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getUserRateLimit(user: string, raw_response: boolean = false): Promise<UserRateLimit> {
-        if (!raw_response) await this.ensureInitialized();
-        const response = await this.httpApi.makeRequest({ type: CONSTANTS.INFO_TYPES.USER_RATE_LIMIT, user: user }, 20);
-        return raw_response ? response : this.convertSymbolsInObject(response);
+    async getUserRateLimit(user: string, rawResponse: boolean = false): Promise<UserRateLimit> {
+        const response = await this.httpApi.makeRequest({ type: InfoType.USER_RATE_LIMIT, user: user }, 20);
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getOrderStatus(user: string, oid: number | string, raw_response: boolean = false): Promise<OrderStatus> {
-        if (!raw_response) await this.ensureInitialized();
-        const response = await this.httpApi.makeRequest({ type: CONSTANTS.INFO_TYPES.ORDER_STATUS, user: user, oid: oid });
-        return raw_response ? response : this.convertSymbolsInObject(response);
+    async getOrderStatus(user: string, oid: number | string, rawResponse: boolean = false): Promise<OrderStatus> {
+        const response = await this.httpApi.makeRequest({ type: InfoType.ORDER_STATUS, user: user, oid: oid });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getL2Book(coin: string, raw_response: boolean = false): Promise<L2Book> {
-        if (!raw_response) await this.ensureInitialized();
-        const response = await this.httpApi.makeRequest({ type: CONSTANTS.INFO_TYPES.L2_BOOK, coin: this.convertSymbol(coin, "reverse") });
-        return raw_response ? response : this.convertSymbolsInObject(response);
+    async getL2Book(coin: string, rawResponse: boolean = false): Promise<L2Book> {
+        const response = await this.httpApi.makeRequest({ type: InfoType.L2_BOOK, coin: await this.symbolConversion.convertSymbol(coin, "reverse") });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getCandleSnapshot(coin: string, interval: string, startTime: number, endTime: number, raw_response: boolean = false): Promise<CandleSnapshot> {
-        if (!raw_response) await this.ensureInitialized();
+    async getCandleSnapshot(coin: string, interval: string, startTime: number, endTime: number, rawResponse: boolean = false): Promise<CandleSnapshot> {
         const response = await this.httpApi.makeRequest({ 
-            type: CONSTANTS.INFO_TYPES.CANDLE_SNAPSHOT, 
-            req: { coin: this.convertSymbol(coin, "reverse"), interval: interval, startTime: startTime, endTime: endTime } 
+            type: InfoType.CANDLE_SNAPSHOT, 
+            req: { coin: await this.symbolConversion.convertSymbol(coin, "reverse"), interval: interval, startTime: startTime, endTime: endTime } 
         });
 
-        return raw_response ? response : this.convertSymbolsInObject(response, ["s"]);
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response, ["s"]);
     }
 }

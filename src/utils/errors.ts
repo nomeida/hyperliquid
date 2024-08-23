@@ -5,6 +5,13 @@ export class HyperliquidAPIError extends Error {
     }
 }
 
+export class AuthenticationError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'AuthenticationError';
+    }
+}
+
 export function handleApiError(error: any): never {
     if (error.response) {
     //The request was made and the server responded with a status code

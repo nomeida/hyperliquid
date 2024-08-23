@@ -6,6 +6,8 @@ export declare class WebSocketClient extends EventEmitter {
     private reconnectAttempts;
     private maxReconnectAttempts;
     private reconnectDelay;
+    private initialReconnectDelay;
+    private maxReconnectDelay;
     constructor(testnet?: boolean);
     connect(): Promise<void>;
     private reconnect;

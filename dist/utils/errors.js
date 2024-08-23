@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HyperliquidAPIError = void 0;
+exports.AuthenticationError = exports.HyperliquidAPIError = void 0;
 exports.handleApiError = handleApiError;
 class HyperliquidAPIError extends Error {
     constructor(code, message) {
@@ -10,6 +10,13 @@ class HyperliquidAPIError extends Error {
     }
 }
 exports.HyperliquidAPIError = HyperliquidAPIError;
+class AuthenticationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'AuthenticationError';
+    }
+}
+exports.AuthenticationError = AuthenticationError;
 function handleApiError(error) {
     if (error.response) {
         //The request was made and the server responded with a status code

@@ -1,9 +1,9 @@
 export type Tif = 'Alo' | 'Ioc' | 'Gtc';
 export type Tpsl = 'tp' | 'sl';
 export type LimitOrderType = { tif: Tif };
-export type TriggerOrderType = { triggerPx: number; isMarket: boolean; tpsl: Tpsl };
+export type TriggerOrderType = { triggerPx: string | number; isMarket: boolean; tpsl: Tpsl };
 export type Grouping = 'na' | 'normalTpsl' | 'positionTpsl';
-export type OrderType = { limit?: LimitOrderType; trigger?: TriggerOrderType };
+export type OrderType = { limit?: LimitOrderType; trigger?: TriggerOrderTypeWire };
 export type Cloid = string;
 export type OidOrCloid = number | Cloid;
 
@@ -362,6 +362,21 @@ export interface OrderWire {
     t: OrderType;
     c?: string;
 }
+
+
+
+export interface TriggerOrderTypeWire {
+    triggerPx: number | string;
+    isMarket: boolean;
+    tpsl: Tpsl;
+}
+
+export type OrderTypeWire = {
+    limit?: LimitOrderType;
+    trigger?: TriggerOrderTypeWire;
+};
+
+
 
 export interface CancelOrderRequest {
     coin: string;

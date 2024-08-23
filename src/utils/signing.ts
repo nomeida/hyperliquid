@@ -1,30 +1,19 @@
-import { encode } from "@msgpack/msgpack";
-import { ethers } from "ethers";
+import { encode } from '@msgpack/msgpack';
+import { ethers, getBytes, HDNodeWallet, keccak256, type Wallet } from 'ethers';
 
-import {
-    OrderType,
-    Cloid,
-    OidOrCloid,
-    Signature,
-    OrderRequest,
-    CancelOrderRequest,
-    OrderWire
-} from '../types/index';
-
-
-const IS_MAINNET = true; // switch this to false to sign for testnet
+import type { OrderType, Signature, OrderRequest, CancelOrderRequest, OrderWire } from '../types';
 
 const phantomDomain = {
-    name: "Exchange",
-    version: "1",
+    name: 'Exchange',
+    version: '1',
     chainId: 1337,
-    verifyingContract: "0x0000000000000000000000000000000000000000"
+    verifyingContract: '0x0000000000000000000000000000000000000000',
 };
 
 const agentTypes = {
     Agent: [
-        { name: "source", type: "string" },
-        { name: "connectionId", type: "bytes32" },
+        { name: 'source', type: 'string' },
+        { name: 'connectionId', type: 'bytes32' },
     ],
 } as const;
 
@@ -34,22 +23,21 @@ export function orderTypeToWire(orderType: OrderType): OrderType {
     } else if (orderType.trigger) {
         return {
             trigger: {
-                triggerPx: parseFloat(floatToWire(orderType.trigger.triggerPx)),
+                triggerPx: floatToWire(Number(orderType.trigger.triggerPx)),
                 isMarket: orderType.trigger.isMarket,
-                tpsl: orderType.trigger.tpsl
-            }
+                tpsl: orderType.trigger.tpsl,
+            },
         };
     }
-    throw new Error("Invalid order type");
+    throw new Error('Invalid order type');
 }
 
 function addressToBytes(address: string): Uint8Array {
-    return ethers.getBytes(address);
+    return getBytes(address);
 }
 
 function actionHash(action: unknown, vaultAddress: string | null, nonce: number): string {
     const msgPackBytes = encode(action);
-    // console.log("action hash", Buffer.from(msgPackBytes).toString("base64"));
     const additionalBytesLength = vaultAddress === null ? 9 : 29;
     const data = new Uint8Array(msgPackBytes.length + additionalBytesLength);
     data.set(msgPackBytes);
@@ -61,44 +49,44 @@ function actionHash(action: unknown, vaultAddress: string | null, nonce: number)
         view.setUint8(msgPackBytes.length + 8, 1);
         data.set(addressToBytes(vaultAddress), msgPackBytes.length + 9);
     }
-    return ethers.keccak256(data);
+    return keccak256(data);
 }
 
 function constructPhantomAgent(hash: string, isMainnet: boolean) {
-    return { source: isMainnet ? "a" : "b", connectionId: hash };
+    return { source: isMainnet ? 'a' : 'b', connectionId: hash };
 }
 
 export async function signL1Action(
-    wallet: ethers.Wallet,
+    wallet: Wallet | HDNodeWallet,
     action: unknown,
     activePool: string | null,
     nonce: number
 ): Promise<Signature> {
     const hash = actionHash(action, activePool, nonce);
-    const phantomAgent = constructPhantomAgent(hash, IS_MAINNET);
+    const phantomAgent = constructPhantomAgent(hash, true);
     const data = {
         domain: phantomDomain,
         types: agentTypes,
-        primaryType: "Agent",
+        primaryType: 'Agent',
         message: phantomAgent,
     };
     return signInner(wallet, data);
 }
 
 export async function signUserSignedAction(
-    wallet: ethers.Wallet,
+    wallet: Wallet,
     action: any,
     payloadTypes: Array<{ name: string; type: string }>,
     primaryType: string
 ): Promise<Signature> {
-    action.signatureChainId = "0x66eee";
-    action.hyperliquidChain = IS_MAINNET ? "Mainnet" : "Testnet";
+    action.signatureChainId = '0x66eee';
+    action.hyperliquidChain = true ? 'Mainnet' : 'Testnet';
     const data = {
         domain: {
-            name: "HyperliquidSignTransaction",
-            version: "1",
+            name: 'HyperliquidSignTransaction',
+            version: '1',
             chainId: 421614,
-            verifyingContract: "0x0000000000000000000000000000000000000000"
+            verifyingContract: '0x0000000000000000000000000000000000000000',
         },
         types: {
             [primaryType]: payloadTypes,
@@ -109,58 +97,49 @@ export async function signUserSignedAction(
     return signInner(wallet, data);
 }
 
-export async function signUsdTransferAction(
-    wallet: ethers.Wallet,
-    action: any
-): Promise<Signature> {
+export async function signUsdTransferAction(wallet: Wallet, action: any): Promise<Signature> {
     return signUserSignedAction(
         wallet,
         action,
         [
-            { name: "hyperliquidChain", type: "string" },
-            { name: "destination", type: "string" },
-            { name: "amount", type: "string" },
-            { name: "time", type: "uint64" },
+            { name: 'hyperliquidChain', type: 'string' },
+            { name: 'destination', type: 'string' },
+            { name: 'amount', type: 'string' },
+            { name: 'time', type: 'uint64' },
         ],
-        "HyperliquidTransaction:UsdSend"
+        'HyperliquidTransaction:UsdSend'
     );
 }
 
-export async function signWithdrawFromBridgeAction(
-    wallet: ethers.Wallet,
-    action: any
-): Promise<Signature> {
+export async function signWithdrawFromBridgeAction(wallet: Wallet, action: any): Promise<Signature> {
     return signUserSignedAction(
         wallet,
         action,
         [
-            { name: "hyperliquidChain", type: "string" },
-            { name: "destination", type: "string" },
-            { name: "amount", type: "string" },
-            { name: "time", type: "uint64" },
+            { name: 'hyperliquidChain', type: 'string' },
+            { name: 'destination', type: 'string' },
+            { name: 'amount', type: 'string' },
+            { name: 'time', type: 'uint64' },
         ],
-        "HyperliquidTransaction:Withdraw"
+        'HyperliquidTransaction:Withdraw'
     );
 }
 
-export async function signAgent(
-    wallet: ethers.Wallet,
-    action: any
-): Promise<Signature> {
+export async function signAgent(wallet: Wallet, action: any): Promise<Signature> {
     return signUserSignedAction(
         wallet,
         action,
         [
-            { name: "hyperliquidChain", type: "string" },
-            { name: "agentAddress", type: "address" },
-            { name: "agentName", type: "string" },
-            { name: "nonce", type: "uint64" },
+            { name: 'hyperliquidChain', type: 'string' },
+            { name: 'agentAddress', type: 'address' },
+            { name: 'agentName', type: 'string' },
+            { name: 'nonce', type: 'uint64' },
         ],
-        "HyperliquidTransaction:ApproveAgent"
+        'HyperliquidTransaction:ApproveAgent'
     );
 }
 
-async function signInner(wallet: ethers.Wallet, data: any): Promise<Signature> {
+async function signInner(wallet: Wallet | HDNodeWallet, data: any): Promise<Signature> {
     const signature = await wallet.signTypedData(data.domain, data.types, data.message);
     return splitSig(signature);
 }
@@ -207,7 +186,7 @@ export function orderRequestToOrderWire(order: OrderRequest, asset: number): Ord
         p: floatToWire(order.limit_px),
         s: floatToWire(order.sz),
         r: order.reduce_only,
-        t: orderTypeToWire(order.order_type)
+        t: orderTypeToWire(order.order_type),
     };
     if (order.cloid !== undefined) {
         orderWire.c = order.cloid;
@@ -215,28 +194,27 @@ export function orderRequestToOrderWire(order: OrderRequest, asset: number): Ord
     return orderWire;
 }
 
-
 export interface CancelOrderResponse {
     status: string;
     response: {
-    type: string;
-    data: {
-        statuses: string[];
-    };
+        type: string;
+        data: {
+            statuses: string[];
+        };
     };
 }
 
 export function cancelOrderToAction(cancelRequest: CancelOrderRequest): any {
     return {
-    type: 'cancel',
-    cancels: [cancelRequest],
+        type: 'cancel',
+        cancels: [cancelRequest],
     };
 }
 
 export function orderWiresToOrderAction(orderWires: OrderWire[]): any {
     return {
-        type: "order",
+        type: 'order',
         orders: orderWires,
-        grouping: "na",
+        grouping: 'na',
     };
 }

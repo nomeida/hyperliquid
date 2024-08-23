@@ -1,14 +1,10 @@
 import { WebSocketClient } from './connection';
 import { AllMids, WsBook, WsOrder, WsUserEvent, Notification, WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates } from '../types/index';
+import { SymbolConversion } from '../utils/symbolConversion';
 export declare class WebSocketSubscriptions {
     private ws;
-    private exchangeToInternalNameMap;
-    private initializationPromise;
-    constructor(ws: WebSocketClient, exchangeToInternalNameMap: Map<string, string>, initializationPromise: Promise<void>);
-    private ensureInitialized;
-    private convertSymbol;
-    private convertSymbolsInObject;
-    private convertToNumber;
+    private symbolConversion;
+    constructor(ws: WebSocketClient, symbolConversion: SymbolConversion);
     private subscribe;
     private unsubscribe;
     private handleMessage;

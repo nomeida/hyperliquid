@@ -1,18 +1,14 @@
 import { Meta, MetaAndAssetCtxs, ClearinghouseState, UserFunding, UserNonFundingLedgerUpdates, FundingHistory } from '../../types';
 import { HttpApi } from '../../utils/helpers';
+import { SymbolConversion } from '../../utils/symbolConversion';
 export declare class PerpetualsInfoAPI {
     private httpApi;
-    private exchangeToInternalNameMap;
-    private initializationPromise;
-    constructor(httpApi: HttpApi, exchangeToInternalNameMap: Map<string, string>, initializationPromise: Promise<void>);
-    ensureInitialized(): Promise<void>;
-    private convertSymbol;
-    private convertSymbolsInObject;
-    private convertToNumber;
-    getMeta(raw_response?: boolean): Promise<Meta>;
-    getMetaAndAssetCtxs(raw_response?: boolean): Promise<MetaAndAssetCtxs>;
-    getClearinghouseState(user: string, raw_response?: boolean): Promise<ClearinghouseState>;
-    getUserFunding(user: string, startTime: number, endTime?: number, raw_response?: boolean): Promise<UserFunding>;
-    getUserNonFundingLedgerUpdates(user: string, startTime: number, endTime?: number, raw_response?: boolean): Promise<UserNonFundingLedgerUpdates>;
-    getFundingHistory(coin: string, startTime: number, endTime?: number, raw_response?: boolean): Promise<FundingHistory>;
+    private symbolConversion;
+    constructor(httpApi: HttpApi, symbolConversion: SymbolConversion);
+    getMeta(rawResponse?: boolean): Promise<Meta>;
+    getMetaAndAssetCtxs(rawResponse?: boolean): Promise<MetaAndAssetCtxs>;
+    getClearinghouseState(user: string, rawResponse?: boolean): Promise<ClearinghouseState>;
+    getUserFunding(user: string, startTime: number, endTime?: number, rawResponse?: boolean): Promise<UserFunding>;
+    getUserNonFundingLedgerUpdates(user: string, startTime: number, endTime?: number, rawResponse?: boolean): Promise<UserNonFundingLedgerUpdates>;
+    getFundingHistory(coin: string, startTime: number, endTime?: number, rawResponse?: boolean): Promise<FundingHistory>;
 }
