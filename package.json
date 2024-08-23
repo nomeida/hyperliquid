@@ -1,6 +1,6 @@
 {
   "name": "hyperliquid",
-  "version": "1.1.2",
+  "version": "1.2.2",
   "description": "SDK for Hyperliquid API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -28,6 +28,7 @@
     "@types/ws": "^8.5.11",
     "axios": "^1.7.2",
     "ethers": "^6.13.2",
+    "hyperliquid-ts": "^1.2.1",
     "typescript": "^5.5.4",
     "ws": "^8.18.0"
   },
