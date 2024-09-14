@@ -37,7 +37,7 @@ export class Hyperliquid {
     this.custom = this.createAuthenticatedProxy(CustomOperations);
 
     if (privateKey) {
-      this.initializeWithPrivateKey(privateKey, baseURL);
+      this.initializeWithPrivateKey(privateKey, testnet);
     }
   }
 
@@ -52,12 +52,12 @@ export class Hyperliquid {
     });
   }
 
-  private initializeWithPrivateKey(privateKey: string, baseURL: string): void {
+  private initializeWithPrivateKey(privateKey: string, testnet: boolean = false): void {
     try {
       const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}` as `0x${string}`;
       new ethers.Wallet(formattedPrivateKey); // Validate the private key
       
-      this.exchange = new ExchangeAPI(baseURL, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion);
+      this.exchange = new ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion);
       this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion);
       this.isValidPrivateKey = true;
     } catch (error) {

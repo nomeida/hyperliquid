@@ -8,7 +8,8 @@ export declare class ExchangeAPI {
     private wallet;
     private httpApi;
     private symbolConversion;
-    constructor(baseURL: string, privateKey: string, info: InfoAPI, rateLimiter: RateLimiter, symbolConversion: SymbolConversion);
+    private IS_MAINNET;
+    constructor(testnet: boolean, privateKey: string, info: InfoAPI, rateLimiter: RateLimiter, symbolConversion: SymbolConversion);
     private getAssetIndex;
     placeOrder(orderRequest: OrderRequest): Promise<any>;
     cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse>;
