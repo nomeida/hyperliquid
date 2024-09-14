@@ -64,9 +64,9 @@ function actionHash(action, vaultAddress, nonce) {
 function constructPhantomAgent(hash, isMainnet) {
     return { source: isMainnet ? 'a' : 'b', connectionId: hash };
 }
-async function signL1Action(wallet, action, activePool, nonce) {
+async function signL1Action(wallet, action, activePool, nonce, isMainnet) {
     const hash = actionHash(action, activePool, nonce);
-    const phantomAgent = constructPhantomAgent(hash, true);
+    const phantomAgent = constructPhantomAgent(hash, isMainnet);
     const data = {
         domain: phantomDomain,
         types: agentTypes,
@@ -75,9 +75,9 @@ async function signL1Action(wallet, action, activePool, nonce) {
     };
     return signInner(wallet, data);
 }
-async function signUserSignedAction(wallet, action, payloadTypes, primaryType) {
+async function signUserSignedAction(wallet, action, payloadTypes, primaryType, isMainnet) {
     action.signatureChainId = '0x66eee';
-    action.hyperliquidChain = true ? 'Mainnet' : 'Testnet';
+    action.hyperliquidChain = isMainnet ? 'Mainnet' : 'Testnet';
     const data = {
         domain: {
             name: 'HyperliquidSignTransaction',
@@ -93,29 +93,29 @@ async function signUserSignedAction(wallet, action, payloadTypes, primaryType) {
     };
     return signInner(wallet, data);
 }
-async function signUsdTransferAction(wallet, action) {
+async function signUsdTransferAction(wallet, action, isMainnet) {
     return signUserSignedAction(wallet, action, [
         { name: 'hyperliquidChain', type: 'string' },
         { name: 'destination', type: 'string' },
         { name: 'amount', type: 'string' },
         { name: 'time', type: 'uint64' },
-    ], 'HyperliquidTransaction:UsdSend');
+    ], 'HyperliquidTransaction:UsdSend', isMainnet);
 }
-async function signWithdrawFromBridgeAction(wallet, action) {
+async function signWithdrawFromBridgeAction(wallet, action, isMainnet) {
     return signUserSignedAction(wallet, action, [
         { name: 'hyperliquidChain', type: 'string' },
         { name: 'destination', type: 'string' },
         { name: 'amount', type: 'string' },
         { name: 'time', type: 'uint64' },
-    ], 'HyperliquidTransaction:Withdraw');
+    ], 'HyperliquidTransaction:Withdraw', isMainnet);
 }
-async function signAgent(wallet, action) {
+async function signAgent(wallet, action, isMainnet) {
     return signUserSignedAction(wallet, action, [
         { name: 'hyperliquidChain', type: 'string' },
         { name: 'agentAddress', type: 'address' },
         { name: 'agentName', type: 'string' },
         { name: 'nonce', type: 'uint64' },
-    ], 'HyperliquidTransaction:ApproveAgent');
+    ], 'HyperliquidTransaction:ApproveAgent', isMainnet);
 }
 async function signInner(wallet, data) {
     const signature = await wallet.signTypedData(data.domain, data.types, data.message);
