@@ -45,94 +45,94 @@ class WebSocketSubscriptions {
     }
     async subscribeToNotification(user, callback) {
         this.subscribe({ type: 'notification', user: user });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'notification') {
-                message = this.symbolConversion.convertSymbolsInObject(message);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message);
+                callback(message.data);
             }
         });
     }
     async subscribeToWebData2(user, callback) {
         this.subscribe({ type: 'webData2', user: user });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'webData2') {
-                message = this.symbolConversion.convertSymbolsInObject(message);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message);
+                callback(message.data);
             }
         });
     }
     async subscribeToCandle(coin, interval, callback) {
         const convertedCoin = await this.symbolConversion.convertSymbol(coin, "reverse");
         this.subscribe({ type: 'candle', coin: convertedCoin, interval: interval });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'candle' && message.data.s === convertedCoin && message.data.i === interval) {
-                message = this.symbolConversion.convertSymbolsInObject(message, ["s"]);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message, ["s"]);
+                callback(message.data);
             }
         });
     }
     async subscribeToL2Book(coin, callback) {
         const convertedCoin = await this.symbolConversion.convertSymbol(coin, "reverse");
         this.subscribe({ type: 'l2Book', coin: convertedCoin });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'l2Book' && message.data.coin === convertedCoin) {
-                message = this.symbolConversion.convertSymbolsInObject(message, ["coin"]);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message, ["coin"]);
+                callback(message.data);
             }
         });
     }
     async subscribeToTrades(coin, callback) {
         const convertedCoin = await this.symbolConversion.convertSymbol(coin, "reverse");
         this.subscribe({ type: 'trades', coin: convertedCoin });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'trades' && message.data[0].coin === convertedCoin) {
-                message = this.symbolConversion.convertSymbolsInObject(message, ["coin"]);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message, ["coin"]);
+                callback(message.data);
             }
         });
     }
     async subscribeToOrderUpdates(user, callback) {
         this.subscribe({ type: 'orderUpdates', user: user });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'orderUpdates') {
-                message = this.symbolConversion.convertSymbolsInObject(message);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message);
+                callback(message.data);
             }
         });
     }
     async subscribeToUserEvents(user, callback) {
         this.subscribe({ type: 'userEvents', user: user });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'userEvents') {
-                message = this.symbolConversion.convertSymbolsInObject(message);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message);
+                callback(message.data);
             }
         });
     }
     async subscribeToUserFills(user, callback) {
         this.subscribe({ type: 'userFills', user: user });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'userFills') {
-                message = this.symbolConversion.convertSymbolsInObject(message);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message);
+                callback(message.data);
             }
         });
     }
     async subscribeToUserFundings(user, callback) {
         this.subscribe({ type: 'userFundings', user: user });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'userFundings') {
-                message = this.symbolConversion.convertSymbolsInObject(message);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message);
+                callback(message.data);
             }
         });
     }
     async subscribeToUserNonFundingLedgerUpdates(user, callback) {
         this.subscribe({ type: 'userNonFundingLedgerUpdates', user: user });
-        this.ws.on('message', (message) => {
+        this.ws.on('message', async (message) => {
             if (message.channel === 'userNonFundingLedgerUpdates') {
-                message = this.symbolConversion.convertSymbolsInObject(message);
-                callback(message);
+                message = await this.symbolConversion.convertSymbolsInObject(message);
+                callback(message.data);
             }
         });
     }
