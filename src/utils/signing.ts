@@ -60,10 +60,11 @@ export async function signL1Action(
     wallet: Wallet | HDNodeWallet,
     action: unknown,
     activePool: string | null,
-    nonce: number
+    nonce: number,
+    isMainnet: boolean,
 ): Promise<Signature> {
     const hash = actionHash(action, activePool, nonce);
-    const phantomAgent = constructPhantomAgent(hash, true);
+    const phantomAgent = constructPhantomAgent(hash, isMainnet);
     const data = {
         domain: phantomDomain,
         types: agentTypes,
@@ -77,10 +78,11 @@ export async function signUserSignedAction(
     wallet: Wallet,
     action: any,
     payloadTypes: Array<{ name: string; type: string }>,
-    primaryType: string
+    primaryType: string,
+    isMainnet: boolean
 ): Promise<Signature> {
     action.signatureChainId = '0x66eee';
-    action.hyperliquidChain = true ? 'Mainnet' : 'Testnet';
+    action.hyperliquidChain = isMainnet ? 'Mainnet' : 'Testnet';
     const data = {
         domain: {
             name: 'HyperliquidSignTransaction',
@@ -97,7 +99,7 @@ export async function signUserSignedAction(
     return signInner(wallet, data);
 }
 
-export async function signUsdTransferAction(wallet: Wallet, action: any): Promise<Signature> {
+export async function signUsdTransferAction(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
         wallet,
         action,
@@ -107,11 +109,12 @@ export async function signUsdTransferAction(wallet: Wallet, action: any): Promis
             { name: 'amount', type: 'string' },
             { name: 'time', type: 'uint64' },
         ],
-        'HyperliquidTransaction:UsdSend'
+        'HyperliquidTransaction:UsdSend',
+        isMainnet
     );
 }
 
-export async function signWithdrawFromBridgeAction(wallet: Wallet, action: any): Promise<Signature> {
+export async function signWithdrawFromBridgeAction(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
         wallet,
         action,
@@ -121,11 +124,12 @@ export async function signWithdrawFromBridgeAction(wallet: Wallet, action: any):
             { name: 'amount', type: 'string' },
             { name: 'time', type: 'uint64' },
         ],
-        'HyperliquidTransaction:Withdraw'
+        'HyperliquidTransaction:Withdraw',
+        isMainnet
     );
 }
 
-export async function signAgent(wallet: Wallet, action: any): Promise<Signature> {
+export async function signAgent(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
         wallet,
         action,
@@ -135,7 +139,8 @@ export async function signAgent(wallet: Wallet, action: any): Promise<Signature>
             { name: 'agentName', type: 'string' },
             { name: 'nonce', type: 'uint64' },
         ],
-        'HyperliquidTransaction:ApproveAgent'
+        'HyperliquidTransaction:ApproveAgent',
+        isMainnet
     );
 }
 
