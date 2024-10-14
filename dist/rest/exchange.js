@@ -31,7 +31,7 @@ const CONSTANTS = __importStar(require("../types/constants"));
 const constants_1 = require("../types/constants");
 // const IS_MAINNET = true; // Make sure this matches the IS_MAINNET in signing.ts
 class ExchangeAPI {
-    constructor(testnet, privateKey, info, rateLimiter, symbolConversion) {
+    constructor(testnet, privateKey, info, rateLimiter, symbolConversion, walletAddress = null) {
         this.info = info;
         this.IS_MAINNET = true;
         const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
@@ -39,6 +39,7 @@ class ExchangeAPI {
         this.httpApi = new helpers_1.HttpApi(baseURL, constants_1.ENDPOINTS.EXCHANGE, rateLimiter);
         this.wallet = new ethers_1.ethers.Wallet(privateKey);
         this.symbolConversion = symbolConversion;
+        this.walletAddress = walletAddress;
     }
     async getAssetIndex(symbol) {
         const index = await this.symbolConversion.getAssetIndex(symbol);
@@ -53,7 +54,7 @@ class ExchangeAPI {
             const orderWire = (0, signing_1.orderRequestToOrderWire)(orderRequest, assetIndex);
             const action = (0, signing_1.orderWiresToOrderAction)([orderWire]);
             const nonce = Date.now();
-            const signature = await (0, signing_1.signL1Action)(this.wallet, action, null, nonce, this.IS_MAINNET);
+            const signature = await (0, signing_1.signL1Action)(this.wallet, action, orderRequest.vaultAddress || null, nonce, this.IS_MAINNET);
             const payload = { action, nonce, signature };
             return this.httpApi.makeRequest(payload, 1);
         }
@@ -193,7 +194,7 @@ class ExchangeAPI {
             };
             const signature = await (0, signing_1.signUsdTransferAction)(this.wallet, action, this.IS_MAINNET);
             const payload = { action, nonce: action.time, signature };
-            return this.httpApi.makeRequest(payload, 1);
+            return this.httpApi.makeRequest(payload, 1, this.walletAddress || this.wallet.address);
         }
         catch (error) {
             throw error;
