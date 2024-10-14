@@ -14,7 +14,7 @@ npm install --save hyperliquid
 
 ## Usage
 
-*API Agent Wallet Usage:* If you are using API Agent wallets everything works as normal but you need to add your actual account's wallet address in the Hyperliquid object field 'walletAddress'.
+**API Agent Wallet Usage:** If you are using API Agent wallets everything works as normal but you need to add your actual account's wallet address in the Hyperliquid object field 'walletAddress'.
 
 If you don't do this you will be unable to use some of the SDK methods successfully. If you are using
 your own Private Key then it's not necessary as the SDK can derive your wallet address from the Private key.
