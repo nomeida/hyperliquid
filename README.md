@@ -14,10 +14,18 @@ npm install --save hyperliquid
 
 ## Usage
 
+*API Agent Wallet Usage:* If you are using API Agent wallets everything works as normal but you need to add your actual account's wallet address in the Hyperliquid object field 'walletAddress'.
+
+If you don't do this you will be unable to use some of the SDK methods successfully. If you are using
+your own Private Key then it's not necessary as the SDK can derive your wallet address from the Private key.
 ```typescript
 const { Hyperliquid } = require('hyperliquid');
 
-const sdk = new Hyperliquid('private_key_here');
+const sdk = new Hyperliquid(
+  <private_key - string>,
+  <testnet - boolean (OPTIONAL)>,
+  <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>
+);
 
 // Use the SDK methods
 sdk.info.getAllMids().then(allMids => {
@@ -54,6 +62,7 @@ sdk.exchange.placeOrder({
   limit_px: 30000,
   order_type: { limit: { tif: 'Gtc' } },
   reduce_only: false
+  //vaultAddress <str> - optional field in case you are using vaults 
 }).then(placeOrderResult => {
   console.log(placeOrderResult);
 }).catch(error => {
