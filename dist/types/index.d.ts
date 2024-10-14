@@ -323,6 +323,7 @@ export interface OrderRequest {
     order_type: OrderType;
     reduce_only: boolean;
     cloid?: Cloid;
+    vaultAddress?: string;
 }
 export interface OrderWire {
     a: number;

@@ -9,7 +9,8 @@ export declare class ExchangeAPI {
     private httpApi;
     private symbolConversion;
     private IS_MAINNET;
-    constructor(testnet: boolean, privateKey: string, info: InfoAPI, rateLimiter: RateLimiter, symbolConversion: SymbolConversion);
+    private walletAddress;
+    constructor(testnet: boolean, privateKey: string, info: InfoAPI, rateLimiter: RateLimiter, symbolConversion: SymbolConversion, walletAddress?: string | null);
     private getAssetIndex;
     placeOrder(orderRequest: OrderRequest): Promise<any>;
     cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse>;

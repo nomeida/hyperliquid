@@ -14,17 +14,20 @@ export class CustomOperations {
     private infoApi: InfoAPI;
     private wallet: ethers.Wallet;
     private symbolConversion: SymbolConversion;
+    private walletAddress: string | null;
 
-    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion) {
+    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion, walletAddress: string | null = null) {
         this.exchange = exchange;
         this.infoApi = infoApi;
         this.wallet = new ethers.Wallet(privateKey);
         this.symbolConversion = symbolConversion;
+        this.walletAddress = walletAddress;
     }
 
     async cancelAllOrders(symbol?: string): Promise<CancelOrderResponse> {
         try {
-            const openOrders: UserOpenOrders = await this.infoApi.getUserOpenOrders(this.wallet.address);
+            const address = this.walletAddress || this.wallet.address;
+            const openOrders: UserOpenOrders = await this.infoApi.getUserOpenOrders(address);
 
             let ordersToCancel: UserOpenOrders;
             
@@ -119,7 +122,8 @@ export class CustomOperations {
         cloid?: string
     ): Promise<OrderResponse> {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
-        const positions = await this.infoApi.perpetuals.getClearinghouseState(this.wallet.address);
+        const address = this.walletAddress || this.wallet.address;
+        const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
         for (const position of positions.assetPositions) {
             const item = position.position;
             if (convertedSymbol !== item.coin) {
@@ -154,7 +158,8 @@ export class CustomOperations {
 
     async closeAllPositions(slippage: number = this.DEFAULT_SLIPPAGE): Promise<OrderResponse[]> {
         try {
-            const positions = await this.infoApi.perpetuals.getClearinghouseState(this.wallet.address);
+            const address = this.walletAddress || this.wallet.address;
+            const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
             const closeOrders: Promise<OrderResponse>[] = [];
 
             console.log(positions)

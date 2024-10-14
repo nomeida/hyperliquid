@@ -73,8 +73,8 @@ async function testExchangeAPI() {
 
     // 3. Cancel Order by CLOID
     console.log("\n3. Cancel Order by CLOID:");
-    const placeOrderResponse = await sdk.exchange.placeOrder(orderRequest);
-    console.log(JSON.stringify(placeOrderResponse));
+    // const placeOrderResponse = await sdk.exchange.placeOrder(orderRequest);
+    // console.log(JSON.stringify(placeOrderResponse));
     const cancelByCloidResponse = await sdk.exchange.cancelOrderByCloid(
       "BTC-PERP",
       process.env.cloid
@@ -84,8 +84,8 @@ async function testExchangeAPI() {
 
     // 4. Modify Order
     console.log("\n4. Modify Order:");
-    const placeOrderResponse = await sdk.exchange.placeOrder(orderRequest);
-    console.log(JSON.stringify(placeOrderResponse));
+    // const placeOrderResponse = await sdk.exchange.placeOrder(orderRequest);
+    // console.log(JSON.stringify(placeOrderResponse));
     const modifyOrderResponse = await sdk.exchange.modifyOrder(
       placeOrderResponse.response.data.statuses[0].resting.oid,
       {

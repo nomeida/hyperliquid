@@ -21,8 +21,9 @@ export class Hyperliquid {
   private rateLimiter: RateLimiter;
   private symbolConversion: SymbolConversion;
   private isValidPrivateKey: boolean = false;
+  private walletAddress: string | null = null;
 
-  constructor(privateKey: string | null = null, testnet: boolean = false) {
+  constructor(privateKey: string | null = null, testnet: boolean = false, walletAddress: string | null = null) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
 
     this.rateLimiter = new RateLimiter();
@@ -35,6 +36,8 @@ export class Hyperliquid {
     // Create proxy objects for exchange and custom
     this.exchange = this.createAuthenticatedProxy(ExchangeAPI);
     this.custom = this.createAuthenticatedProxy(CustomOperations);
+
+    this.walletAddress = walletAddress;
 
     if (privateKey) {
       this.initializeWithPrivateKey(privateKey, testnet);
@@ -57,8 +60,8 @@ export class Hyperliquid {
       const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}` as `0x${string}`;
       new ethers.Wallet(formattedPrivateKey); // Validate the private key
       
-      this.exchange = new ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion);
-      this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion);
+      this.exchange = new ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion, this.walletAddress);
+      this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion, this.walletAddress);
       this.isValidPrivateKey = true;
     } catch (error) {
       console.warn("Invalid private key provided. Some functionalities will be limited.");

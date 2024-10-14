@@ -30,6 +30,7 @@ export class ExchangeAPI {
   private httpApi: HttpApi;
   private symbolConversion: SymbolConversion;
   private IS_MAINNET = true;
+  private walletAddress: string | null;
 
   constructor(
     testnet: boolean, 
@@ -37,12 +38,14 @@ export class ExchangeAPI {
     private info: InfoAPI,
     rateLimiter: RateLimiter,
     symbolConversion: SymbolConversion,
+    walletAddress: string | null = null
   ) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
     this.IS_MAINNET = !testnet;
     this.httpApi = new HttpApi(baseURL, ENDPOINTS.EXCHANGE, rateLimiter);
     this.wallet = new ethers.Wallet(privateKey);
     this.symbolConversion = symbolConversion;
+    this.walletAddress = walletAddress;
   }
 
   private async getAssetIndex(symbol: string): Promise<number> {
@@ -55,19 +58,20 @@ export class ExchangeAPI {
 
   async placeOrder(orderRequest: OrderRequest): Promise<any> {
     try {
-        const assetIndex = await this.getAssetIndex(orderRequest.coin);
+      const assetIndex = await this.getAssetIndex(orderRequest.coin);
 
-        const orderWire = orderRequestToOrderWire(orderRequest, assetIndex);
-        const action = orderWiresToOrderAction([orderWire]);
-        const nonce = Date.now();
-        const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const orderWire = orderRequestToOrderWire(orderRequest, assetIndex);
+      const action = orderWiresToOrderAction([orderWire]);
+      const nonce = Date.now();
+      const signature = await signL1Action(this.wallet, action, orderRequest.vaultAddress || null, nonce, this.IS_MAINNET);
 
-        const payload = { action, nonce, signature };
-        return this.httpApi.makeRequest(payload, 1);
+      const payload = { action, nonce, signature };
+    
+      return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
-        throw error;
+      throw error;
     }
-}
+  }
 
   //Cancel using order id (oid)
   async cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse> {
@@ -217,7 +221,7 @@ export class ExchangeAPI {
       const signature = await signUsdTransferAction(this.wallet, action, this.IS_MAINNET);
 
       const payload = { action, nonce: action.time, signature };
-      return this.httpApi.makeRequest(payload, 1);
+      return this.httpApi.makeRequest(payload, 1, this.walletAddress || this.wallet.address);
     } catch (error) {
       throw error;
     }
