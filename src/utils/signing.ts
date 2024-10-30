@@ -2,6 +2,7 @@ import { encode } from '@msgpack/msgpack';
 import { ethers, getBytes, HDNodeWallet, keccak256, type Wallet } from 'ethers';
 
 import type { OrderType, Signature, OrderRequest, CancelOrderRequest, OrderWire } from '../types';
+import { TurnkeySigner } from '@alchemy/aa-signers';
 
 const phantomDomain = {
     name: 'Exchange',
@@ -57,7 +58,7 @@ function constructPhantomAgent(hash: string, isMainnet: boolean) {
 }
 
 export async function signL1Action(
-    wallet: Wallet | HDNodeWallet,
+    turnkeySigner: TurnkeySigner,
     action: unknown,
     activePool: string | null,
     nonce: number,
@@ -71,11 +72,11 @@ export async function signL1Action(
         primaryType: 'Agent',
         message: phantomAgent,
     };
-    return signInner(wallet, data);
+    return signInner(turnkeySigner, data);
 }
 
 export async function signUserSignedAction(
-    wallet: Wallet,
+    turnkeySigner: TurnkeySigner,
     action: any,
     payloadTypes: Array<{ name: string; type: string }>,
     primaryType: string,
@@ -96,12 +97,13 @@ export async function signUserSignedAction(
         primaryType: primaryType,
         message: action,
     };
-    return signInner(wallet, data);
+    return signInner(turnkeySigner, data);
 }
 
-export async function signUsdTransferAction(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
+export async function signUsdTransferAction(
+    turnkeySigner: TurnkeySigner, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
-        wallet,
+        turnkeySigner,
         action,
         [
             { name: 'hyperliquidChain', type: 'string' },
@@ -114,9 +116,10 @@ export async function signUsdTransferAction(wallet: Wallet, action: any, isMainn
     );
 }
 
-export async function signWithdrawFromBridgeAction(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
+export async function signWithdrawFromBridgeAction(
+    turnkeySigner: TurnkeySigner, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
-        wallet,
+        turnkeySigner,
         action,
         [
             { name: 'hyperliquidChain', type: 'string' },
@@ -129,9 +132,10 @@ export async function signWithdrawFromBridgeAction(wallet: Wallet, action: any, 
     );
 }
 
-export async function signAgent(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
+export async function signAgent(
+    turnkeySigner: TurnkeySigner, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
-        wallet,
+        turnkeySigner,
         action,
         [
             { name: 'hyperliquidChain', type: 'string' },
@@ -144,8 +148,9 @@ export async function signAgent(wallet: Wallet, action: any, isMainnet: boolean)
     );
 }
 
-async function signInner(wallet: Wallet | HDNodeWallet, data: any): Promise<Signature> {
-    const signature = await wallet.signTypedData(data.domain, data.types, data.message);
+async function signInner(
+    turnkeySigner: TurnkeySigner, data: any): Promise<Signature> {
+    const signature = await turnkeySigner.signTypedData(data);
     return splitSig(signature);
 }
 

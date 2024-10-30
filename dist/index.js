@@ -34,12 +34,12 @@ const subscriptions_1 = require("./websocket/subscriptions");
 const rateLimiter_1 = require("./utils/rateLimiter");
 const CONSTANTS = __importStar(require("./types/constants"));
 const custom_1 = require("./rest/custom");
-const ethers_1 = require("ethers");
 const symbolConversion_1 = require("./utils/symbolConversion");
 const errors_1 = require("./utils/errors");
 class Hyperliquid {
-    constructor(privateKey = null, testnet = false) {
+    constructor(turnkeySigner = null, testnet = false, walletAddress = null) {
         this.isValidPrivateKey = false;
+        this.walletAddress = null;
         const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
         this.rateLimiter = new rateLimiter_1.RateLimiter();
         this.symbolConversion = new symbolConversion_1.SymbolConversion(baseURL, this.rateLimiter);
@@ -49,8 +49,9 @@ class Hyperliquid {
         // Create proxy objects for exchange and custom
         this.exchange = this.createAuthenticatedProxy(exchange_1.ExchangeAPI);
         this.custom = this.createAuthenticatedProxy(custom_1.CustomOperations);
-        if (privateKey) {
-            this.initializeWithPrivateKey(privateKey, testnet);
+        this.walletAddress = walletAddress;
+        if (turnkeySigner) {
+            this.initializeWithTurnkey(turnkeySigner, testnet);
         }
     }
     createAuthenticatedProxy(Class) {
@@ -63,16 +64,14 @@ class Hyperliquid {
             }
         });
     }
-    initializeWithPrivateKey(privateKey, testnet = false) {
+    initializeWithTurnkey(turnkeySigner, testnet = false) {
         try {
-            const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
-            new ethers_1.ethers.Wallet(formattedPrivateKey); // Validate the private key
-            this.exchange = new exchange_1.ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion);
-            this.custom = new custom_1.CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion);
+            this.exchange = new exchange_1.ExchangeAPI(testnet, turnkeySigner, this.info, this.rateLimiter, this.symbolConversion, this.walletAddress);
+            this.custom = new custom_1.CustomOperations(this.exchange, this.info, turnkeySigner, this.symbolConversion, this.walletAddress);
             this.isValidPrivateKey = true;
         }
         catch (error) {
-            console.warn("Invalid private key provided. Some functionalities will be limited.");
+            console.warn("Invalid turnkey signer provided. Some functionalities will be limited.");
             this.isValidPrivateKey = false;
         }
     }

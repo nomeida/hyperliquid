@@ -3,14 +3,16 @@ import { InfoAPI } from './info';
 import { CancelOrderResponse } from '../utils/signing';
 import { CancelOrderRequest, OrderRequest } from '../types/index';
 import { SymbolConversion } from '../utils/symbolConversion';
+import { TurnkeySigner } from '@alchemy/aa-signers';
 export declare class ExchangeAPI {
     private info;
-    private wallet;
+    private turnkeySigner;
     private httpApi;
     private symbolConversion;
     private IS_MAINNET;
     private walletAddress;
-    constructor(testnet: boolean, privateKey: string, info: InfoAPI, rateLimiter: RateLimiter, symbolConversion: SymbolConversion, walletAddress?: string | null);
+    private turnkeySignerAddress;
+    constructor(testnet: boolean, turnkeySigner: TurnkeySigner, info: InfoAPI, rateLimiter: RateLimiter, symbolConversion: SymbolConversion, walletAddress?: string | null);
     private getAssetIndex;
     placeOrder(orderRequest: OrderRequest): Promise<any>;
     cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse>;

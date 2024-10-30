@@ -29,6 +29,7 @@
     "@types/ws": "^8.5.11",
     "axios": "^1.7.2",
     "ethers": "^6.13.2",
+    "@alchemy/aa-signers": "^3.16.0",
     "typescript": "^5.5.4",
     "ws": "^8.18.0"
   },

@@ -2,18 +2,23 @@
 // src/rest/custom.ts
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CustomOperations = void 0;
-const ethers_1 = require("ethers");
 class CustomOperations {
-    constructor(exchange, infoApi, privateKey, symbolConversion) {
+    constructor(exchange, infoApi, turnkeySigner, symbolConversion, walletAddress = null) {
+        this.turnkeySignerAddress = "";
         this.DEFAULT_SLIPPAGE = 0.05;
         this.exchange = exchange;
         this.infoApi = infoApi;
-        this.wallet = new ethers_1.ethers.Wallet(privateKey);
+        this.turnkeySigner = turnkeySigner;
         this.symbolConversion = symbolConversion;
+        this.walletAddress = walletAddress;
+        (async () => {
+            this.turnkeySignerAddress = await turnkeySigner.getAddress();
+        })();
     }
     async cancelAllOrders(symbol) {
         try {
-            const openOrders = await this.infoApi.getUserOpenOrders(this.wallet.address);
+            const address = this.walletAddress || this.turnkeySignerAddress;
+            const openOrders = await this.infoApi.getUserOpenOrders(address);
             let ordersToCancel;
             for (let order of openOrders) {
                 order.coin = await this.symbolConversion.convertSymbol(order.coin);
@@ -74,7 +79,8 @@ class CustomOperations {
     }
     async marketClose(symbol, size, px, slippage = this.DEFAULT_SLIPPAGE, cloid) {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
-        const positions = await this.infoApi.perpetuals.getClearinghouseState(this.wallet.address);
+        const address = this.walletAddress || this.turnkeySignerAddress;
+        const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
         for (const position of positions.assetPositions) {
             const item = position.position;
             if (convertedSymbol !== item.coin) {
@@ -103,7 +109,8 @@ class CustomOperations {
     }
     async closeAllPositions(slippage = this.DEFAULT_SLIPPAGE) {
         try {
-            const positions = await this.infoApi.perpetuals.getClearinghouseState(this.wallet.address);
+            const address = this.walletAddress || this.turnkeySignerAddress;
+            const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
             const closeOrders = [];
             console.log(positions);
             for (const position of positions.assetPositions) {

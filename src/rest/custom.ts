@@ -8,25 +8,30 @@ import { OrderResponse, CancelOrderRequest, OrderRequest, OrderType } from '../t
 import { CancelOrderResponse } from '../utils/signing'
 import { SymbolConversion } from '../utils/symbolConversion';
 import { floatToWire } from '../utils/signing';
+import { TurnkeySigner } from '@alchemy/aa-signers';
 
 export class CustomOperations {
     private exchange: ExchangeAPI;
     private infoApi: InfoAPI;
-    private wallet: ethers.Wallet;
+    private turnkeySigner: TurnkeySigner;
     private symbolConversion: SymbolConversion;
     private walletAddress: string | null;
+    private turnkeySignerAddress: string = "";
 
-    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion, walletAddress: string | null = null) {
+    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, turnkeySigner: TurnkeySigner, symbolConversion: SymbolConversion, walletAddress: string | null = null) {
         this.exchange = exchange;
         this.infoApi = infoApi;
-        this.wallet = new ethers.Wallet(privateKey);
+        this.turnkeySigner = turnkeySigner;
         this.symbolConversion = symbolConversion;
         this.walletAddress = walletAddress;
+        (async () => {
+          this.turnkeySignerAddress = await turnkeySigner.getAddress();
+        })();
     }
 
     async cancelAllOrders(symbol?: string): Promise<CancelOrderResponse> {
         try {
-            const address = this.walletAddress || this.wallet.address;
+            const address = this.walletAddress || this.turnkeySignerAddress;
             const openOrders: UserOpenOrders = await this.infoApi.getUserOpenOrders(address);
 
             let ordersToCancel: UserOpenOrders;
@@ -122,7 +127,7 @@ export class CustomOperations {
         cloid?: string
     ): Promise<OrderResponse> {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
-        const address = this.walletAddress || this.wallet.address;
+        const address = this.walletAddress || this.turnkeySignerAddress;
         const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
         for (const position of positions.assetPositions) {
             const item = position.position;
@@ -158,7 +163,7 @@ export class CustomOperations {
 
     async closeAllPositions(slippage: number = this.DEFAULT_SLIPPAGE): Promise<OrderResponse[]> {
         try {
-            const address = this.walletAddress || this.wallet.address;
+            const address = this.walletAddress || this.turnkeySignerAddress;
             const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
             const closeOrders: Promise<OrderResponse>[] = [];
 

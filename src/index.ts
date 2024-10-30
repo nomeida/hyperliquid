@@ -8,6 +8,7 @@ import { CustomOperations } from './rest/custom';
 import { ethers } from 'ethers';
 import { SymbolConversion } from './utils/symbolConversion';
 import { AuthenticationError } from './utils/errors';
+import { TurnkeySigner } from "@alchemy/aa-signers";
 
 
 
@@ -23,7 +24,7 @@ export class Hyperliquid {
   private isValidPrivateKey: boolean = false;
   private walletAddress: string | null = null;
 
-  constructor(privateKey: string | null = null, testnet: boolean = false, walletAddress: string | null = null) {
+  constructor(turnkeySigner: TurnkeySigner | null = null, testnet: boolean = false, walletAddress: string | null = null) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
 
     this.rateLimiter = new RateLimiter();
@@ -39,8 +40,8 @@ export class Hyperliquid {
 
     this.walletAddress = walletAddress;
 
-    if (privateKey) {
-      this.initializeWithPrivateKey(privateKey, testnet);
+    if (turnkeySigner) {
+      this.initializeWithTurnkey(turnkeySigner, testnet);
     }
   }
 
@@ -55,16 +56,14 @@ export class Hyperliquid {
     });
   }
 
-  private initializeWithPrivateKey(privateKey: string, testnet: boolean = false): void {
+  private initializeWithTurnkey(turnkeySigner: TurnkeySigner, testnet: boolean = false): void {
     try {
-      const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}` as `0x${string}`;
-      new ethers.Wallet(formattedPrivateKey); // Validate the private key
       
-      this.exchange = new ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion, this.walletAddress);
-      this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion, this.walletAddress);
+      this.exchange = new ExchangeAPI(testnet, turnkeySigner, this.info, this.rateLimiter, this.symbolConversion, this.walletAddress);
+      this.custom = new CustomOperations(this.exchange, this.info, turnkeySigner, this.symbolConversion, this.walletAddress);
       this.isValidPrivateKey = true;
     } catch (error) {
-      console.warn("Invalid private key provided. Some functionalities will be limited.");
+      console.warn("Invalid turnkey signer provided. Some functionalities will be limited.");
       this.isValidPrivateKey = false;
     }
   }
