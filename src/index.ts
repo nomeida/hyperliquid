@@ -8,9 +8,6 @@ import { CustomOperations } from './rest/custom';
 import { ethers } from 'ethers';
 import { SymbolConversion } from './utils/symbolConversion';
 import { AuthenticationError } from './utils/errors';
-
-
-
 export class Hyperliquid {
   public info: InfoAPI;
   public exchange: ExchangeAPI;
@@ -44,7 +41,7 @@ export class Hyperliquid {
     }
   }
 
-  private createAuthenticatedProxy<T extends object>(Class: new (...args: any[]) => T): T {
+  private createAuthenticatedProxy<T extends object>(_: new (...args: any[]) => T): T {
     return new Proxy({} as T, {
       get: (target, prop) => {
         if (!this.isValidPrivateKey) {
@@ -59,8 +56,8 @@ export class Hyperliquid {
     try {
       const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}` as `0x${string}`;
       new ethers.Wallet(formattedPrivateKey); // Validate the private key
-      
-      this.exchange = new ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion, this.walletAddress);
+
+      this.exchange = new ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion);
       this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion, this.walletAddress);
       this.isValidPrivateKey = true;
     } catch (error) {
@@ -85,5 +82,4 @@ export class Hyperliquid {
   }
 }
 
-export * from './types';
-export * from './utils/signing';
+export default Hyperliquid;

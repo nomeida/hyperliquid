@@ -1,40 +1,48 @@
-export type Tif = 'Alo' | 'Ioc' | 'Gtc';
-export type Tpsl = 'tp' | 'sl';
-export type LimitOrderType = { tif: Tif };
-export type TriggerOrderType = { triggerPx: string | number; isMarket: boolean; tpsl: Tpsl };
-export type Grouping = 'na' | 'normalTpsl' | 'positionTpsl';
-export type OrderType = { limit?: LimitOrderType; trigger?: TriggerOrderTypeWire };
+export type Tif = "Alo" | "Ioc" | "Gtc";
+export type Tpsl = "tp" | "sl";
+export type LimitOrderType = {
+    tif: Tif;
+};
+export type TriggerOrderType = {
+    triggerPx: string | number;
+    isMarket: boolean;
+    tpsl: Tpsl;
+};
+export type Grouping = "na" | "normalTpsl" | "positionTpsl";
+export type OrderType = {
+    limit?: LimitOrderType;
+    trigger?: TriggerOrderTypeWire;
+};
 export type Cloid = string;
 export type OidOrCloid = number | Cloid;
-
-
 export interface AllMids {
     [coin: string]: string;
 }
 
-export interface Meta {
-    universe: {
+export type Market = {
     name: string;
     szDecimals: number;
     maxLeverage: number;
     onlyIsolated: boolean;
-    }[];
+};
+
+export interface Meta {
+    universe: Market[];
 }
 
-export interface ClearinghouseState {
-    assetPositions: {
+export interface AssetPosition {
     position: {
         coin: string;
         cumFunding: {
-        allTime: string;
-        sinceChange: string;
-        sinceOpen: string;
+            allTime: string;
+            sinceChange: string;
+            sinceOpen: string;
         };
         entryPx: string;
         leverage: {
-        rawUsd: string;
-        type: string;
-        value: number;
+            rawUsd: string;
+            type: string;
+            value: number;
         };
         liquidationPx: string;
         marginUsed: string;
@@ -45,24 +53,26 @@ export interface ClearinghouseState {
         unrealizedPnl: string;
     };
     type: string;
-    }[];
+}
+
+export interface ClearinghouseState {
+    assetPositions: AssetPosition[];
     crossMaintenanceMarginUsed: string;
     crossMarginSummary: {
-    accountValue: string;
-    totalMarginUsed: string;
-    totalNtlPos: string;
-    totalRawUsd: string;
+        accountValue: string;
+        totalMarginUsed: string;
+        totalNtlPos: string;
+        totalRawUsd: string;
     };
     marginSummary: {
-    accountValue: string;
-    totalMarginUsed: string;
-    totalNtlPos: string;
-    totalRawUsd: string;
+        accountValue: string;
+        totalMarginUsed: string;
+        totalNtlPos: string;
+        totalRawUsd: string;
     };
     time: number;
     withdrawable: string;
 }
-
 export interface UserFills {
     closedPnl: string;
     coin: string;
@@ -71,26 +81,30 @@ export interface UserFills {
     hash: string;
     oid: number;
     px: string;
+    fee: string;
     side: string;
     startPosition: string;
     sz: string;
     time: number;
-}[]
-
-
+}
 export interface OrderResponse {
     status: string;
     response: {
-    type: string;
-    data: {
-        statuses: Array<{
-        resting?: { oid: number };
-        filled?: { oid: number };
-        }>;
-    };
+        type: string;
+        data: {
+            statuses: Array<{
+                resting?: {
+                    oid: number;
+                };
+                filled?: {
+                    oid: number;
+                };
+            } | {
+                error: string;
+            }>;
+        };
     };
 }
-
 export interface WsTrade {
     coin: string;
     side: string;
@@ -100,36 +114,33 @@ export interface WsTrade {
     time: number;
     tid: number;
 }
-
 export interface WsBook {
     coin: string;
     levels: [Array<WsLevel>, Array<WsLevel>];
     time: number;
 }
-
 export interface WsLevel {
     px: string;
     sz: string;
     n: number;
 }
-
 export interface WsOrder {
     order: {
-    coin: string;
-    side: string;
-    limitPx: string;
-    sz: string;
-    oid: number;
-    timestamp: number;
-    origSz: string;
+        coin: string;
+        side: string;
+        limitPx: string;
+        sz: string;
+        oid: number;
+        timestamp: number;
+        origSz: string;
     };
     status: string;
     statusTimestamp: number;
     user: string;
 }
-
-export type WsUserEvent = (WsFill[] | WsUserFunding | WsLiquidation | WsNonUserCancel[]) & { user: string };
-
+export type WsUserEvent = (WsFill[] | WsUserFunding | WsLiquidation | WsNonUserCancel[]) & {
+    user: string;
+};
 export interface WsFill {
     coin: string;
     px: string;
@@ -153,7 +164,6 @@ export interface WsUserFunding {
     szi: string;
     fundingRate: string;
 }
-
 export interface WsLiquidation {
     lid: number;
     liquidator: string;
@@ -161,13 +171,10 @@ export interface WsLiquidation {
     liquidated_ntl_pos: string;
     liquidated_account_value: string;
 }
-
 export interface WsNonUserCancel {
     coin: string;
     oid: number;
 }
-
-
 export interface SpotClearinghouseState {
     balances: {
         coin: string;
@@ -175,7 +182,6 @@ export interface SpotClearinghouseState {
         total: string;
     }[];
 }
-
 export interface FrontendOpenOrders {
     coin: string;
     isPositionTpsl: boolean;
@@ -190,8 +196,7 @@ export interface FrontendOpenOrders {
     timestamp: number;
     triggerCondition: string;
     triggerPx: string;
-}[]
-
+}
 export interface UserFills {
     closedPnl: string;
     coin: string;
@@ -204,16 +209,13 @@ export interface UserFills {
     startPosition: string;
     sz: string;
     time: number;
-}[]
-
+}
 export interface UserRateLimit {
     [key: string]: any;
 }
-
 export interface OrderStatus {
     [key: string]: any;
 }
-
 export interface L2Book {
     levels: [
         {
@@ -225,10 +227,9 @@ export interface L2Book {
             px: string;
             sz: string;
             n: number;
-        }[]
+        }[],
     ];
 }
-
 export interface CandleSnapshot {
     T: number;
     c: string;
@@ -240,9 +241,7 @@ export interface CandleSnapshot {
     s: string;
     t: number;
     v: string;
-}[]
-
-
+}
 export interface AssetCtx {
     dayNtlVlm: string;
     funding: string;
@@ -254,12 +253,7 @@ export interface AssetCtx {
     premium: string;
     prevDayPx: string;
 }
-
-export interface MetaAndAssetCtxs {
-    meta: Meta;
-    assetCtxs: AssetCtx[];
-}
-
+export type MetaAndAssetCtxs = [Meta, AssetCtx[]];
 export interface UserFundingDelta {
     coin: string;
     fundingRate: string;
@@ -267,38 +261,30 @@ export interface UserFundingDelta {
     type: "funding";
     usdc: string;
 }
-
 export interface UserFundingEntry {
     delta: UserFundingDelta;
     hash: string;
     time: number;
 }
-
 export type UserFunding = UserFundingEntry[];
-
 export interface UserNonFundingLedgerDelta {
     coin: string;
     type: "deposit" | "withdraw" | "transfer" | "liquidation";
     usdc: string;
 }
-
 export interface UserNonFundingLedgerEntry {
     delta: UserNonFundingLedgerDelta;
     hash: string;
     time: number;
 }
-
 export type UserNonFundingLedgerUpdates = UserNonFundingLedgerEntry[];
-
 export interface FundingHistoryEntry {
     coin: string;
     fundingRate: string;
     premium: string;
     time: number;
 }
-
 export type FundingHistory = FundingHistoryEntry[];
-
 export interface SpotToken {
     name: string;
     szDecimals: number;
@@ -307,31 +293,26 @@ export interface SpotToken {
     tokenId: string;
     isCanonical: boolean;
 }
-
 export interface SpotMarket {
     name: string;
-    tokens: [number, number]; // Indices of base and quote tokens
+    tokens: [number, number];
     index: number;
     isCanonical: boolean;
 }
-
 export interface SpotMeta {
     tokens: SpotToken[];
     universe: SpotMarket[];
 }
-
 export interface SpotAssetCtx {
     dayNtlVlm: string;
     markPx: string;
     midPx: string;
     prevDayPx: string;
 }
-
 export interface SpotMetaAndAssetCtxs {
     meta: SpotMeta;
     assetCtxs: SpotAssetCtx[];
 }
-
 export interface UserOpenOrder {
     coin: string;
     limitPx: string;
@@ -340,20 +321,17 @@ export interface UserOpenOrder {
     sz: string;
     timestamp: number;
 }
-
 export type UserOpenOrders = UserOpenOrder[];
-
 export interface OrderRequest {
     coin: string;
     is_buy: boolean;
     sz: number;
     limit_px: number;
-    order_type: OrderType;
+    order_types: OrderType[];
     reduce_only: boolean;
     cloid?: Cloid;
     vaultAddress?: string;
 }
-
 export interface OrderWire {
     a: number;
     b: boolean;
@@ -363,84 +341,79 @@ export interface OrderWire {
     t: OrderType;
     c?: string;
 }
-
-
-
 export interface TriggerOrderTypeWire {
     triggerPx: number | string;
     isMarket: boolean;
     tpsl: Tpsl;
 }
-
 export type OrderTypeWire = {
     limit?: LimitOrderType;
     trigger?: TriggerOrderTypeWire;
 };
-
-
-
 export interface CancelOrderRequest {
     coin: string;
     o: number;
 }
-
 export type CancelOrderRequests = {
     a: number;
     o: number;
 }[];
-
 export interface CancelByCloidRequest {
     coin: string;
     cloid: Cloid;
 }
-
 export interface ModifyRequest {
     oid: OidOrCloid;
     order: OrderRequest;
 }
-
 export interface ModifyWire {
     oid: number;
     order: OrderWire;
 }
-
 export interface ScheduleCancelAction {
-    type: 'scheduleCancel';
+    type: "scheduleCancel";
     time?: number | null;
 }
-
 export interface Signature {
     r: string;
     s: string;
     v: number;
 }
-
-
 export interface Notification {
     notification: string;
     user: string;
 }
-
-// As flexible as possible 
 export interface WebData2 {
-    [key: string]: any;
+    clearinghouseState: ClearinghouseState
+    leadingVaults: any[]
+    totalVaultEquity: string
+    openOrders: FrontendOpenOrders[]
+    agentAddress: string
+    agentValidUntil: number
+    cumLedger: string
+    meta: Meta
+    assetCtxs: AssetCtx[]
+    serverTime: number
+    isVault: boolean
+    user: string
+    twapStates: any[]
+    spotState: SpotClearinghouseState
+    spotAssetCtxs: SpotAssetCtx[]
 }
-
 export interface Candle {
-    t: number;  // open time
-    T: number;  // close time
-    s: string;  // symbol
-    i: string;  // interval
-    o: string;  // open 
-    c: string;  // close 
-    h: string;  // high
-    l: string;  // low
-    v: string;  // volume
-    n: number;  // number of trades
+    t: number;
+    T: number;
+    s: string;
+    i: string;
+    o: string;
+    c: string;
+    h: string;
+    l: string;
+    v: string;
+    n: number;
     coin: string;
     interval: string;
 }
-
 export interface WsUserFill {
     coin: string;
     px: string;
@@ -456,13 +429,11 @@ export interface WsUserFill {
     fee: string;
     tid: number;
 }
-
 export type WsUserFills = {
     isSnapshot: boolean;
     fills: WsUserFill[];
     user: string;
 };
-
 export interface WsUserFunding {
     time: number;
     coin: string;
@@ -470,22 +441,82 @@ export interface WsUserFunding {
     szi: string;
     fundingRate: string;
 }
-
 export type WsUserFundings = {
     isSnapshot: boolean;
     fundings: WsUserFunding[];
     user: string;
 };
-
+export interface WsUserHistoricalOrders {
+    isSnapshot: boolean;
+    orderHistory: OrderHistory[];
+}
+export interface OrderHistory {
+    order: Order
+    status: string
+    statusTimestamp: number
+}
+export interface Order {
+    coin: string
+    side: string
+    limitPx: string
+    sz: string
+    oid: number
+    timestamp: number
+    triggerCondition: string
+    isTrigger: boolean
+    triggerPx: string
+    children: Children[]
+    isPositionTpsl: boolean
+    reduceOnly: boolean
+    orderType: string
+    origSz: string
+    tif?: string
+    cloid: any
+}
+export interface Children {
+    coin: string
+    side: string
+    limitPx: string
+    sz: string
+    oid: number
+    timestamp: number
+    triggerCondition: string
+    isTrigger: boolean
+    triggerPx: string
+    children: any[]
+    isPositionTpsl: boolean
+    reduceOnly: boolean
+    orderType: string
+    origSz: string
+    tif: any
+    cloid: any
+}
 export interface WsUserNonFundingLedgerUpdate {
     time: number;
     coin: string;
     usdc: string;
-    type: 'deposit' | 'withdraw' | 'transfer' | 'liquidation';
+    type: "deposit" | "withdraw" | "transfer" | "liquidation";
 }
-
 export type WsUserNonFundingLedgerUpdates = {
     isSnapshot: boolean;
     updates: WsUserNonFundingLedgerUpdate[];
     user: string;
 };
+
+export interface WsActiveAssetData {
+    availableToTrade: number[];
+    coin: string;
+    leverage: Leverage;
+    maxTradeSzs: number[];
+    user: string;
+}
+
+export interface Leverage {
+    type: "cross" | "isolated";
+    value: number;
+}
+
+export interface WsActiveAssetCtx {
+    coin: string;
+    ctx: AssetCtx;
+}

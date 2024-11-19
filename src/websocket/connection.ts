@@ -1,4 +1,3 @@
-import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 
 import * as CONSTANTS from '../types/constants';
@@ -9,7 +8,7 @@ export class WebSocketClient extends EventEmitter {
     private pingInterval: NodeJS.Timeout | null = null;
     private reconnectAttempts: number = 0;
     private maxReconnectAttempts: number = 5;
-    private reconnectDelay: number = 5000;
+    // private reconnectDelay: number = 5000;
     private initialReconnectDelay: number = 1000;
     private maxReconnectDelay: number = 30000;
 
@@ -22,28 +21,32 @@ export class WebSocketClient extends EventEmitter {
         return new Promise((resolve, reject) => {
             this.ws = new WebSocket(this.url);
 
-            this.ws.on('open', () => {
+            this.ws.onopen = () => {
                 console.log('WebSocket connected');
                 this.reconnectAttempts = 0;
                 this.startPingInterval();
                 resolve();
-            });
+            };
 
-            this.ws.on('message', (data: WebSocket.Data) => {
-                const message = JSON.parse(data.toString());
-                this.emit('message', message);
-            });
+            this.ws.onmessage = (data: WebSocketMessageEvent) => {
+                try {
+                    const message = JSON.parse(data.data.toString());
+                    this.emit("message", message);
+                } catch (error) {
+                    console.error("JSON Parse error:");
+                }
+            };
 
-            this.ws.on('error', (error: Error) => {
-                console.error('WebSocket error:', error);
+            this.ws.onerror = (error: Event) => {
+                console.error("WebSocket error:", error);
                 reject(error);
-            });
+            };
 
-            this.ws.on('close', () => {
+            this.ws.onclose = () => {
                 console.log('WebSocket disconnected');
                 this.stopPingInterval();
                 this.reconnect();
-            });
+            };
         });
     }
 
@@ -54,17 +57,15 @@ export class WebSocketClient extends EventEmitter {
                 this.initialReconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
                 this.maxReconnectDelay
             );
-            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`);
             setTimeout(() => this.connect(), delay);
         } else {
-            console.error('Max reconnection attempts reached. Please reconnect manually.');
             this.emit('maxReconnectAttemptsReached');
         }
     }
 
     private startPingInterval(): void {
         this.pingInterval = setInterval(() => {
-            this.sendMessage({ method: 'ping' });
+            this.sendMessage({ method: "ping" });
         }, 15000); // Send ping every 15 seconds
     }
 
@@ -77,7 +78,7 @@ export class WebSocketClient extends EventEmitter {
 
     sendMessage(message: any): void {
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            throw new Error('WebSocket is not connected');
+            throw new Error("WebSocket is not connected");
         }
         this.ws.send(JSON.stringify(message));
     }
@@ -86,6 +87,7 @@ export class WebSocketClient extends EventEmitter {
         if (this.ws) {
             this.ws.close();
         }
+        this.removeAllListeners();
         this.stopPingInterval();
     }
 }

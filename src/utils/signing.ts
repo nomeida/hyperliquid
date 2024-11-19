@@ -1,7 +1,7 @@
 import { encode } from '@msgpack/msgpack';
 import { ethers, getBytes, HDNodeWallet, keccak256, type Wallet } from 'ethers';
 
-import type { OrderType, Signature, OrderRequest, CancelOrderRequest, OrderWire } from '../types';
+import type { OrderType, Signature, OrderRequest, CancelOrderRequest, OrderWire, Grouping } from '../types';
 
 const phantomDomain = {
     name: 'Exchange',
@@ -184,19 +184,27 @@ export function getTimestampMs(): number {
     return Date.now();
 }
 
-export function orderRequestToOrderWire(order: OrderRequest, asset: number): OrderWire {
-    const orderWire: OrderWire = {
-        a: asset,
-        b: order.is_buy,
-        p: floatToWire(order.limit_px),
-        s: floatToWire(order.sz),
-        r: order.reduce_only,
-        t: orderTypeToWire(order.order_type),
-    };
-    if (order.cloid !== undefined) {
-        orderWire.c = order.cloid;
-    }
-    return orderWire;
+export function orderRequestToOrderWires(order: OrderRequest, asset: number): OrderWire[] {
+    const orderWires = order.order_types.map((orderType) => {
+        const is_buy = orderType.limit ? order.is_buy : !order.is_buy;
+        const reduce_only = orderType.limit ? order.reduce_only : true;
+        const limit_px = orderType.limit
+          ? floatToWire(order.limit_px)
+          : floatToWire(Number(orderType.trigger?.triggerPx) - Number(orderType.trigger?.triggerPx) * 0.05);
+        const orderWire: OrderWire = {
+            a: asset,
+            b: is_buy,
+            p: limit_px,
+            s: floatToWire(order.sz),
+            r: reduce_only,
+            t: orderTypeToWire(orderType),
+        };
+        if (order.cloid !== undefined) {
+            orderWire.c = order.cloid;
+        }
+        return orderWire;
+    });
+    return orderWires;
 }
 
 export interface CancelOrderResponse {
@@ -216,10 +224,10 @@ export function cancelOrderToAction(cancelRequest: CancelOrderRequest): any {
     };
 }
 
-export function orderWiresToOrderAction(orderWires: OrderWire[]): any {
+export function orderWiresToOrderAction(orderWires: OrderWire[], grouping: Grouping): any {
     return {
         type: 'order',
         orders: orderWires,
-        grouping: 'na',
+        grouping: grouping,
     };
 }

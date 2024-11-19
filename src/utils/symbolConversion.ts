@@ -94,7 +94,7 @@ export class SymbolConversion {
         const perp: string[] = [];
         const spot: string[] = [];
 
-        for (const [asset, index] of this.assetToIndexMap.entries()) {
+        for (const [asset, _] of this.assetToIndexMap.entries()) {
             if (asset.endsWith('-PERP')) {
                 perp.push(asset);
             } else if (asset.endsWith('-SPOT')) {

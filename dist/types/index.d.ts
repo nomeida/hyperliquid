@@ -170,6 +170,8 @@ export interface SpotClearinghouseState {
         coin: string;
         hold: string;
         total: string;
+        entryNtl: string;
+        token: string;
     }[];
 }
 export interface FrontendOpenOrders {

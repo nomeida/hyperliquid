@@ -1,4 +1,4 @@
-import { SpotMeta, SpotClearinghouseState, SpotMetaAndAssetCtxs } from '../../types';
+import type { SpotMeta, SpotClearinghouseState, SpotMetaAndAssetCtxs } from '../../types';
 import { HttpApi } from '../../utils/helpers';
 import { InfoType } from '../../types/constants';
 import { SymbolConversion } from '../../utils/symbolConversion';

@@ -12,6 +12,6 @@
     "resolveJsonModule": true,
     "moduleResolution": "node"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "rest", "types", "utils", "websocket", "global.d.ts", "index.ts"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

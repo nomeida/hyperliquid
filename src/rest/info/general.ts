@@ -1,19 +1,9 @@
-// src/rest/info/general.ts
 
-import { 
-    AllMids, 
-    Meta, 
-    UserOpenOrders, 
-    FrontendOpenOrders, 
-    UserFills, 
-    UserRateLimit, 
-    OrderStatus, 
-    L2Book, 
-    CandleSnapshot 
-} from '../../types';
+
 import { HttpApi } from '../../utils/helpers';
 import { SymbolConversion } from '../../utils/symbolConversion';
 import { InfoType } from '../../types/constants';
+import type { AllMids, CandleSnapshot, FrontendOpenOrders, L2Book, OrderStatus, UserFills, UserOpenOrders, UserRateLimit } from '../../types';
 
 export class GeneralInfoAPI {
     private httpApi: HttpApi;
@@ -50,12 +40,12 @@ export class GeneralInfoAPI {
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getUserFills(user: string, rawResponse: boolean = false): Promise<UserFills> {
+    async getUserFills(user: string, rawResponse: boolean = false): Promise<UserFills[]> {
         const response = await this.httpApi.makeRequest({ type: InfoType.USER_FILLS, user: user }, 20);
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getUserFillsByTime(user: string, startTime: number, endTime?: number, rawResponse: boolean = false): Promise<UserFills> {
+    async getUserFillsByTime(user: string, startTime: number, endTime?: number, rawResponse: boolean = false): Promise<UserFills[]> {
         let params: { user: string; startTime: number; type: string; endTime?: number } = {
             user: user,
             startTime: Math.round(startTime),
@@ -85,7 +75,7 @@ export class GeneralInfoAPI {
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getCandleSnapshot(coin: string, interval: string, startTime: number, endTime: number, rawResponse: boolean = false): Promise<CandleSnapshot> {
+    async getCandleSnapshot(coin: string, interval: string, startTime: number, endTime: number, rawResponse: boolean = false): Promise<CandleSnapshot[]> {
         const response = await this.httpApi.makeRequest({ 
             type: InfoType.CANDLE_SNAPSHOT, 
             req: { coin: await this.symbolConversion.convertSymbol(coin, "reverse"), interval: interval, startTime: startTime, endTime: endTime } 

@@ -1,7 +1,10 @@
 import { WebSocketClient } from './connection';
-import { 
-    AllMids, WsTrade, WsBook, WsOrder, WsUserEvent, Notification, 
-    WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates 
+import type {
+    AllMids, WsBook, WsOrder, WsUserEvent, Notification,
+    WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates,
+    WsActiveAssetData,
+    WsActiveAssetCtx,
+    WsUserHistoricalOrders
 } from '../types/index';
 import { SymbolConversion } from '../utils/symbolConversion';
 
@@ -14,13 +17,12 @@ export class WebSocketSubscriptions {
         this.symbolConversion = symbolConversion;
     }
 
-    private async subscribe(subscription: { type: string; [key: string]: any }): Promise<void> {
+    private async subscribe(subscription: { type: string;[key: string]: any }): Promise<void> {
         await this.ws.sendMessage({ method: 'subscribe', subscription: subscription });
     }
 
-    private async unsubscribe(subscription: { type: string; [key: string]: any }): Promise<void> {
-        const convertedSubscription = await this.symbolConversion.convertSymbolsInObject(subscription);
-        await this.ws.sendMessage({ method: 'unsubscribe', subscription: convertedSubscription });
+    private async unsubscribe(subscription: { type: string;[key: string]: any }): Promise<void> {
+        await this.ws.sendMessage({ method: 'unsubscribe', subscription: subscription });
     }
 
     private handleMessage(message: any, callback: (data: any) => void, channel: string, additionalChecks: (data: any) => boolean = () => true) {
@@ -40,7 +42,6 @@ export class WebSocketSubscriptions {
         if (typeof callback !== 'function') {
             throw new Error('Callback must be a function');
         }
-
         this.subscribe({ type: 'allMids' });
 
         this.ws.on('message', async (message: any) => {
@@ -127,7 +128,7 @@ export class WebSocketSubscriptions {
         this.ws.on('message', async (message: any) => {
 
             if (message.channel === 'userEvents') {
-                message = await  this.symbolConversion.convertSymbolsInObject(message)
+                message = await this.symbolConversion.convertSymbolsInObject(message)
                 callback(message.data)
             }
         });
@@ -154,6 +155,16 @@ export class WebSocketSubscriptions {
         });
     }
 
+    async subscribeToUserHistoricalOrders(user: string, callback: (data: WsUserHistoricalOrders & { user: string }) => void): Promise<void> {
+        this.subscribe({ type: 'userHistoricalOrders', user: user });
+        this.ws.on('message', async (message: any) => {
+            if (message.channel === 'userHistoricalOrders') {
+                message = await this.symbolConversion.convertSymbolsInObject(message)
+                callback(message.data)
+            }
+        });
+    }
+
     async subscribeToUserNonFundingLedgerUpdates(user: string, callback: (data: WsUserNonFundingLedgerUpdates & { user: string }) => void): Promise<void> {
         this.subscribe({ type: 'userNonFundingLedgerUpdates', user: user });
         this.ws.on('message', async (message: any) => {
@@ -164,10 +175,30 @@ export class WebSocketSubscriptions {
         });
     }
 
+    async subscribeToActiveAssetData(user: string, coin: string, callback: (data: WsActiveAssetData & { user: string }) => void): Promise<void> {
+        this.subscribe({ type: 'activeAssetData', user: user, coin: coin });
+        this.ws.on('message', async (message: any) => {
+            if (message.channel === 'activeAssetData') {
+                message = await this.symbolConversion.convertSymbolsInObject(message)
+                callback(message.data)
+            }
+        });
+    }
+
+    async subscribeActiveAssetCtx(user: string, coin: string, callback: (data: WsActiveAssetCtx) => void): Promise<void> {
+        this.subscribe({ type: 'activeAssetCtx', user: user, coin: coin });
+        this.ws.on('message', async (message: any) => {
+            if (message.channel === 'activeAssetCtx') {
+                message = await this.symbolConversion.convertSymbolsInObject(message)
+                callback(message.data)
+            }
+        });
+    }
+
     async postRequest(requestType: 'info' | 'action', payload: any): Promise<any> {
         const id = Date.now();
         const convertedPayload = await this.symbolConversion.convertSymbolsInObject(payload);
-        
+
         await this.ws.sendMessage({
             method: 'post',
             id: id,
@@ -244,5 +275,21 @@ export class WebSocketSubscriptions {
 
     async unsubscribeFromUserNonFundingLedgerUpdates(user: string): Promise<void> {
         this.unsubscribe({ type: 'userNonFundingLedgerUpdates', user: user });
+    }
+
+    async unsubscribeFromActiveAssetData(user: string, coin: string): Promise<void> {
+        this.unsubscribe({ type: 'activeAssetData', user: user, coin: coin });
+    }
+
+    async unsubscribeFromActiveAssetCtx(user: string, coin: string): Promise<void> {
+        this.unsubscribe({ type: 'activeAssetCtx', user: user, coin: coin });
+    }
+
+    async unsubscribeFromUserHistoricalOrders(user: string): Promise<void> {
+        this.unsubscribe({ type: 'userHistoricalOrders', user: user });
+    }
+
+    async unsubscribeFromAll(): Promise<void> {
+        this.unsubscribe({ type: 'all' });
     }
 }
