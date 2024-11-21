@@ -1,15 +1,24 @@
 # Hyperliquid API SDK
 
-Typescript SDK to more easily interact with Hyperliquid's API
+Typescript SDK to more easily interact with Hyperliquid's API forked from [HyperLiquid](https://github.com/nomeida/hyperliquid) for React Native
 
 All info on the Hyperliquid API can be found here: [HyperLiquid API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs)
+
+The modifications include:
+
+- Adding new functions (makeLimitOrder, placeOrdersTpSl, orderRequestToOrderWires)
+- Adding grouping for orderWiresToOrderAction
+- Updating to specifically support React Native
+- Fixing the exchange module endpoint (usdTransfer)
+- Correcting the response type of some functions
+- Adding more types
+- Custom WebSocket for React Native
 
 ## Installation
 
 ```bash
-npm install --save hyperliquid
+npm install react-native-hyperliquid
 ```
-
 
 
 ## Usage
@@ -19,7 +28,7 @@ npm install --save hyperliquid
 If you don't do this you will be unable to use some of the SDK methods successfully. If you are using
 your own Private Key then it's not necessary as the SDK can derive your wallet address from the Private key.
 ```typescript
-const { Hyperliquid } = require('hyperliquid');
+import Hyperliquid from "react-native-hyperliquid";
 
 const sdk = new Hyperliquid(
   <private_key - string>,
@@ -90,7 +99,6 @@ sdk.exchange.transferBetweenSpotAndPerp(100, true) // Transfer 100 USDC from spo
 All methods supported can be found here: [Hyperliquid Exchange Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)
 
 
-
 ### General Info Methods
 
 ```typescript
@@ -122,7 +130,7 @@ All methods supported can be found here: [Hyperliquid Info Endpoint API Document
 ### WebSocket Methods
 
 ```typescript
-const { Hyperliquid } = require('hyperliquid');
+import Hyperliquid from "react-native-hyperliquid";
 
 async function testWebSocket() {
     // Create a new Hyperliquid instance
@@ -158,7 +166,6 @@ async function testWebSocket() {
 
 testWebSocket();
 ```
-
 
 ### Spot Info Methods
 

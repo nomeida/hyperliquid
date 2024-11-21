@@ -1,7 +1,0 @@
-# Dependency directories
-node_modules/
-*.js.map
-src/**/*.js
-**/venv/** */
-.env
-.vscode/
