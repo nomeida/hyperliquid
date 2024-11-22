@@ -1,7 +1,7 @@
 import { WebSocketClient } from './connection';
-import { 
-    AllMids, WsTrade, WsBook, WsOrder, WsUserEvent, Notification, 
-    WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates 
+import {
+    AllMids, WsTrade, WsBook, WsOrder, WsUserEvent, Notification,
+    WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates, WsUserActiveAssetData
 } from '../types/index';
 import { SymbolConversion } from '../utils/symbolConversion';
 
@@ -164,6 +164,16 @@ export class WebSocketSubscriptions {
         });
     }
 
+    async subscribeToUserActiveAssetData(user: string, coin: string, callback: (data: WsUserActiveAssetData & { user: string }) => void): Promise<void> {
+        this.subscribe({ type: 'activeAssetData', user: user, coin: coin });
+        this.ws.on('message', async (message: any) => {
+            if (message.channel === 'activeAssetData') {
+                message = await this.symbolConversion.convertSymbolsInObject(message)
+                callback(message.data)
+            }
+        });
+    }
+
     async postRequest(requestType: 'info' | 'action', payload: any): Promise<any> {
         const id = Date.now();
         const convertedPayload = await this.symbolConversion.convertSymbolsInObject(payload);
@@ -244,5 +254,9 @@ export class WebSocketSubscriptions {
 
     async unsubscribeFromUserNonFundingLedgerUpdates(user: string): Promise<void> {
         this.unsubscribe({ type: 'userNonFundingLedgerUpdates', user: user });
+    }
+
+    async unsubscribeFromUserActiveAssetData(user: string, coin: string): Promise<void> {
+        this.unsubscribe({ type: 'activeAssetData', user: user, coin: coin });
     }
 }
