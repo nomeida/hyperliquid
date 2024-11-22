@@ -32,7 +32,7 @@ sdk.info.getAllMids().then(allMids => {
   console.log(allMids);
 });
 ```
-**Note:** You don't have to provide your private key, but it is required if you want to 
+**Note:** You don't have to provide your private key, but it is required if you want to
 use the exchange API to place, cancel or modify orders or access your accounts assets.
 
 
@@ -61,8 +61,33 @@ sdk.exchange.placeOrder({
   sz: 1,
   limit_px: 30000,
   order_type: { limit: { tif: 'Gtc' } },
-  reduce_only: false
-  //vaultAddress <str> - optional field in case you are using vaults 
+  reduce_only: false,
+  vaultAddress: '0x...' // optional
+}).then(placeOrderResult => {
+  console.log(placeOrderResult);
+}).catch(error => {
+  console.error('Error placing order:', error);
+});
+
+// Multiple orders can be passed as an array or order objects
+// The grouping, vaultAddress and builder properties are optional
+// Grouping determines how multiple orders are treated by the exchange endpoint in terms
+// of transaction priority, execution and dependency. Defaults to 'na' if not specified.
+sdk.exchange.placeOrder({
+  orders: [{
+    coin: 'BTC-PERP',
+    is_buy: true,
+    sz: 1,
+    limit_px: 30000,
+    order_type: { limit: { tif: 'Gtc' } },
+    reduce_only: false
+  }],
+  vaultAddress: '0x...',
+  grouping: 'normalTpsl',
+  builder: {
+    address: '0x...',
+    fee: 999,
+  }
 }).then(placeOrderResult => {
   console.log(placeOrderResult);
 }).catch(error => {
@@ -138,12 +163,12 @@ async function testWebSocket() {
         sdk.subscriptions.subscribeToAllMids((data) => {
             console.log('Received trades data:', data);
         });
-        
+
         // Get updates anytime the user gets new fills
         sdk.subscriptions.subscribeToUserFills("<wallet_address_here>", (data) => {
             console.log('Received user fills data:', data);
         });
-        
+
         // Get updates on 1 minute ETH-PERP candles
         sdk.subscriptions.subscribeToCandle("BTC-PERP", "1m", (data) => {
             console.log('Received candle data:', data);
