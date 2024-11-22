@@ -91,6 +91,12 @@ export interface OrderResponse {
     };
 }
 
+export interface Leverage {
+    type: "cross" | "isolated";
+    value: number;
+    rawUsd?: string;
+}
+
 export interface WsTrade {
     coin: string;
     side: string;
@@ -488,4 +494,14 @@ export type WsUserNonFundingLedgerUpdates = {
     isSnapshot: boolean;
     updates: WsUserNonFundingLedgerUpdate[];
     user: string;
+};
+
+
+export type WsUserActiveAssetData = {
+    isSnapshot: boolean;
+    user: string;
+    coin: string;
+    leverage: Leverage;
+    maxTradeSzs: [number, number];
+    availableToTrade: [number, number];
 };
