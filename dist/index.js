@@ -38,8 +38,9 @@ const ethers_1 = require("ethers");
 const symbolConversion_1 = require("./utils/symbolConversion");
 const errors_1 = require("./utils/errors");
 class Hyperliquid {
-    constructor(privateKey = null, testnet = false) {
+    constructor(privateKey = null, testnet = false, walletAddress = null) {
         this.isValidPrivateKey = false;
+        this.walletAddress = null;
         const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
         this.rateLimiter = new rateLimiter_1.RateLimiter();
         this.symbolConversion = new symbolConversion_1.SymbolConversion(baseURL, this.rateLimiter);
@@ -49,6 +50,7 @@ class Hyperliquid {
         // Create proxy objects for exchange and custom
         this.exchange = this.createAuthenticatedProxy(exchange_1.ExchangeAPI);
         this.custom = this.createAuthenticatedProxy(custom_1.CustomOperations);
+        this.walletAddress = walletAddress;
         if (privateKey) {
             this.initializeWithPrivateKey(privateKey, testnet);
         }
@@ -67,8 +69,8 @@ class Hyperliquid {
         try {
             const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
             new ethers_1.ethers.Wallet(formattedPrivateKey); // Validate the private key
-            this.exchange = new exchange_1.ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion);
-            this.custom = new custom_1.CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion);
+            this.exchange = new exchange_1.ExchangeAPI(testnet, formattedPrivateKey, this.info, this.rateLimiter, this.symbolConversion, this.walletAddress);
+            this.custom = new custom_1.CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion, this.walletAddress);
             this.isValidPrivateKey = true;
         }
         catch (error) {

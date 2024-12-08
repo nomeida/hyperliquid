@@ -8,7 +8,8 @@ export declare class CustomOperations {
     private infoApi;
     private wallet;
     private symbolConversion;
-    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion);
+    private walletAddress;
+    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion, walletAddress?: string | null);
     cancelAllOrders(symbol?: string): Promise<CancelOrderResponse>;
     getAllAssets(): Promise<{
         perp: string[];

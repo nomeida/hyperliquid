@@ -12,7 +12,8 @@ export declare class Hyperliquid {
     private rateLimiter;
     private symbolConversion;
     private isValidPrivateKey;
-    constructor(privateKey?: string | null, testnet?: boolean);
+    private walletAddress;
+    constructor(privateKey?: string | null, testnet?: boolean, walletAddress?: string | null);
     private createAuthenticatedProxy;
     private initializeWithPrivateKey;
     isAuthenticated(): boolean;
