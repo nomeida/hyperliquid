@@ -42,7 +42,7 @@ export class SymbolConversion {
                 if (universeItem) {
                     const internalName = `${token.name}-SPOT`;
                     const exchangeName = universeItem.name;
-                    const index = spotMeta[0].universe.indexOf(universeItem);
+                    const index = universeItem.index;
                     this.assetToIndexMap.set(internalName, 10000 + index);
                     this.exchangeToInternalNameMap.set(exchangeName, internalName);
                 }
