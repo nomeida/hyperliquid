@@ -1,6 +1,6 @@
 {
   "name": "hyperliquid",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "SDK for Hyperliquid API",
   "main": "src/index.ts",
   "types": "dist/index.d.ts",
