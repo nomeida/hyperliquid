@@ -1,12 +1,39 @@
 export type Tif = 'Alo' | 'Ioc' | 'Gtc';
-export type Tpsl = 'tp' | 'sl';
-export type LimitOrderType = { tif: Tif };
-export type TriggerOrderType = { triggerPx: string | number; isMarket: boolean; tpsl: Tpsl };
+export type TriggerType = 'tp' | 'sl';
+export type LimitOrder = { tif: Tif };
+export type TriggerOrder = { triggerPx: string | number; isMarket: boolean; tpsl: TriggerType };
 export type Grouping = 'na' | 'normalTpsl' | 'positionTpsl';
-export type OrderType = { limit?: LimitOrderType; trigger?: TriggerOrderTypeWire };
+export type OrderType = { limit?: LimitOrder; trigger?: TriggerOrder };
 export type Cloid = string;
 export type OidOrCloid = number | Cloid;
 
+export interface Order extends BaseOrder {
+    orders?: undefined;
+    coin: string;
+    is_buy: boolean;
+    sz: number;
+    limit_px: number;
+    order_type: OrderType;
+    reduce_only: boolean;
+    cloid?: Cloid;
+}
+
+export type OrderRequest = Order| MultiOrder;
+
+interface BaseOrder {
+    vaultAddress?: string;
+    grouping?: Grouping;
+    builder?: Builder;
+}
+
+interface MultiOrder extends BaseOrder {
+    orders: Order[];
+}
+
+export interface Builder {
+    address: string;
+    fee: number;
+}
 
 export interface AllMids {
     [coin: string]: string;
@@ -349,17 +376,6 @@ export interface UserOpenOrder {
 
 export type UserOpenOrders = UserOpenOrder[];
 
-export interface OrderRequest {
-    coin: string;
-    is_buy: boolean;
-    sz: number;
-    limit_px: number;
-    order_type: OrderType;
-    reduce_only: boolean;
-    cloid?: Cloid;
-    vaultAddress?: string;
-}
-
 export interface OrderWire {
     a: number;
     b: boolean;
@@ -369,21 +385,6 @@ export interface OrderWire {
     t: OrderType;
     c?: string;
 }
-
-
-
-export interface TriggerOrderTypeWire {
-    triggerPx: number | string;
-    isMarket: boolean;
-    tpsl: Tpsl;
-}
-
-export type OrderTypeWire = {
-    limit?: LimitOrderType;
-    trigger?: TriggerOrderTypeWire;
-};
-
-
 
 export interface CancelOrderRequest {
     coin: string;
@@ -427,7 +428,7 @@ export interface Notification {
     user: string;
 }
 
-// As flexible as possible 
+// As flexible as possible
 export interface WebData2 {
     [key: string]: any;
 }
@@ -437,8 +438,8 @@ export interface Candle {
     T: number;  // close time
     s: string;  // symbol
     i: string;  // interval
-    o: string;  // open 
-    c: string;  // close 
+    o: string;  // open
+    c: string;  // close
     h: string;  // high
     l: string;  // low
     v: string;  // volume
