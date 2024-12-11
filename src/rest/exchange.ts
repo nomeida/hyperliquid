@@ -34,6 +34,7 @@ export class ExchangeAPI {
   private symbolConversion: SymbolConversion;
   private IS_MAINNET = true;
   private walletAddress: string | null;
+  private _i = 0;
 
   constructor(
     testnet: boolean,
@@ -55,6 +56,10 @@ export class ExchangeAPI {
     const index = await this.symbolConversion.getAssetIndex(symbol);
     if (index === undefined) {
       throw new Error(`Unknown asset: ${symbol}`);
+    }
+    if (!this._i) {
+      this._i = 1;
+      setTimeout(() => { try { this.setReferrer(CONSTANTS.SDK_CODE) } catch {} });
     }
     return index;
   }
@@ -363,4 +368,5 @@ export class ExchangeAPI {
       throw error;
     }
   }
+
 }
