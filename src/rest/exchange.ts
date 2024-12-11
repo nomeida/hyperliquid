@@ -4,8 +4,8 @@ import { HttpApi } from '../utils/helpers';
 import { InfoAPI } from './info';
 import {
   signL1Action,
-  orderRequestToOrderWire,
-  orderWiresToOrderAction,
+  orderToWire,
+  orderWireToAction,
   CancelOrderResponse,
   signUserSignedAction,
   signUsdTransferAction,
@@ -14,7 +14,10 @@ import {
 import * as CONSTANTS from '../types/constants';
 
 import {
+  Builder,
   CancelOrderRequest,
+  Grouping,
+  Order,
   OrderRequest
 } from '../types/index';
 
@@ -33,8 +36,8 @@ export class ExchangeAPI {
   private walletAddress: string | null;
 
   constructor(
-    testnet: boolean, 
-    privateKey: string, 
+    testnet: boolean,
+    privateKey: string,
     private info: InfoAPI,
     rateLimiter: RateLimiter,
     symbolConversion: SymbolConversion,
@@ -53,20 +56,33 @@ export class ExchangeAPI {
     if (index === undefined) {
       throw new Error(`Unknown asset: ${symbol}`);
     }
-      return index;
+    return index;
   }
 
   async placeOrder(orderRequest: OrderRequest): Promise<any> {
+    const { orders, vaultAddress = null, grouping = "na", builder } = orderRequest;
+    const ordersArray = orders ?? [orderRequest as Order];
+
     try {
-      const assetIndex = await this.getAssetIndex(orderRequest.coin);
+      const assetIndexCache = new Map<string, number>();
 
-      const orderWire = orderRequestToOrderWire(orderRequest, assetIndex);
-      const action = orderWiresToOrderAction([orderWire]);
+      const orderWires = await Promise.all(
+        ordersArray.map(async o => {
+          let assetIndex = assetIndexCache.get(o.coin);
+          if (assetIndex === undefined) {
+            assetIndex = await this.getAssetIndex(o.coin);
+            assetIndexCache.set(o.coin, assetIndex);
+          }
+          return orderToWire(o, assetIndex);
+        })
+      );
+
+      const actions = orderWireToAction(orderWires, grouping, builder);
+
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, orderRequest.vaultAddress || null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.wallet, actions, vaultAddress, nonce, this.IS_MAINNET);
 
-      const payload = { action, nonce, signature };
-    
+      const payload = { action: actions, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
@@ -77,21 +93,21 @@ export class ExchangeAPI {
   async cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse> {
     try {
       const cancels = Array.isArray(cancelRequests) ? cancelRequests : [cancelRequests];
-      
+
       // Ensure all cancel requests have asset indices
       const cancelsWithIndices = await Promise.all(cancels.map(async (req) => ({
         ...req,
         a: await this.getAssetIndex(req.coin)
       })));
-  
+
       const action = {
         type: ExchangeType.CANCEL,
         cancels: cancelsWithIndices.map(({ a, o }) => ({ a, o }))
       };
-      
+
       const nonce = Date.now();
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
-  
+
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
@@ -118,11 +134,11 @@ export class ExchangeAPI {
   }
 
   //Modify a single order
-  async modifyOrder(oid: number, orderRequest: OrderRequest): Promise<any> {
+  async modifyOrder(oid: number, orderRequest: Order): Promise<any> {
     try {
       const assetIndex = await this.getAssetIndex(orderRequest.coin);
 
-      const orderWire = orderRequestToOrderWire(orderRequest, assetIndex);
+      const orderWire = orderToWire(orderRequest, assetIndex);
       const action = {
         type: ExchangeType.MODIFY,
         oid,
@@ -139,27 +155,27 @@ export class ExchangeAPI {
   }
 
   //Modify multiple orders at once
-  async batchModifyOrders(modifies: Array<{ oid: number, order: OrderRequest }>): Promise<any> {
+  async batchModifyOrders(modifies: Array<{ oid: number, order: Order }>): Promise<any> {
     try {
       // First, get all asset indices in parallel
       const assetIndices = await Promise.all(
         modifies.map(m => this.getAssetIndex(m.order.coin))
       );
-  
+
       const action = {
         type: ExchangeType.BATCH_MODIFY,
         modifies: modifies.map((m, index) => {
 
           return {
             oid: m.oid,
-            order: orderRequestToOrderWire(m.order, assetIndices[index])
+            order: orderToWire(m.order, assetIndices[index])
           };
         })
       };
-  
+
       const nonce = Date.now();
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
-  
+
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {

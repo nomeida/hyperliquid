@@ -1,7 +1,7 @@
 import { encode } from '@msgpack/msgpack';
 import { ethers, getBytes, HDNodeWallet, keccak256, type Wallet } from 'ethers';
 
-import type { OrderType, Signature, OrderRequest, CancelOrderRequest, OrderWire } from '../types';
+import type { Builder, Order, OrderRequest, OrderType, OrderWire, Signature, CancelOrderRequest, Grouping } from '../types';
 
 const phantomDomain = {
     name: 'Exchange',
@@ -23,8 +23,8 @@ export function orderTypeToWire(orderType: OrderType): OrderType {
     } else if (orderType.trigger) {
         return {
             trigger: {
-                triggerPx: floatToWire(Number(orderType.trigger.triggerPx)),
                 isMarket: orderType.trigger.isMarket,
+                triggerPx: floatToWire(Number(orderType.trigger.triggerPx)),
                 tpsl: orderType.trigger.tpsl,
             },
         };
@@ -184,7 +184,7 @@ export function getTimestampMs(): number {
     return Date.now();
 }
 
-export function orderRequestToOrderWire(order: OrderRequest, asset: number): OrderWire {
+export function orderToWire(order: Order, asset: number): OrderWire {
     const orderWire: OrderWire = {
         a: asset,
         b: order.is_buy,
@@ -197,6 +197,15 @@ export function orderRequestToOrderWire(order: OrderRequest, asset: number): Ord
         orderWire.c = order.cloid;
     }
     return orderWire;
+}
+
+export function orderWireToAction(orders: OrderWire[], grouping: Grouping = "na", builder?: Builder): any {
+    return {
+        type: 'order',
+        orders: orders,
+        grouping: grouping,
+        ...(builder !== undefined ? { builder: builder } : {})
+    };
 }
 
 export interface CancelOrderResponse {
@@ -213,13 +222,5 @@ export function cancelOrderToAction(cancelRequest: CancelOrderRequest): any {
     return {
         type: 'cancel',
         cancels: [cancelRequest],
-    };
-}
-
-export function orderWiresToOrderAction(orderWires: OrderWire[]): any {
-    return {
-        type: 'order',
-        orders: orderWires,
-        grouping: 'na',
     };
 }
