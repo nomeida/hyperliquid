@@ -255,7 +255,7 @@ All Custom methods are listed above. These are custom methods that are not part 
 
 For more detailed documentation on all available methods and their parameters, please refer to the [official Hyperliquid API documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/).
 
-
+*p.s. if you use use my referral, all the proceeds will go towards buying HYPE and PURR (essentially, a less rich version of the Hyperliquid assistance fund)*
 
 ## License
 
