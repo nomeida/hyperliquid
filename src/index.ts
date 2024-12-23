@@ -23,53 +23,94 @@ export class Hyperliquid {
   private isValidPrivateKey: boolean = false;
   private walletAddress: string | null = null;
   private _initialized: boolean = false;
+  private _initializing: Promise<void> | null = null;
   private _privateKey?: string;
   private _walletAddress?: string;
 
   constructor(privateKey?: string, testnet: boolean = false, walletAddress?: string) {
-      const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
+    const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
 
-      this.rateLimiter = new RateLimiter();
-      this.symbolConversion = new SymbolConversion(baseURL, this.rateLimiter);
-      this.walletAddress = walletAddress || null;
+    this.rateLimiter = new RateLimiter();
+    this.symbolConversion = new SymbolConversion(baseURL, this.rateLimiter);
+    this.walletAddress = walletAddress || null;
 
-      // Pass 'this' to InfoAPI
-      this.info = new InfoAPI(baseURL, this.rateLimiter, this.symbolConversion, this);
-      this.ws = new WebSocketClient(testnet);
-      this.subscriptions = new WebSocketSubscriptions(this.ws, this.symbolConversion);
-      
-      // Create proxy objects for exchange and custom
-      this.exchange = this.createAuthenticatedProxy(ExchangeAPI);
-      this.custom = this.createAuthenticatedProxy(CustomOperations);
+    // Initialize info API
+    this.info = new InfoAPI(baseURL, this.rateLimiter, this.symbolConversion, this);
+    
+    // Initialize WebSocket
+    this.ws = new WebSocketClient(testnet);
+    this.subscriptions = new WebSocketSubscriptions(this.ws, this.symbolConversion);
+    
+    // Create proxy objects for exchange and custom
+    this.exchange = this.createAuthenticatedProxy(ExchangeAPI);
+    this.custom = this.createAuthenticatedProxy(CustomOperations);
 
-      if (privateKey) {
-          this._privateKey = privateKey;
-          this._walletAddress = walletAddress;
-      }
+    if (privateKey) {
+      this._privateKey = privateKey;
+      this._walletAddress = walletAddress;
+      this.initializePrivateKey(privateKey, testnet);
+    }
   }
 
-  public async ensureInitialized(): Promise<void> {
-      if (!this._initialized) {
-          await this.initialize();
-          this._initialized = true;
+  public async connect(): Promise<void> {
+    if (!this._initialized) {
+      if (!this._initializing) {
+        this._initializing = this.initialize();
       }
+      await this._initializing;
+    }
   }
 
   private async initialize(): Promise<void> {
-      if (this._initialized) return;
+    if (this._initialized) return;
+    
+    try {
+      // Initialize symbol conversion first
+      await this.symbolConversion.initialize();
       
-      try {
-          // Initialize symbol conversion first
-          await this.symbolConversion.initialize();
-          
-          // Now it's safe to initialize other components
-          await this.ws.connect();
-          
-          this._initialized = true;
-      } catch (error) {
-          console.error('Failed to initialize Hyperliquid:', error);
-          throw error;
-      }
+      // Connect WebSocket
+      await this.ws.connect();
+      
+      this._initialized = true;
+      this._initializing = null;
+    } catch (error) {
+      this._initializing = null;
+      throw error;
+    }
+  }
+
+  public async ensureInitialized(): Promise<void> {
+    await this.connect();
+  }
+
+  private initializePrivateKey(privateKey: string, testnet: boolean): void {
+    try {
+      const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+      new ethers.Wallet(formattedPrivateKey); // Validate the private key
+      
+      this.exchange = new ExchangeAPI(
+        testnet, 
+        formattedPrivateKey, 
+        this.info, 
+        this.rateLimiter, 
+        this.symbolConversion, 
+        this.walletAddress,
+        this
+      );
+      
+      this.custom = new CustomOperations(
+        this.exchange, 
+        this.info, 
+        formattedPrivateKey, 
+        this.symbolConversion, 
+        this.walletAddress
+      );
+      
+      this.isValidPrivateKey = true;
+    } catch (error) {
+      console.warn("Invalid private key provided. Some functionalities will be limited.");
+      this.isValidPrivateKey = false;
+    }
   }
 
   private createAuthenticatedProxy<T extends object>(Class: new (...args: any[]) => T): T {
@@ -111,12 +152,6 @@ export class Hyperliquid {
     return this.isValidPrivateKey;
 }
 
-async connect(): Promise<void> {
-    await this.initialize();
-    if (!this.isValidPrivateKey) {
-        console.warn("Not authenticated. Some WebSocket functionalities may be limited.");
-    }
-}
 
 disconnect(): void {
     this.ensureInitialized();

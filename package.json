@@ -2,13 +2,16 @@
   "name": "hyperliquid",
   "version": "1.4.1",
   "description": "SDK for Hyperliquid API",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["src", "dist"],
   "scripts": {
     "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rimraf dist",
+    "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "npm run build"
+    "dev": "ts-node --esm src/index.ts"
   },
   "keywords": [
     "hyperliquid",
@@ -32,6 +35,12 @@
     "typescript": "^5.5.4",
     "ws": "^8.18.0"
   },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "dotenv": "^16.4.5",
+    "rimraf": "^5.0.0",
+    "ts-node": "^10.9.1"
+  },
   "directories": {
     "test": "tests"
   },
@@ -39,7 +48,7 @@
     "type": "git",
     "url": "https://github.com/nomeida/hyperliquid-api"
   },
-  "devDependencies": {
-    "dotenv": "^16.4.5"
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
