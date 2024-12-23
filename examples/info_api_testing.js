@@ -1,4 +1,4 @@
-const { HyperliquidSDK } = require('./dist/index');
+const { Hyperliquid } = require('../dist/index');
 const readline = require('readline');
 
 const private_key = "";
@@ -109,12 +109,12 @@ async function testPerpetualsInfoAPI(sdk) {
 }
 
 async function main() {
-    const sdk = new HyperliquidSDK(private_key);
+    const sdk = new Hyperliquid(private_key);
 
     try {
-        // await testInfoAPI(sdk);
-        // await testSpotInfoAPI(sdk);
-        // await testPerpetualsInfoAPI(sdk);
+        await testInfoAPI(sdk);
+        await testSpotInfoAPI(sdk);
+        await testPerpetualsInfoAPI(sdk);
     } catch (error) {
         console.error('An error occurred:', error);
     } finally {
