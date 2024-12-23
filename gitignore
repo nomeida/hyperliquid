@@ -1,0 +1,28 @@
+# Dependency directories
+**/node_modules/**
+/node_modules/**
+
+
+# Build output directories
+/build
+
+# JavaScript source map files
+*.js.map
+
+# Operating system-specific files
+.DS_Store
+Thumbs.db
+
+# Environment-specific files
+*.log
+.env
+
+# IDE-specific directories
+.vscode
+
+# Other build or output directories
+/output
+/temp
+/logs
+
+.env
