@@ -7,16 +7,30 @@ export class SymbolConversion {
     private httpApi: HttpApi;
     private refreshIntervalMs: number = 60000;
     private refreshInterval: NodeJS.Timeout | null = null;
-    private initializationPromise: Promise<void>;
+    private initialized: boolean = false;
 
     constructor(baseURL: string, rateLimiter: any) {
         this.httpApi = new HttpApi(baseURL, CONSTANTS.ENDPOINTS.INFO, rateLimiter);
-        this.initializationPromise = this.initialize();
     }
 
-    private async initialize(): Promise<void> {
+    async initialize(): Promise<void> {
+        if (this.initialized) return;
+        
         await this.refreshAssetMaps();
         this.startPeriodicRefresh();
+        this.initialized = true;
+    }
+
+    private ensureInitialized(): void {
+        if (!this.initialized) {
+            throw new Error('SymbolConversion must be initialized before use. Call initialize() first.');
+        }
+    }
+
+    // Modify all public methods to check initialization
+    async getInternalName(exchangeName: string): Promise<string | undefined> {
+        this.ensureInitialized();
+        return this.exchangeToInternalNameMap.get(exchangeName);
     }
 
     private async refreshAssetMaps(): Promise<void> {
@@ -63,15 +77,6 @@ export class SymbolConversion {
             clearInterval(this.refreshInterval);
             this.refreshInterval = null;
         }
-    }
-
-    private async ensureInitialized(): Promise<void> {
-        await this.initializationPromise;
-    }
-
-    public async getInternalName(exchangeName: string): Promise<string | undefined> {
-        await this.ensureInitialized();
-        return this.exchangeToInternalNameMap.get(exchangeName);
     }
 
     public async getExchangeName(internalName: string): Promise<string | undefined> {

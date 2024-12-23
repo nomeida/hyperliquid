@@ -257,6 +257,16 @@ For more detailed documentation on all available methods and their parameters, p
 
 *p.s. if you use use my referral, all the proceeds will go towards buying HYPE and PURR (essentially, a less rich version of the Hyperliquid assistance fund)*
 
+## Initialization
+
+The SDK uses lazy initialization, meaning it automatically initializes when needed. While you can explicitly initialize using:
+
+```typescript
+await sdk.connect();
+```
+
+This is entirely optional - the SDK will automatically initialize itself when required.
+
 ## License
 
 MIT

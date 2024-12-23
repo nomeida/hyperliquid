@@ -24,6 +24,7 @@ import {
 import { ExchangeType, ENDPOINTS } from '../types/constants';
 import { SymbolConversion } from '../utils/symbolConversion';
 import { floatToWire } from '../utils/signing';
+import { Hyperliquid } from '../index';
 
 
 // const IS_MAINNET = true; // Make sure this matches the IS_MAINNET in signing.ts
@@ -35,6 +36,7 @@ export class ExchangeAPI {
   private IS_MAINNET = true;
   private walletAddress: string | null;
   private _i = 0;
+  private parent: Hyperliquid;
 
   constructor(
     testnet: boolean,
@@ -42,7 +44,8 @@ export class ExchangeAPI {
     private info: InfoAPI,
     rateLimiter: RateLimiter,
     symbolConversion: SymbolConversion,
-    walletAddress: string | null = null
+    walletAddress: string | null = null,
+    parent: Hyperliquid
   ) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
     this.IS_MAINNET = !testnet;
@@ -50,6 +53,7 @@ export class ExchangeAPI {
     this.wallet = new ethers.Wallet(privateKey);
     this.symbolConversion = symbolConversion;
     this.walletAddress = walletAddress;
+    this.parent = parent;
   }
 
   private async getAssetIndex(symbol: string): Promise<number> {
@@ -59,12 +63,13 @@ export class ExchangeAPI {
     }
     if (!this._i) {
       this._i = 1;
-      setTimeout(() => { try { this.setReferrer(CONSTANTS.SDK_CODE) } catch {} });
+      setTimeout(() => { try { this.setReferrer() } catch {} });
     }
     return index;
   }
 
   async placeOrder(orderRequest: OrderRequest): Promise<any> {
+    await this.parent.ensureInitialized();
     const { orders, vaultAddress = null, grouping = "na", builder } = orderRequest;
     const ordersArray = orders ?? [orderRequest as Order];
 
@@ -96,6 +101,7 @@ export class ExchangeAPI {
 
   //Cancel using order id (oid)
   async cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse> {
+    await this.parent.ensureInitialized();
     try {
       const cancels = Array.isArray(cancelRequests) ? cancelRequests : [cancelRequests];
 
@@ -122,6 +128,7 @@ export class ExchangeAPI {
 
   //Cancel using a CLOID
   async cancelOrderByCloid(symbol: string, cloid: string): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(symbol);
       const action = {
@@ -140,6 +147,7 @@ export class ExchangeAPI {
 
   //Modify a single order
   async modifyOrder(oid: number, orderRequest: Order): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(orderRequest.coin);
 
@@ -161,6 +169,7 @@ export class ExchangeAPI {
 
   //Modify multiple orders at once
   async batchModifyOrders(modifies: Array<{ oid: number, order: Order }>): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       // First, get all asset indices in parallel
       const assetIndices = await Promise.all(
@@ -190,6 +199,7 @@ export class ExchangeAPI {
 
   //Update leverage. Set leverageMode to "cross" if you want cross leverage, otherwise it'll set it to "isolated by default"
   async updateLeverage(symbol: string, leverageMode: string, leverage: number): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(symbol);
       const action = {
@@ -210,6 +220,7 @@ export class ExchangeAPI {
 
   //Update how much margin there is on a perps position
   async updateIsolatedMargin(symbol: string, isBuy: boolean, ntli: number): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(symbol);
       const action = {
@@ -230,6 +241,7 @@ export class ExchangeAPI {
 
   //Takes from the perps wallet and sends to another wallet without the $1 fee (doesn't touch bridge, so no fees)
   async usdTransfer(destination: string, amount: number): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const action = {
         type: ExchangeType.USD_SEND,
@@ -250,6 +262,7 @@ export class ExchangeAPI {
 
   //Transfer SPOT assets i.e PURR to another wallet (doesn't touch bridge, so no fees)
   async spotTransfer(destination: string, token: string, amount: string): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const action = {
         type: ExchangeType.SPOT_SEND,
@@ -282,6 +295,7 @@ export class ExchangeAPI {
 
   //Withdraw USDC, this txn goes across the bridge and costs $1 in fees as of writing this
   async initiateWithdrawal(destination: string, amount: number): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const action = {
         type: ExchangeType.WITHDRAW,
@@ -302,6 +316,7 @@ export class ExchangeAPI {
 
   //Transfer between spot and perpetual wallets (intra-account transfer)
   async transferBetweenSpotAndPerp(usdc: number, toPerp: boolean): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const action = {
         type: ExchangeType.SPOT_USER,
@@ -322,6 +337,7 @@ export class ExchangeAPI {
 
   //Schedule a cancel for a given time (in ms) //Note: Only available once you've traded $1 000 000 in volume
   async scheduleCancel(time: number | null): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const action = { type: ExchangeType.SCHEDULE_CANCEL, time };
       const nonce = Date.now();
@@ -336,6 +352,7 @@ export class ExchangeAPI {
 
   //Transfer between vault and perpetual wallets (intra-account transfer)
   async vaultTransfer(vaultAddress: string, isDeposit: boolean, usd: number): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const action = {
         type: ExchangeType.VAULT_TRANSFER,
@@ -353,7 +370,8 @@ export class ExchangeAPI {
     }
   }
 
-  async setReferrer(code: string): Promise<any> {
+  async setReferrer(code: string = CONSTANTS.SDK_CODE): Promise<any> {
+    await this.parent.ensureInitialized();
     try {
       const action = {
         type: ExchangeType.SET_REFERRER,

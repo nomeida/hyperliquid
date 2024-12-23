@@ -14,14 +14,17 @@ import {
 import { HttpApi } from '../../utils/helpers';
 import { SymbolConversion } from '../../utils/symbolConversion';
 import { InfoType } from '../../types/constants';
+import { Hyperliquid } from '../../index';
 
 export class GeneralInfoAPI {
-    private httpApi: HttpApi;
-    private symbolConversion: SymbolConversion;
+    private parent: Hyperliquid;
 
-    constructor(httpApi: HttpApi, symbolConversion: SymbolConversion) {
-        this.httpApi = httpApi;
-        this.symbolConversion = symbolConversion;
+    constructor(
+        private httpApi: HttpApi, 
+        private symbolConversion: SymbolConversion,
+        parent: Hyperliquid
+    ) {
+        this.parent = parent;
     }
 
     async getAllMids(rawResponse: boolean = false): Promise<AllMids> {
@@ -41,6 +44,7 @@ export class GeneralInfoAPI {
     }
 
     async getUserOpenOrders(user: string, rawResponse: boolean = false): Promise<UserOpenOrders> {
+        await this.parent.ensureInitialized();
         const response = await this.httpApi.makeRequest({ type: InfoType.OPEN_ORDERS, user: user });
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
