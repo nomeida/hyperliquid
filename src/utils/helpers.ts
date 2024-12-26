@@ -12,6 +12,7 @@ export class HttpApi {
         this.endpoint = endpoint;
         this.client = axios.create({
             baseURL: baseUrl,
+            timeout: 5000, 
             headers: {
                 'Content-Type': 'application/json',
             },
