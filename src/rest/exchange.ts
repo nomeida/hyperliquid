@@ -1,7 +1,7 @@
-import { ethers } from 'ethers';
-import { RateLimiter } from '../utils/rateLimiter';
-import { HttpApi } from '../utils/helpers';
-import { InfoAPI } from './info';
+import { ethers } from 'npm:ethers';
+import { RateLimiter } from '../utils/rateLimiter.ts';
+import { HttpApi } from '../utils/helpers.ts';
+import { InfoAPI } from './info.ts';
 import {
   signL1Action,
   orderToWire,
@@ -10,21 +10,18 @@ import {
   signUserSignedAction,
   signUsdTransferAction,
   signWithdrawFromBridgeAction,
-} from '../utils/signing';
-import * as CONSTANTS from '../types/constants';
+} from '../utils/signing.ts';
+import * as CONSTANTS from '../types/constants.ts';
 
 import {
-  Builder,
   CancelOrderRequest,
-  Grouping,
   Order,
   OrderRequest
-} from '../types/index';
+} from '../types/index.ts';
 
-import { ExchangeType, ENDPOINTS } from '../types/constants';
-import { SymbolConversion } from '../utils/symbolConversion';
-import { floatToWire } from '../utils/signing';
-import { Hyperliquid } from '../index';
+import { ExchangeType, ENDPOINTS } from '../types/constants.ts';
+import { SymbolConversion } from '../utils/symbolConversion.ts';
+import { Hyperliquid } from '../index.ts';
 
 
 // const IS_MAINNET = true; // Make sure this matches the IS_MAINNET in signing.ts

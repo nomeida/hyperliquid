@@ -1,13 +1,13 @@
-import { InfoAPI } from './rest/info';
-import { ExchangeAPI } from './rest/exchange';
-import { WebSocketClient } from './websocket/connection';
-import { WebSocketSubscriptions } from './websocket/subscriptions';
-import { RateLimiter } from './utils/rateLimiter';
-import * as CONSTANTS from './types/constants';
-import { CustomOperations } from './rest/custom';
-import { ethers } from 'ethers';
-import { SymbolConversion } from './utils/symbolConversion';
-import { AuthenticationError } from './utils/errors';
+import { InfoAPI } from './rest/info.ts';
+import { ExchangeAPI } from './rest/exchange.ts';
+import { WebSocketClient } from './websocket/connection.ts';
+import { WebSocketSubscriptions } from './websocket/subscriptions.ts';
+import { RateLimiter } from './utils/rateLimiter.ts';
+import * as CONSTANTS from './types/constants.ts';
+import { CustomOperations } from './rest/custom.ts';
+import { ethers } from 'npm:ethers';
+import { SymbolConversion } from './utils/symbolConversion.ts';
+import { AuthenticationError } from './utils/errors.ts';
 
 
 
@@ -160,5 +160,5 @@ disconnect(): void {
 
 }
 
-export * from './types';
-export * from './utils/signing';
+export * from './types/index.ts';
+export * from './utils/signing.ts';

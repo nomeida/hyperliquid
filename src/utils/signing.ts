@@ -1,7 +1,7 @@
-import { encode } from '@msgpack/msgpack';
-import { ethers, getBytes, HDNodeWallet, keccak256, type Wallet } from 'ethers';
+import { encode } from 'npm:@msgpack/msgpack';
+import { ethers, getBytes, HDNodeWallet, keccak256, type Wallet } from 'npm:ethers';
 
-import type { Builder, Order, OrderRequest, OrderType, OrderWire, Signature, CancelOrderRequest, Grouping } from '../types';
+import type { Builder, Order,  OrderType, OrderWire, Signature, CancelOrderRequest, Grouping } from '../types/index.ts';
 
 const phantomDomain = {
     name: 'Exchange',

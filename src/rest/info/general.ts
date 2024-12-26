@@ -2,7 +2,6 @@
 
 import { 
     AllMids, 
-    Meta, 
     UserOpenOrders, 
     FrontendOpenOrders, 
     UserFills, 
@@ -10,11 +9,11 @@ import {
     OrderStatus, 
     L2Book, 
     CandleSnapshot 
-} from '../../types';
-import { HttpApi } from '../../utils/helpers';
-import { SymbolConversion } from '../../utils/symbolConversion';
-import { InfoType } from '../../types/constants';
-import { Hyperliquid } from '../../index';
+} from '../../types/index.ts';
+import { HttpApi } from '../../utils/helpers.ts';
+import { SymbolConversion } from '../../utils/symbolConversion.ts';
+import { InfoType } from '../../types/constants.ts';
+import { Hyperliquid } from '../../index.ts';
 
 export class GeneralInfoAPI {
     private parent: Hyperliquid;

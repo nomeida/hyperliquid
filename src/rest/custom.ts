@@ -1,13 +1,12 @@
 // src/rest/custom.ts
 
-import { ethers } from 'ethers';
-import { InfoAPI } from './info';
-import { ExchangeAPI } from './exchange';
-import { UserOpenOrders } from '../types';
-import { OrderResponse, CancelOrderRequest, OrderRequest, OrderType } from '../types/index';
-import { CancelOrderResponse } from '../utils/signing'
-import { SymbolConversion } from '../utils/symbolConversion';
-import { floatToWire } from '../utils/signing';
+import { ethers } from 'npm:ethers';
+import { InfoAPI } from './info.ts';
+import { ExchangeAPI } from './exchange.ts';
+import { UserOpenOrders } from '../types/index.ts';
+import { OrderResponse, CancelOrderRequest, OrderRequest, OrderType } from '../types/index.ts';
+import { CancelOrderResponse } from '../utils/signing.ts'
+import { SymbolConversion } from '../utils/symbolConversion.ts';
 
 export class CustomOperations {
     private exchange: ExchangeAPI;

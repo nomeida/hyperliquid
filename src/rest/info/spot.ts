@@ -1,7 +1,7 @@
-import { SpotMeta, SpotClearinghouseState, SpotMetaAndAssetCtxs } from '../../types';
-import { HttpApi } from '../../utils/helpers';
-import { InfoType } from '../../types/constants';
-import { SymbolConversion } from '../../utils/symbolConversion';
+import { SpotMeta, SpotClearinghouseState, SpotMetaAndAssetCtxs } from '../../types/index.ts';
+import { HttpApi } from '../../utils/helpers.ts';
+import { InfoType } from '../../types/constants.ts';
+import { SymbolConversion } from '../../utils/symbolConversion.ts';
 
 export class SpotInfoAPI {
     private httpApi: HttpApi;

@@ -1,6 +1,6 @@
-import axios, { AxiosInstance } from 'axios';
-import { handleApiError } from './errors';
-import { RateLimiter } from './rateLimiter';
+import axios, { AxiosInstance } from 'npm:axios';
+import { handleApiError } from './errors.ts';
+import { RateLimiter } from './rateLimiter.ts';
 
 
 export class HttpApi {

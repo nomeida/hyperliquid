@@ -1,9 +1,9 @@
-import { WebSocketClient } from './connection';
+import { WebSocketClient } from './connection.ts';
 import {
-    AllMids, WsTrade, WsBook, WsOrder, WsUserEvent, Notification,
+    AllMids,  WsBook, WsOrder, WsUserEvent, Notification,
     WebData2, Candle, WsUserFills, WsUserFundings, WsUserNonFundingLedgerUpdates, WsUserActiveAssetData
-} from '../types/index';
-import { SymbolConversion } from '../utils/symbolConversion';
+} from '../types/index.ts';
+import { SymbolConversion } from '../utils/symbolConversion.ts';
 
 export class WebSocketSubscriptions {
     private ws: WebSocketClient;

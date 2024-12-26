@@ -1,5 +1,5 @@
-import { HttpApi } from './helpers';
-import * as CONSTANTS from '../types/constants';
+import { HttpApi } from './helpers.ts';
+import * as CONSTANTS from '../types/constants.ts';
 
 export class SymbolConversion {
     private assetToIndexMap: Map<string, number> = new Map();

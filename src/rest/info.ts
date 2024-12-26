@@ -1,10 +1,10 @@
-import { RateLimiter } from '../utils/rateLimiter';
-import { GeneralInfoAPI } from './info/general';
-import { SpotInfoAPI } from './info/spot';
-import { PerpetualsInfoAPI } from './info/perpetuals';
-import { HttpApi } from '../utils/helpers';
-import { SymbolConversion } from '../utils/symbolConversion';
-import { Hyperliquid } from '../index';
+import { RateLimiter } from '../utils/rateLimiter.ts';
+import { GeneralInfoAPI } from './info/general.ts';
+import { SpotInfoAPI } from './info/spot.ts';
+import { PerpetualsInfoAPI } from './info/perpetuals.ts';
+import { HttpApi } from '../utils/helpers.ts';
+import { SymbolConversion } from '../utils/symbolConversion.ts';
+import { Hyperliquid } from '../index.ts';
 
 import { 
     AllMids, 
@@ -16,9 +16,9 @@ import {
     OrderStatus, 
     L2Book, 
     CandleSnapshot 
-} from '../types/index';
+} from '../types/index.ts';
 
-import { InfoType, ENDPOINTS } from '../types/constants';
+import { ENDPOINTS } from '../types/constants.ts';
 
 export class InfoAPI {
     public spot: SpotInfoAPI;

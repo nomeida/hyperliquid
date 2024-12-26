@@ -1,7 +1,7 @@
-import WebSocket from 'ws';
-import { EventEmitter } from 'events';
+import WebSocket from 'npm:ws';
+import { EventEmitter } from 'node:events';
 
-import * as CONSTANTS from '../types/constants';
+import * as CONSTANTS from '../types/constants.ts';
 
 export class WebSocketClient extends EventEmitter {
     private ws: WebSocket | null = null;
