@@ -23,7 +23,6 @@ import {
 
 import { ExchangeType, ENDPOINTS } from '../types/constants';
 import { SymbolConversion } from '../utils/symbolConversion';
-import { floatToWire } from '../utils/signing';
 import { Hyperliquid } from '../index';
 
 
@@ -70,7 +69,8 @@ export class ExchangeAPI {
 
   async placeOrder(orderRequest: OrderRequest): Promise<any> {
     await this.parent.ensureInitialized();
-    const { orders, vaultAddress = null, grouping = "na", builder } = orderRequest;
+    const { orders, vaultAddress, grouping = "na", builder } = orderRequest;
+    const effectiveVaultAddress = vaultAddress ?? this.walletAddress ?? null;
     const ordersArray = orders ?? [orderRequest as Order];
 
     try {
@@ -90,9 +90,9 @@ export class ExchangeAPI {
       const actions = orderWireToAction(orderWires, grouping, builder);
 
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, actions, vaultAddress, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.wallet, actions, effectiveVaultAddress, nonce, this.IS_MAINNET);
 
-      const payload = { action: actions, nonce, signature, vaultAddress };
+      const payload = { action: actions, nonce, signature, vaultAddress: effectiveVaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
@@ -318,7 +318,7 @@ export class ExchangeAPI {
   async transferBetweenSpotAndPerp(usdc: number, toPerp: boolean): Promise<any> {
     await this.parent.ensureInitialized();
     try {
-      const action = {
+        const action = {
             type: ExchangeType.USD_CLASS_TRANSFER,
             hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
             signatureChainId: '0xa4b1',  // Arbitrum chain ID
@@ -341,11 +341,11 @@ export class ExchangeAPI {
         );
 
         const payload = { action, nonce: action.nonce, signature };
-      return this.httpApi.makeRequest(payload, 1);
+        return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
-      throw error;
+        throw error;
     }
-  }
+}
 
   //Schedule a cancel for a given time (in ms) //Note: Only available once you've traded $1 000 000 in volume
   async scheduleCancel(time: number | null): Promise<any> {
