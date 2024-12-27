@@ -259,13 +259,14 @@ For more detailed documentation on all available methods and their parameters, p
 
 ## Initialization
 
-The SDK uses lazy initialization, meaning it automatically initializes when needed. While you can explicitly initialize using:
+In most cases the SDK will automatically initialize itself when required. However, in some cases you may need to explicitly initialize the SDK. You can use this method to initialize the SDK: 
 
 ```typescript
-await sdk.initialize();
+await sdk.connect();
 ```
 
-This is entirely optional - the SDK will automatically initialize itself when required.
+p.s. You only need to worry about this if the SDK throws you an error telling you that it needs to be initialized.
+
 
 ## Star History
 
