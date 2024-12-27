@@ -262,10 +262,14 @@ For more detailed documentation on all available methods and their parameters, p
 The SDK uses lazy initialization, meaning it automatically initializes when needed. While you can explicitly initialize using:
 
 ```typescript
-await sdk.connect();
+await sdk.initialize();
 ```
 
 This is entirely optional - the SDK will automatically initialize itself when required.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=nomeida/hyperliquid&type=Date)](https://star-history.com/#nomeida/hyperliquid&Date)
 
 ## License
 
