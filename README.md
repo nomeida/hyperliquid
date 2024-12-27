@@ -251,12 +251,17 @@ console.log(allAssets);
 All Custom methods are listed above. These are custom methods that are not part of the official Hyperliquid API. As more are added we will add examples for them here.
 
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=nomeida/hyperliquid&type=Date)](https://star-history.com/#nomeida/hyperliquid&Date)
+
+
 
 ## Documentation
 
 For more detailed documentation on all available methods and their parameters, please refer to the [official Hyperliquid API documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/).
 
-*p.s. if you use use my referral, all the proceeds will go towards buying HYPE and PURR (essentially, a less rich version of the Hyperliquid assistance fund)*
+*if you use use my referral, all the proceeds will go towards buying HYPE and PURR (a poor mans version of assistance fund)*
 
 ## Initialization
 
@@ -267,11 +272,6 @@ await sdk.connect();
 ```
 
 p.s. You only need to worry about this if the SDK throws you an error telling you that it needs to be initialized.
-
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=nomeida/hyperliquid&type=Date)](https://star-history.com/#nomeida/hyperliquid&Date)
 
 ## License
 
