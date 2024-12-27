@@ -319,16 +319,28 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     try {
       const action = {
-        type: ExchangeType.SPOT_USER,
-        classTransfer: {
-          usdc: usdc * 1e6,
-          toPerp: toPerp
-        }
-      };
-      const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+            type: ExchangeType.USD_CLASS_TRANSFER,
+            hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+            signatureChainId: '0xa4b1',  // Arbitrum chain ID
+            amount: usdc.toString(),  // API expects string
+            toPerp: toPerp,
+            nonce: Date.now()
+        };
 
-      const payload = { action, nonce, signature };
+        const signature = await signUserSignedAction(
+            this.wallet,
+            action,
+            [
+                { name: 'hyperliquidChain', type: 'string' },
+                { name: 'amount', type: 'string' },
+                { name: 'toPerp', type: 'bool' },
+                { name: 'nonce', type: 'uint64' }
+            ],
+            'HyperliquidTransaction:UsdClassTransfer',
+            this.IS_MAINNET
+        );
+
+        const payload = { action, nonce: action.nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
