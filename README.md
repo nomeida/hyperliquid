@@ -24,7 +24,8 @@ const { Hyperliquid } = require('hyperliquid');
 const sdk = new Hyperliquid(
   <private_key - string>,
   <testnet - boolean (OPTIONAL)>,
-  <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>
+  <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>,
+  <vaultAddress - string (OPTIONAL)>
 );
 
 // Use the SDK methods

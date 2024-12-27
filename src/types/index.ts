@@ -507,6 +507,43 @@ export type WsUserActiveAssetData = {
     availableToTrade: [number, number];
 };
 
+export interface TwapOrder {
+    coin: string;
+    is_buy: boolean;
+    sz: number;
+    reduce_only: boolean;
+    minutes: number;
+    randomize: boolean;
+}
+
+export interface TwapCancelRequest {
+    coin: string;
+    twap_id: number;
+}
+
+export interface TwapOrderResponse {
+    status: string;
+    response: {
+        type: string;
+        data: {
+            status: {
+                running: {
+                    twapId: number;
+                };
+            };
+        };
+    };
+}
+
+export interface TwapCancelResponse {
+    status: string;
+    response: {
+        type: string;
+        data: {
+            status: string;
+        };
+    };
+}
 
 export interface PredictedFunding {
     fundingRate: string;

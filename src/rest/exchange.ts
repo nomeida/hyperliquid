@@ -18,7 +18,11 @@ import {
   CancelOrderRequest,
   Grouping,
   Order,
-  OrderRequest
+  OrderRequest,
+  TwapCancelRequest,
+  TwapCancelResponse,
+  TwapOrder,
+  TwapOrderResponse
 } from '../types/index';
 
 import { ExchangeType, ENDPOINTS } from '../types/constants';
@@ -36,7 +40,7 @@ export class ExchangeAPI {
   private walletAddress: string | null;
   private _i = 0;
   private parent: Hyperliquid;
-
+  private vaultAddress: string | null;
   constructor(
     testnet: boolean,
     privateKey: string,
@@ -44,7 +48,8 @@ export class ExchangeAPI {
     rateLimiter: RateLimiter,
     symbolConversion: SymbolConversion,
     walletAddress: string | null = null,
-    parent: Hyperliquid
+    parent: Hyperliquid,
+    vaultAddress: string | null = null
   ) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
     this.IS_MAINNET = !testnet;
@@ -53,6 +58,11 @@ export class ExchangeAPI {
     this.symbolConversion = symbolConversion;
     this.walletAddress = walletAddress;
     this.parent = parent;
+    this.vaultAddress = vaultAddress;
+  }
+
+  private getVaultAddress(): string | null {
+    return this.vaultAddress || null;
   }
 
   private async getAssetIndex(symbol: string): Promise<number> {
@@ -69,13 +79,12 @@ export class ExchangeAPI {
 
   async placeOrder(orderRequest: OrderRequest): Promise<any> {
     await this.parent.ensureInitialized();
-    const { orders, vaultAddress, grouping = "na", builder } = orderRequest;
-    const effectiveVaultAddress = vaultAddress ?? this.walletAddress ?? null;
+    const { orders, vaultAddress = this.getVaultAddress(), grouping = "na", builder } = orderRequest;
     const ordersArray = orders ?? [orderRequest as Order];
-
+  
     try {
       const assetIndexCache = new Map<string, number>();
-
+  
       const orderWires = await Promise.all(
         ordersArray.map(async o => {
           let assetIndex = assetIndexCache.get(o.coin);
@@ -86,40 +95,39 @@ export class ExchangeAPI {
           return orderToWire(o, assetIndex);
         })
       );
-
+  
       const actions = orderWireToAction(orderWires, grouping, builder);
-
+  
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, actions, effectiveVaultAddress, nonce, this.IS_MAINNET);
-
-      const payload = { action: actions, nonce, signature, vaultAddress: effectiveVaultAddress };
+      const signature = await signL1Action(this.wallet, actions, vaultAddress, nonce, this.IS_MAINNET);
+  
+      const payload = { action: actions, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
     }
   }
 
-  //Cancel using order id (oid)
   async cancelOrder(cancelRequests: CancelOrderRequest | CancelOrderRequest[]): Promise<CancelOrderResponse> {
     await this.parent.ensureInitialized();
     try {
       const cancels = Array.isArray(cancelRequests) ? cancelRequests : [cancelRequests];
-
-      // Ensure all cancel requests have asset indices
+      const vaultAddress = this.getVaultAddress();
+  
       const cancelsWithIndices = await Promise.all(cancels.map(async (req) => ({
         ...req,
         a: await this.getAssetIndex(req.coin)
       })));
-
+  
       const action = {
         type: ExchangeType.CANCEL,
         cancels: cancelsWithIndices.map(({ a, o }) => ({ a, o }))
       };
-
+  
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
-
-      const payload = { action, nonce, signature };
+      const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
+  
+      const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
@@ -131,14 +139,15 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(symbol);
+      const vaultAddress = this.getVaultAddress();
       const action = {
         type: ExchangeType.CANCEL_BY_CLOID,
         cancels: [{ asset: assetIndex, cloid }]
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
-      const payload = { action, nonce, signature };
+      const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
@@ -150,6 +159,7 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(orderRequest.coin);
+      const vaultAddress = this.getVaultAddress();
 
       const orderWire = orderToWire(orderRequest, assetIndex);
       const action = {
@@ -158,9 +168,9 @@ export class ExchangeAPI {
         order: orderWire
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
-      const payload = { action, nonce, signature };
+      const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
@@ -171,26 +181,23 @@ export class ExchangeAPI {
   async batchModifyOrders(modifies: Array<{ oid: number, order: Order }>): Promise<any> {
     await this.parent.ensureInitialized();
     try {
-      // First, get all asset indices in parallel
+      const vaultAddress = this.getVaultAddress();
       const assetIndices = await Promise.all(
         modifies.map(m => this.getAssetIndex(m.order.coin))
       );
 
       const action = {
         type: ExchangeType.BATCH_MODIFY,
-        modifies: modifies.map((m, index) => {
-
-          return {
-            oid: m.oid,
-            order: orderToWire(m.order, assetIndices[index])
-          };
-        })
+        modifies: modifies.map((m, index) => ({
+          oid: m.oid,
+          order: orderToWire(m.order, assetIndices[index])
+        }))
       };
 
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
-      const payload = { action, nonce, signature };
+      const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
@@ -202,6 +209,7 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(symbol);
+      const vaultAddress = this.getVaultAddress();
       const action = {
         type: ExchangeType.UPDATE_LEVERAGE,
         asset: assetIndex,
@@ -209,9 +217,9 @@ export class ExchangeAPI {
         leverage: leverage
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
-      const payload = { action, nonce, signature };
+      const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
@@ -223,6 +231,7 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(symbol);
+      const vaultAddress = this.getVaultAddress();
       const action = {
         type: ExchangeType.UPDATE_ISOLATED_MARGIN,
         asset: assetIndex,
@@ -230,9 +239,9 @@ export class ExchangeAPI {
         ntli
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
-      const payload = { action, nonce, signature };
+      const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;
@@ -398,5 +407,69 @@ export class ExchangeAPI {
       throw error;
     }
   }
+
+  async placeTwapOrder(orderRequest: TwapOrder): Promise<TwapOrderResponse> {
+        await this.parent.ensureInitialized();
+        try {
+            const assetIndex = await this.getAssetIndex(orderRequest.coin);
+            const vaultAddress = this.getVaultAddress();
+            
+            const twapWire = {
+                a: assetIndex,
+                b: orderRequest.is_buy,
+                s: orderRequest.sz.toString(),
+                r: orderRequest.reduce_only,
+                m: orderRequest.minutes,
+                t: orderRequest.randomize
+            };
+
+            const action = {
+                type: ExchangeType.TWAP_ORDER,
+                twap: twapWire
+            };
+
+            const nonce = Date.now();
+            const signature = await signL1Action(
+                this.wallet, 
+                action, 
+                vaultAddress, 
+                nonce, 
+                this.IS_MAINNET
+            );
+
+            const payload = { action, nonce, signature, vaultAddress };
+            return this.httpApi.makeRequest(payload, 1);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async cancelTwapOrder(cancelRequest: TwapCancelRequest): Promise<TwapCancelResponse> {
+        await this.parent.ensureInitialized();
+        try {
+            const assetIndex = await this.getAssetIndex(cancelRequest.coin);
+            const vaultAddress = this.getVaultAddress();
+            
+            const action = {
+                type: ExchangeType.TWAP_CANCEL,
+                a: assetIndex,
+                t: cancelRequest.twap_id
+            };
+
+            const nonce = Date.now();
+            const signature = await signL1Action(
+                this.wallet, 
+                action, 
+                vaultAddress, 
+                nonce, 
+                this.IS_MAINNET
+            );
+
+            const payload = { action, nonce, signature, vaultAddress };
+            return this.httpApi.makeRequest(payload, 1);
+        } catch (error) {
+            throw error;
+        }
+    }
 
 }

@@ -45,7 +45,7 @@ export class InfoAPI {
         
         this.generalAPI = new GeneralInfoAPI(this.httpApi, this.symbolConversion, this.parent);
         this.spot = new SpotInfoAPI(this.httpApi, this.symbolConversion);
-        this.perpetuals = new PerpetualsInfoAPI(this.httpApi, this.symbolConversion);
+        this.perpetuals = new PerpetualsInfoAPI(this.httpApi, this.symbolConversion, this.parent);
     }
 
     async getAssetIndex(assetName: string): Promise<number | undefined> {
