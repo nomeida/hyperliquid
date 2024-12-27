@@ -1,4 +1,4 @@
-import { Meta, MetaAndAssetCtxs, ClearinghouseState, UserFunding, UserNonFundingLedgerUpdates, FundingHistory } from '../../types';
+import { Meta, MetaAndAssetCtxs, ClearinghouseState, UserFunding, UserNonFundingLedgerUpdates, FundingHistory, PredictedFundings } from '../../types';
 import { HttpApi } from '../../utils/helpers';
 import { InfoType } from '../../types/constants';
 import { SymbolConversion } from '../../utils/symbolConversion';
@@ -54,6 +54,14 @@ export class PerpetualsInfoAPI {
                 startTime: startTime, 
                 endTime: endTime 
             }, 20);
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getPredictedFundings(rawResponse: boolean = false): Promise<PredictedFundings> {
+        const response = await this.httpApi.makeRequest({ 
+            type: InfoType.PREDICTED_FUNDINGS 
+        }, 20);
+        
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 }
