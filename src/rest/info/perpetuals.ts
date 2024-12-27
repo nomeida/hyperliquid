@@ -2,14 +2,17 @@ import { Meta, MetaAndAssetCtxs, ClearinghouseState, UserFunding, UserNonFunding
 import { HttpApi } from '../../utils/helpers';
 import { InfoType } from '../../types/constants';
 import { SymbolConversion } from '../../utils/symbolConversion';
+import { Hyperliquid } from '../../index';
 
 export class PerpetualsInfoAPI {
     private httpApi: HttpApi;
     private symbolConversion: SymbolConversion;
+    private parent: Hyperliquid;
 
-    constructor(httpApi: HttpApi, symbolConversion: SymbolConversion) {
+    constructor(httpApi: HttpApi, symbolConversion: SymbolConversion, parent: Hyperliquid) {
         this.httpApi = httpApi;
         this.symbolConversion = symbolConversion;
+        this.parent = parent;
     }
 
     async getMeta(rawResponse: boolean = false): Promise<Meta> {
@@ -48,6 +51,7 @@ export class PerpetualsInfoAPI {
     }
 
     async getFundingHistory(coin: string, startTime: number, endTime?: number, rawResponse: boolean = false): Promise<FundingHistory> {
+        await this.parent.ensureInitialized();
         const response = await this.httpApi.makeRequest({ 
                 type: InfoType.FUNDING_HISTORY, 
                 coin: await this.symbolConversion.convertSymbol(coin, "reverse"), 
