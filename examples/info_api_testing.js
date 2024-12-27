@@ -59,6 +59,31 @@ async function testInfoAPI(sdk) {
     console.log("getCandleSnapshot:");
     console.log(await sdk.info.getCandleSnapshot("BTC-PERP", "1h", Date.now() - 86400000, Date.now(), raw_mode));
     await waitForInput("Press Enter to continue...");
+
+    console.log("getMaxBuilderFee:");
+    console.log(await sdk.info.getMaxBuilderFee(user_address, "", raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getHistoricalOrders:");
+    console.log(await sdk.info.getHistoricalOrders(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getUserTwapSliceFills:");
+    console.log(await sdk.info.getUserTwapSliceFills(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getSubAccounts:");
+    console.log(await sdk.info.getSubAccounts(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getVaultDetails:");
+    const vaultAddress = ""; // Replace with actual vault address
+    console.log(await sdk.info.getVaultDetails(vaultAddress, user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getUserVaultEquities:");
+    console.log(await sdk.info.getUserVaultEquities(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
 }
 
 async function testSpotInfoAPI(sdk) {
@@ -76,6 +101,13 @@ async function testSpotInfoAPI(sdk) {
     console.log(await sdk.info.spot.getSpotMetaAndAssetCtxs(raw_mode));
     await waitForInput("Press Enter to continue...");
 
+    console.log("getTokenDetails:");
+    console.log(await sdk.info.spot.getTokenDetails("", raw_mode)); //using PURR as example
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getSpotDeployState:");
+    console.log(await sdk.info.spot.getSpotDeployState(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
 }
 
 async function testPerpetualsInfoAPI(sdk) {
@@ -103,8 +135,14 @@ async function testPerpetualsInfoAPI(sdk) {
     console.log(await sdk.info.perpetuals.getUserNonFundingLedgerUpdates(user_address, Date.now() - 86400000, Date.now(), raw_mode));
     await waitForInput("Press Enter to continue...");
 
+    // await sdk.connect() // Need to connect/initialize SDK symbols map before using internal symbol mappings
+
     console.log("getFundingHistory:");
     console.log(await sdk.info.perpetuals.getFundingHistory("BTC-PERP", Date.now() - 86400000, Date.now(), raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getPredictedFundings:");
+    console.log(await sdk.info.perpetuals.getPredictedFundings(raw_mode));
     await waitForInput("Press Enter to continue...");
 }
 
