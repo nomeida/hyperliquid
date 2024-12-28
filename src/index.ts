@@ -17,9 +17,9 @@ export class Hyperliquid {
   public ws: WebSocketClient;
   public subscriptions: WebSocketSubscriptions;
   public custom: CustomOperations;
+  public symbolConversion: SymbolConversion;
 
   private rateLimiter: RateLimiter;
-  private symbolConversion: SymbolConversion;
   private isValidPrivateKey: boolean = false;
   private walletAddress: string | null = null;
   private _initialized: boolean = false;
