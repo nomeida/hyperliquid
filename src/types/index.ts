@@ -348,22 +348,23 @@ export interface SpotMarket {
     isCanonical: boolean;
 }
 
-export interface SpotMeta {
+export type SpotMeta = {
     tokens: SpotToken[];
     universe: SpotMarket[];
-}
-
-export interface SpotAssetCtx {
+  };
+  
+  export type SpotAssetCtx = {
+    circulatingSupply: string;
+    coin: string;
+    dayBaseVlm: string;
     dayNtlVlm: string;
     markPx: string;
     midPx: string;
     prevDayPx: string;
-}
-
-export interface SpotMetaAndAssetCtxs {
-    meta: SpotMeta;
-    assetCtxs: SpotAssetCtx[];
-}
+    totalSupply: string;
+  };
+  
+  export type SpotMetaAndAssetCtxs = [SpotMeta, SpotAssetCtx[]];
 
 export interface UserOpenOrder {
     coin: string;
