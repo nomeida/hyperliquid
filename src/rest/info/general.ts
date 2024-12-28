@@ -8,7 +8,12 @@ import {
     UserRateLimit, 
     OrderStatus, 
     L2Book, 
-    CandleSnapshot 
+    CandleSnapshot,
+    HistoricalOrder,
+    TwapSliceFill,
+    SubAccount,
+    VaultDetails,
+    VaultEquity
 } from '../../types/index.ts';
 import { HttpApi } from '../../utils/helpers.ts';
 import { SymbolConversion } from '../../utils/symbolConversion.ts';
@@ -95,5 +100,62 @@ export class GeneralInfoAPI {
         });
 
         return rawResponse ? response : await this.symbolConversion.convertResponse(response, ["s"]);
+    }
+
+    // Add these methods to src/rest/info/general.ts
+
+    async getMaxBuilderFee(user: string, builder: string, rawResponse: boolean = false): Promise<number> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.MAX_BUILDER_FEE,
+            user,
+            builder
+        });
+        return rawResponse ? response : this.symbolConversion.convertToNumber(response);
+    }
+
+    async getHistoricalOrders(user: string, rawResponse: boolean = false): Promise<HistoricalOrder[]> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.HISTORICAL_ORDERS,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getUserTwapSliceFills(user: string, rawResponse: boolean = false): Promise<TwapSliceFill[]> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.USER_TWAP_SLICE_FILLS,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getSubAccounts(user: string, rawResponse: boolean = false): Promise<SubAccount[]> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.SUB_ACCOUNTS,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getVaultDetails(vaultAddress: string, user?: string, rawResponse: boolean = false): Promise<VaultDetails> {
+        const params: any = {
+            type: InfoType.VAULT_DETAILS,
+            vaultAddress
+        };
+        
+        if (user) {
+            params.user = user;
+        }
+        
+        const response = await this.httpApi.makeRequest(params);
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getUserVaultEquities(user: string, rawResponse: boolean = false): Promise<VaultEquity[]> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.USER_VAULT_EQUITIES,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 }

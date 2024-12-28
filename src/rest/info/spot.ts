@@ -26,4 +26,22 @@ export class SpotInfoAPI {
         const response = await this.httpApi.makeRequest({ type: InfoType.SPOT_META_AND_ASSET_CTXS });
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
+
+    async getTokenDetails(tokenId: string, rawResponse: boolean = false): Promise<any> {
+        const response = await this.httpApi.makeRequest({ 
+            type: InfoType.TOKEN_DETAILS,
+            tokenId: tokenId
+        }, 20);
+        
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+    
+    async getSpotDeployState(user: string, rawResponse: boolean = false): Promise<any> {
+        const response = await this.httpApi.makeRequest({ 
+            type: InfoType.SPOT_DEPLOY_STATE,
+            user: user
+        }, 20);
+        
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
 }

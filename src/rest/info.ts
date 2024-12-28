@@ -15,7 +15,12 @@ import {
     UserRateLimit, 
     OrderStatus, 
     L2Book, 
-    CandleSnapshot 
+    CandleSnapshot,
+    VaultEquity,
+    HistoricalOrder,
+    TwapSliceFill,
+    SubAccount,
+    VaultDetails
 } from '../types/index.ts';
 
 import { ENDPOINTS } from '../types/constants.ts';
@@ -40,7 +45,7 @@ export class InfoAPI {
         
         this.generalAPI = new GeneralInfoAPI(this.httpApi, this.symbolConversion, this.parent);
         this.spot = new SpotInfoAPI(this.httpApi, this.symbolConversion);
-        this.perpetuals = new PerpetualsInfoAPI(this.httpApi, this.symbolConversion);
+        this.perpetuals = new PerpetualsInfoAPI(this.httpApi, this.symbolConversion, this.parent);
     }
 
     async getAssetIndex(assetName: string): Promise<number | undefined> {
@@ -97,5 +102,35 @@ export class InfoAPI {
     async getCandleSnapshot(coin: string, interval: string, startTime: number, endTime: number, rawResponse: boolean = false): Promise<CandleSnapshot> {
         await this.parent.ensureInitialized();
         return this.generalAPI.getCandleSnapshot(coin, interval, startTime, endTime, rawResponse);
+    }
+
+    async getMaxBuilderFee(user: string, builder: string, rawResponse: boolean = false): Promise<number> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getMaxBuilderFee(user, builder, rawResponse);
+    }
+
+    async getHistoricalOrders(user: string, rawResponse: boolean = false): Promise<HistoricalOrder[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getHistoricalOrders(user, rawResponse);
+    }
+
+    async getUserTwapSliceFills(user: string, rawResponse: boolean = false): Promise<TwapSliceFill[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getUserTwapSliceFills(user, rawResponse);
+    }
+
+    async getSubAccounts(user: string, rawResponse: boolean = false): Promise<SubAccount[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getSubAccounts(user, rawResponse);
+    }
+
+    async getVaultDetails(vaultAddress: string, user?: string, rawResponse: boolean = false): Promise<VaultDetails> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getVaultDetails(vaultAddress, user, rawResponse);
+    }
+
+    async getUserVaultEquities(user: string, rawResponse: boolean = false): Promise<VaultEquity[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getUserVaultEquities(user, rawResponse);
     }
 }

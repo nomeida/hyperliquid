@@ -506,3 +506,207 @@ export type WsUserActiveAssetData = {
     maxTradeSzs: [number, number];
     availableToTrade: [number, number];
 };
+
+export interface TwapOrder {
+    coin: string;
+    is_buy: boolean;
+    sz: number;
+    reduce_only: boolean;
+    minutes: number;
+    randomize: boolean;
+}
+
+export interface TwapCancelRequest {
+    coin: string;
+    twap_id: number;
+}
+
+export interface TwapOrderResponse {
+    status: string;
+    response: {
+        type: string;
+        data: {
+            status: {
+                running: {
+                    twapId: number;
+                };
+            };
+        };
+    };
+}
+
+export interface TwapCancelResponse {
+    status: string;
+    response: {
+        type: string;
+        data: {
+            status: string;
+        };
+    };
+}
+
+export interface PredictedFunding {
+    fundingRate: string;
+    nextFundingTime: number;
+}
+
+export interface VenueFunding {
+    [venue: string]: PredictedFunding;
+}
+
+export interface PredictedFundings {
+    [coin: string]: VenueFunding[];
+}
+
+export interface TokenDetails {
+    name: string;
+    maxSupply: string;
+    totalSupply: string;
+    circulatingSupply: string;
+    szDecimals: number;
+    weiDecimals: number;
+    midPx: string;
+    markPx: string;
+    prevDayPx: string;
+    genesis: {
+        userBalances: [string, string][];
+        existingTokenBalances: [number, string][];
+    };
+    deployer: string;
+    deployGas: string;
+    deployTime: string;
+    seededUsdc: string;
+    nonCirculatingUserBalances: string[];
+    futureEmissions: string;
+}
+
+export interface SpotDeployState {
+    states: {
+        token: number;
+        spec: {
+            name: string;
+            szDecimals: number;
+            weiDecimals: number;
+        };
+        fullName: string;
+        spots: number[];
+        maxSupply: number;
+        hyperliquidityGenesisBalance: string;
+        totalGenesisBalanceWei: string;
+        userGenesisBalances: [string, string][];
+        existingTokenGenesisBalances: [number, string][];
+    }[];
+    gasAuction: {
+        startTimeSeconds: number;
+        durationSeconds: number;
+        startGas: string;
+        currentGas: string | null;
+        endGas: string;
+    };
+}
+
+// Add these to types/index.ts
+
+export interface SubAccount {
+    name: string;
+    subAccountUser: string;
+    master: string;
+    clearinghouseState: ClearinghouseState;
+    spotState: {
+        balances: {
+            coin: string;
+            token: number;
+            total: string;
+            hold: string;
+            entryNtl: string;
+        }[];
+    };
+}
+
+export interface PortfolioPeriodData {
+    accountValueHistory: [number, string][];
+    pnlHistory: [number, string][];
+    vlm: string;
+}
+
+export interface VaultFollower {
+    user: string;
+    vaultEquity: string;
+    pnl: string;
+    allTimePnl: string;
+    daysFollowing: number;
+    vaultEntryTime: number;
+    lockupUntil: number;
+}
+
+export interface VaultDetails {
+    name: string;
+    vaultAddress: string;
+    leader: string;
+    description: string;
+    portfolio: [string, PortfolioPeriodData][];
+    apr: number;
+    followerState: any;
+    leaderFraction: number;
+    leaderCommission: number;
+    followers: VaultFollower[];
+    maxDistributable: number;
+    maxWithdrawable: number;
+    isClosed: boolean;
+    relationship: {
+        type: string;
+        data: {
+            childAddresses: string[];
+        };
+    };
+    allowDeposits: boolean;
+    alwaysCloseOnWithdraw: boolean;
+}
+
+export interface VaultEquity {
+    vaultAddress: string;
+    equity: string;
+}
+
+export interface HistoricalOrder {
+    order: {
+        coin: string;
+        side: string;
+        limitPx: string;
+        sz: string;
+        oid: number;
+        timestamp: number;
+        triggerCondition: string;
+        isTrigger: boolean;
+        triggerPx: string;
+        children: any[];
+        isPositionTpsl: boolean;
+        reduceOnly: boolean;
+        orderType: string;
+        origSz: string;
+        tif: string;
+        cloid: string | null;
+    };
+    status: 'filled' | 'open' | 'canceled' | 'triggered' | 'rejected' | 'marginCanceled';
+    statusTimestamp: number;
+}
+
+export interface TwapSliceFill {
+    fill: {
+        closedPnl: string;
+        coin: string;
+        crossed: boolean;
+        dir: string;
+        hash: string;
+        oid: number;
+        px: string;
+        side: string;
+        startPosition: string;
+        sz: string;
+        time: number;
+        fee: string;
+        feeToken: string;
+        tid: number;
+    };
+    twapId: number;
+}

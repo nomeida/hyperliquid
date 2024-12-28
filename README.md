@@ -24,7 +24,8 @@ const { Hyperliquid } = require('hyperliquid');
 const sdk = new Hyperliquid(
   <private_key - string>,
   <testnet - boolean (OPTIONAL)>,
-  <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>
+  <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>,
+  <vaultAddress - string (OPTIONAL)>
 );
 
 // Use the SDK methods
@@ -250,22 +251,27 @@ console.log(allAssets);
 All Custom methods are listed above. These are custom methods that are not part of the official Hyperliquid API. As more are added we will add examples for them here.
 
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=nomeida/hyperliquid&type=Date)](https://star-history.com/#nomeida/hyperliquid&Date)
+
+
 
 ## Documentation
 
 For more detailed documentation on all available methods and their parameters, please refer to the [official Hyperliquid API documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/).
 
-*p.s. if you use use my referral, all the proceeds will go towards buying HYPE and PURR (essentially, a less rich version of the Hyperliquid assistance fund)*
+*if you use use my referral, all the proceeds will go towards buying HYPE and PURR (a poor mans version of assistance fund)*
 
 ## Initialization
 
-The SDK uses lazy initialization, meaning it automatically initializes when needed. While you can explicitly initialize using:
+In most cases the SDK will automatically initialize itself when required. However, in some cases you may need to explicitly initialize the SDK. You can use this method to initialize the SDK: 
 
 ```typescript
 await sdk.connect();
 ```
 
-This is entirely optional - the SDK will automatically initialize itself when required.
+p.s. You only need to worry about this if the SDK throws you an error telling you that it needs to be initialized.
 
 ## License
 

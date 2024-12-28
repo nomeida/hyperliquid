@@ -1,15 +1,18 @@
-import { Meta, MetaAndAssetCtxs, ClearinghouseState, UserFunding, UserNonFundingLedgerUpdates, FundingHistory } from '../../types/index.ts';
+import { Meta, MetaAndAssetCtxs, ClearinghouseState, UserFunding, UserNonFundingLedgerUpdates, FundingHistory, PredictedFundings } from '../../types/index.ts';
 import { HttpApi } from '../../utils/helpers.ts';
 import { InfoType } from '../../types/constants.ts';
 import { SymbolConversion } from '../../utils/symbolConversion.ts';
+import { Hyperliquid } from '../../index.ts';
 
 export class PerpetualsInfoAPI {
     private httpApi: HttpApi;
     private symbolConversion: SymbolConversion;
+    private parent: Hyperliquid;
 
-    constructor(httpApi: HttpApi, symbolConversion: SymbolConversion) {
+    constructor(httpApi: HttpApi, symbolConversion: SymbolConversion, parent: Hyperliquid) {
         this.httpApi = httpApi;
         this.symbolConversion = symbolConversion;
+        this.parent = parent;
     }
 
     async getMeta(rawResponse: boolean = false): Promise<Meta> {
@@ -48,12 +51,21 @@ export class PerpetualsInfoAPI {
     }
 
     async getFundingHistory(coin: string, startTime: number, endTime?: number, rawResponse: boolean = false): Promise<FundingHistory> {
+        await this.parent.ensureInitialized();
         const response = await this.httpApi.makeRequest({ 
                 type: InfoType.FUNDING_HISTORY, 
                 coin: await this.symbolConversion.convertSymbol(coin, "reverse"), 
                 startTime: startTime, 
                 endTime: endTime 
             }, 20);
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getPredictedFundings(rawResponse: boolean = false): Promise<PredictedFundings> {
+        const response = await this.httpApi.makeRequest({ 
+            type: InfoType.PREDICTED_FUNDINGS 
+        }, 20);
+        
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 }

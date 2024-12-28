@@ -4,6 +4,8 @@ const { Hyperliquid } = require("../dist/index");
 const readline = require("readline");
 require("dotenv").config();
 
+const cloid = "0x1234567890abcdef1234567890abcdef"
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -19,10 +21,11 @@ function waitForUserInput(message) {
 
 async function testCustomExchangeAPI() {
   // Initialize the SDK (replace with your actual private key and other necessary parameters)
-  const private_key = process.env.private_key;
-  const user_address = process.env.user_address;
-  const testnet = process.env.mainnet ? false : true;// false for mainnet, true for testnet
-  const sdk = new Hyperliquid(private_key, testnet); 
+  const private_key = "";
+  const user_address = ""
+  const testnet = true// false for mainnet, true for testnet
+  const vaultAddress = null // or your vault address
+  const sdk = new Hyperliquid(private_key, testnet, user_address, vaultAddress); 
 
   try {
     const cancelResponse = await sdk.custom.cancelAllOrders();
@@ -36,22 +39,23 @@ async function testCustomExchangeAPI() {
 
 async function testExchangeAPI() {
   // Initialize the SDK (replace with your actual private key and other necessary parameters)
-  const private_key = process.env.private_key;
-  const user_address = process.env.user_address;
-  const testnet = process.env.mainnet ? false : true; // false for mainnet, true for testnet
-  const sdk = new Hyperliquid(private_key, testnet); 
+  const private_key = "";
+  const user_address = ""
+  const testnet = true// false for mainnet, true for testnet
+  const vaultAddress = null // or your vault address
+  const sdk = new Hyperliquid(private_key, testnet, user_address, vaultAddress); 
   try {
     console.log("Testing ExchangeAPI endpoints:");
 
     // 1. Place Order
     const orderRequest = {
-      coin: "BTC-PERP",
+      coin: "SOL-PERP",
       is_buy: true,
-      sz: 0.001,
-      limit_px: 59000,
+      sz: 15,
+      limit_px: 180,
       order_type: { limit: { tif: "Gtc" } },
       reduce_only: false,
-      cloid: process.env.cloid,
+      cloid: cloid,
     };
 
     console.log("\n1. Place Order:");
@@ -61,7 +65,7 @@ async function testExchangeAPI() {
 
     // 2. Cancel Order
     const cancelRequest = {
-      coin: "BTC-PERP",
+      coin: "SOL-PERP",
       o: placeOrderResponse.response.data.statuses[0].resting.oid, // assuming this is where the order ID is
     };
     console.log("\n2. Cancel Order:");
@@ -76,21 +80,19 @@ async function testExchangeAPI() {
     // const placeOrderResponse = await sdk.exchange.placeOrder(orderRequest);
     // console.log(JSON.stringify(placeOrderResponse));
     const cancelByCloidResponse = await sdk.exchange.cancelOrderByCloid(
-      "BTC-PERP",
-      process.env.cloid
+      "SOL-PERP",
+      cloid
     );
     console.log(JSON.stringify(cancelByCloidResponse));
     await waitForUserInput("Press Enter to continue to Modify Order...");
 
     // 4. Modify Order
     console.log("\n4. Modify Order:");
-    // const placeOrderResponse = await sdk.exchange.placeOrder(orderRequest);
-    // console.log(JSON.stringify(placeOrderResponse));
     const modifyOrderResponse = await sdk.exchange.modifyOrder(
       placeOrderResponse.response.data.statuses[0].resting.oid,
       {
         ...orderRequest,
-        limit_px: 40000,
+        limit_px: 170,
       }
     );
     console.log(modifyOrderResponse);
@@ -101,7 +103,7 @@ async function testExchangeAPI() {
     const batchModifyResponse = await sdk.exchange.batchModifyOrders([
       {
         oid: placeOrderResponse.response.data.statuses[0].resting.oid,
-        order: { ...orderRequest, limit_px: 32000 },
+        order: { ...orderRequest, limit_px: 155.3 },
       },
     ]);
     console.log(batchModifyResponse);
@@ -111,9 +113,9 @@ async function testExchangeAPI() {
     // 6. Update Leverage
     console.log("\n6. Update Leverage:");
     const updateLeverageResponse = await sdk.exchange.updateLeverage(
-      "BTC-PERP",
-      "cross",
-      20
+      "SOL-PERP",
+      "isolated",
+      15
     );
     console.log(updateLeverageResponse);
     await waitForUserInput(
@@ -133,7 +135,7 @@ async function testExchangeAPI() {
     // 8. USD Transfer
     console.log("\n8. USD Transfer:");
     const usdTransferResponse = await sdk.exchange.usdTransfer(
-      "0x0C18ce20fA086ED8A1744367CeAa0605FF2A19aD",
+      "",
       12
     );
     console.log(usdTransferResponse);
@@ -142,7 +144,7 @@ async function testExchangeAPI() {
     // 9. Spot Transfer --
     console.log("\n9. Spot Transfer:");
     const spotTransferResponse = await sdk.exchange.spotTransfer(
-      "0x1F65dDE3EbEbfcb77aFD1c1059402a7227e190bB",
+      "",
       "PURR-SPOT",
       "0.001"
     );
@@ -152,7 +154,7 @@ async function testExchangeAPI() {
     // 10. Initiate Withdrawal --
     console.log("\n10. Initiate Withdrawal:");
     const withdrawalResponse = await sdk.exchange.initiateWithdrawal(
-      "0x1F65dDE3EbEbfcb77aFD1c1059402a7227e190bB",
+      "",
       15.14
     );
     console.log(withdrawalResponse);
@@ -162,10 +164,8 @@ async function testExchangeAPI() {
 
     // 11. Transfer Between Spot and Perp
     console.log("\n11. Transfer Between Spot and Perp:");
-    const transferResponse = await sdk.exchange.transferBetweenSpotAndPerp(
-      15,
-      false
-    );
+
+    const transferResponse = await sdk.exchange.transferBetweenSpotAndPerp(0.1, true);
     console.log(transferResponse);
     await waitForUserInput("Press Enter to continue to Schedule Cancel...");
 
@@ -180,7 +180,7 @@ async function testExchangeAPI() {
     // 13. Vault Transfer
     console.log("\n13. Vault Transfer:");
     const vaultTransferResponse = await sdk.exchange.vaultTransfer(
-      "0x1962905b0a2d0ce7907ae1a0d17f3e4a1f63dfb7",
+      "",
       true,
       4
     );
@@ -193,6 +193,27 @@ async function testExchangeAPI() {
       "referrer_code_here"
     );
     console.log(setReferrerResponse);
+
+    await waitForUserInput("Press Enter to continue to Place TWAP order...");
+
+    // 15. Place TWAP order 
+    console.log("\n15. Place TWAP order:");
+    const twapOrderResponse = await sdk.exchange.placeTwapOrder({
+      coin: "BTC-PERP",
+      is_buy: true,
+      sz: 0.001,
+      reduce_only: false,
+      minutes: 10,
+      randomize: false
+    });
+    console.log(twapOrderResponse);
+
+    await waitForUserInput("Press Enter to continue to Cancel TWAP order...");
+
+    // 16. Cancel TWAP order
+    console.log("\n16. Cancel TWAP order:");
+    const cancelTwapOrderResponse = await sdk.exchange.cancelTwapOrder(twapOrderResponse.response.data.status.running.twapId);
+    console.log(cancelTwapOrderResponse);
   } catch (error) {
     console.error("An error occurred:", error);
   } finally {

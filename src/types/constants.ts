@@ -31,7 +31,16 @@ export enum InfoType {
     FUNDING_HISTORY = 'fundingHistory',
     SPOT_META = 'spotMeta',
     SPOT_CLEARINGHOUSE_STATE = 'spotClearinghouseState',
-    SPOT_META_AND_ASSET_CTXS = 'spotMetaAndAssetCtxs'
+    SPOT_META_AND_ASSET_CTXS = 'spotMetaAndAssetCtxs',
+    PREDICTED_FUNDINGS = 'predictedFundings',
+    SPOT_DEPLOY_STATE = 'spotDeployState',
+    TOKEN_DETAILS = 'tokenDetails',
+    MAX_BUILDER_FEE = 'maxBuilderFee',
+    HISTORICAL_ORDERS = 'historicalOrders',
+    USER_TWAP_SLICE_FILLS = 'userTwapSliceFills',
+    SUB_ACCOUNTS = 'subAccounts',
+    VAULT_DETAILS = 'vaultDetails',
+    USER_VAULT_EQUITIES = 'userVaultEquities'
 }
 
 export enum ExchangeType {
@@ -48,7 +57,10 @@ export enum ExchangeType {
     WITHDRAW = 'withdraw3',
     SPOT_USER = 'spotUser',
     VAULT_TRANSFER = 'vaultTransfer',
-    SET_REFERRER = 'setReferrer'
+    SET_REFERRER = 'setReferrer',
+    USD_CLASS_TRANSFER = 'usdClassTransfer',
+    TWAP_ORDER = 'twapOrder',
+    TWAP_CANCEL = 'twapCancel'
 }
 
 export const WEBSOCKET = {

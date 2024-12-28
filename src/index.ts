@@ -26,14 +26,15 @@ export class Hyperliquid {
   private _initializing: Promise<void> | null = null;
   private _privateKey?: string;
   private _walletAddress?: string;
+  private vaultAddress?: string | null = null;
 
-  constructor(privateKey?: string, testnet: boolean = false, walletAddress?: string) {
+  constructor(privateKey?: string, testnet: boolean = false, walletAddress?: string, vaultAddress?: string) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
 
     this.rateLimiter = new RateLimiter();
     this.symbolConversion = new SymbolConversion(baseURL, this.rateLimiter);
     this.walletAddress = walletAddress || null;
-
+    this.vaultAddress = vaultAddress || null;
     // Initialize info API
     this.info = new InfoAPI(baseURL, this.rateLimiter, this.symbolConversion, this);
     
@@ -95,7 +96,8 @@ export class Hyperliquid {
         this.rateLimiter, 
         this.symbolConversion, 
         this.walletAddress,
-        this
+        this,
+        this.vaultAddress
       );
       
       this.custom = new CustomOperations(
@@ -136,7 +138,8 @@ export class Hyperliquid {
           this.rateLimiter, 
           this.symbolConversion, 
           this.walletAddress,
-          this
+          this,
+          this.vaultAddress
       );
       this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion, this.walletAddress);
       this.isValidPrivateKey = true;
