@@ -19,7 +19,7 @@ export class HttpApi {
         this.rateLimiter = rateLimiter;
     }
 
-    async makeRequest(payload: any, weight: number = 2, endpoint: string = this.endpoint,): Promise<any> {
+    async makeRequest<T>(payload: any, weight: number = 2, endpoint: string = this.endpoint,): Promise<T> {
         try {
 
             await this.rateLimiter.waitForToken(weight);

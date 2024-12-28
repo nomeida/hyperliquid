@@ -39,12 +39,12 @@ export interface AllMids {
     [coin: string]: string;
 }
 
-export interface Meta {
+export type Meta = {
     universe: {
     name: string;
     szDecimals: number;
     maxLeverage: number;
-    onlyIsolated: boolean;
+    onlyIsolated?: boolean;
     }[];
 }
 
@@ -276,7 +276,8 @@ export interface CandleSnapshot {
 }[]
 
 
-export interface AssetCtx {
+export type AssetCtx = {
+    dayBaseVlm: string;
     dayNtlVlm: string;
     funding: string;
     impactPxs: [string, string];
@@ -288,10 +289,7 @@ export interface AssetCtx {
     prevDayPx: string;
 }
 
-export interface MetaAndAssetCtxs {
-    meta: Meta;
-    assetCtxs: AssetCtx[];
-}
+export type MetaAndAssetCtxs = [Meta, AssetCtx[]];
 
 export interface UserFundingDelta {
     coin: string;
@@ -351,9 +349,9 @@ export interface SpotMarket {
 export type SpotMeta = {
     tokens: SpotToken[];
     universe: SpotMarket[];
-  };
+};
   
-  export type SpotAssetCtx = {
+export type SpotAssetCtx = {
     circulatingSupply: string;
     coin: string;
     dayBaseVlm: string;
@@ -362,9 +360,9 @@ export type SpotMeta = {
     midPx: string;
     prevDayPx: string;
     totalSupply: string;
-  };
+};
   
-  export type SpotMetaAndAssetCtxs = [SpotMeta, SpotAssetCtx[]];
+export type SpotMetaAndAssetCtxs = [SpotMeta, SpotAssetCtx[]];
 
 export interface UserOpenOrder {
     coin: string;
