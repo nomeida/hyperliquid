@@ -2,11 +2,20 @@
   "name": "hyperliquid",
   "version": "1.5.2",
   "description": "SDK for Hyperliquid API",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": ["src", "dist"],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "build:watch": "tsc --watch",
     "clean": "rimraf dist",
     "prepare": "npm run build",
