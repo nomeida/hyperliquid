@@ -1,5 +1,6 @@
 import { HttpApi } from './helpers';
 import * as CONSTANTS from '../types/constants';
+import { MetaAndAssetCtxs, SpotMetaAndAssetCtxs } from '../types';
 
 export class SymbolConversion {
     private assetToIndexMap: Map<string, number> = new Map();
@@ -36,8 +37,8 @@ export class SymbolConversion {
     private async refreshAssetMaps(): Promise<void> {
         try {
             const [perpMeta, spotMeta] = await Promise.all([
-                this.httpApi.makeRequest({ "type": CONSTANTS.InfoType.PERPS_META_AND_ASSET_CTXS }),
-                this.httpApi.makeRequest({ "type": CONSTANTS.InfoType.SPOT_META_AND_ASSET_CTXS })
+                this.httpApi.makeRequest<MetaAndAssetCtxs>({ "type": CONSTANTS.InfoType.PERPS_META_AND_ASSET_CTXS }),
+                this.httpApi.makeRequest<SpotMetaAndAssetCtxs>({ "type": CONSTANTS.InfoType.SPOT_META_AND_ASSET_CTXS })
             ]);
 
             this.assetToIndexMap.clear();
