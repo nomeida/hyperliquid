@@ -90,7 +90,7 @@ export interface ClearinghouseState {
     withdrawable: string;
 }
 
-export interface UserFills {
+export type UserFills = {
     closedPnl: string;
     coin: string;
     crossed: boolean;
@@ -209,7 +209,7 @@ export interface SpotClearinghouseState {
     }[];
 }
 
-export interface FrontendOpenOrders {
+export type FrontendOpenOrders = {
     coin: string;
     isPositionTpsl: boolean;
     isTrigger: boolean;
@@ -223,20 +223,6 @@ export interface FrontendOpenOrders {
     timestamp: number;
     triggerCondition: string;
     triggerPx: string;
-}[]
-
-export interface UserFills {
-    closedPnl: string;
-    coin: string;
-    crossed: boolean;
-    dir: string;
-    hash: string;
-    oid: number;
-    px: string;
-    side: string;
-    startPosition: string;
-    sz: string;
-    time: number;
 }[]
 
 export interface UserRateLimit {
