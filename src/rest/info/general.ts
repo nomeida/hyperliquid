@@ -33,7 +33,7 @@ export class GeneralInfoAPI {
     }
 
     async getAllMids(rawResponse: boolean = false): Promise<AllMids> {
-        const response = await this.httpApi.makeRequest({ type: InfoType.ALL_MIDS });
+        const response = await this.httpApi.makeRequest<AllMids>({ type: InfoType.ALL_MIDS });
 
         if (rawResponse) {
             return response;
@@ -94,7 +94,7 @@ export class GeneralInfoAPI {
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getCandleSnapshot(coin: string, interval: string, startTime: number, endTime: number, rawResponse: boolean = false): Promise<CandleSnapshot> {
+    async getCandleSnapshot(coin: string, interval: string, startTime: number, endTime: number, rawResponse: boolean = false): Promise<CandleSnapshot[]> {
         const response = await this.httpApi.makeRequest({ 
             type: InfoType.CANDLE_SNAPSHOT, 
             req: { coin: await this.symbolConversion.convertSymbol(coin, "reverse"), interval: interval, startTime: startTime, endTime: endTime } 
