@@ -262,7 +262,7 @@ export interface L2Book {
     ];
 }
 
-export interface CandleSnapshot {
+export type CandleSnapshot = {
     T: number;
     c: string;
     h: string;
