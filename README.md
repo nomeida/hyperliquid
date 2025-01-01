@@ -261,8 +261,6 @@ All Custom methods are listed above. These are custom methods that are not part 
 
 For more detailed documentation on all available methods and their parameters, please refer to the [official Hyperliquid API documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/).
 
-*if you use use my referral, all the proceeds will go towards buying HYPE and PURR (a poor mans version of assistance fund)*
-
 ## Initialization
 
 In most cases the SDK will automatically initialize itself when required. However, in some cases you may need to explicitly initialize the SDK. You can use this method to initialize the SDK: 
@@ -272,6 +270,12 @@ await sdk.connect();
 ```
 
 p.s. You only need to worry about this if the SDK throws you an error telling you that it needs to be initialized.
+
+## Disclaimer
+If you don't have an existing referral and use this SDK then your referral will be set by the SDK. This gives you a 4% discount on fees and gives me a percentage of the fees you pay so that I can keep working on and maintaining the SDK. You get a 4% fee discount & an easy-to-use SDK and in return I get some compensation for maintaining it, win-win
+
+*p.s. All referral commissions from this SDK will go towards buying HYPE and other HL-related coins, so it will function as an extension of the assistance fund essentially*
+
 
 ## License
 
