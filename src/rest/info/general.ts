@@ -33,7 +33,7 @@ export class GeneralInfoAPI {
     }
 
     async getAllMids(rawResponse: boolean = false): Promise<AllMids> {
-        const response = await this.httpApi.makeRequest({ type: InfoType.ALL_MIDS });
+        const response = await this.httpApi.makeRequest<AllMids>({ type: InfoType.ALL_MIDS });
 
         if (rawResponse) {
             return response;
