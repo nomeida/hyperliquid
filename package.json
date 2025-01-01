@@ -1,6 +1,6 @@
 {
   "name": "hyperliquid",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "SDK for Hyperliquid API",
   "type": "module",
   "exports": {
