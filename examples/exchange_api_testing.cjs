@@ -25,7 +25,12 @@ async function testCustomExchangeAPI() {
   const user_address = ""
   const testnet = true// false for mainnet, true for testnet
   const vaultAddress = null // or your vault address
-  const sdk = new Hyperliquid(private_key, testnet, user_address, vaultAddress); 
+  const sdk = new Hyperliquid({
+    privateKey: private_key,
+    testnet: testnet,
+    walletAddress: user_address,
+    vaultAddress: vaultAddress
+  }); 
 
   try {
     const cancelResponse = await sdk.custom.cancelAllOrders();
@@ -43,7 +48,12 @@ async function testExchangeAPI() {
   const user_address = ""
   const testnet = true// false for mainnet, true for testnet
   const vaultAddress = null // or your vault address
-  const sdk = new Hyperliquid(private_key, testnet, user_address, vaultAddress); 
+  const sdk = new Hyperliquid({
+    privateKey: private_key,
+    testnet: testnet,
+    walletAddress: user_address,
+    vaultAddress: vaultAddress
+  }); 
   try {
     console.log("Testing ExchangeAPI endpoints:");
 

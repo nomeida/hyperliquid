@@ -2,7 +2,7 @@ const { Hyperliquid } = require('../dist/index');
 const readline = require('readline');
 
 const private_key = "";
-const user_address = "";
+const user_address = "0xd852e3a7a2abca6aecd0fa39147851ae96eba5d7";
 
 const raw_mode = true;
 
@@ -147,7 +147,9 @@ async function testPerpetualsInfoAPI(sdk) {
 }
 
 async function main() {
-    const sdk = new Hyperliquid(private_key);
+    const sdk = new Hyperliquid({
+        privateKey: private_key
+    });
 
     try {
         await testInfoAPI(sdk);

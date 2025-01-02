@@ -21,12 +21,13 @@ your own Private Key then it's not necessary as the SDK can derive your wallet a
 ```typescript
 const { Hyperliquid } = require('hyperliquid');
 
-const sdk = new Hyperliquid(
-  <private_key - string>,
-  <testnet - boolean (OPTIONAL)>,
-  <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>,
-  <vaultAddress - string (OPTIONAL)>
-);
+const sdk = new Hyperliquid({
+  enableWs: true, // boolean (OPTIONAL) - Enable/disable WebSocket functionality, defaults to true
+  privateKey: <private_key - string>,
+  testnet: <testnet - boolean (OPTIONAL)>,
+  walletAddress: <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>,
+  vaultAddress: <vaultAddress - string (OPTIONAL)>
+});
 
 // Use the SDK methods
 sdk.info.getAllMids().then(allMids => {
@@ -35,6 +36,7 @@ sdk.info.getAllMids().then(allMids => {
 ```
 **Note:** You don't have to provide your private key, but it is required if you want to
 use the exchange API to place, cancel or modify orders or access your accounts assets.
+WebSocket functionality is enabled by default but can be disabled by setting `enableWs: false` in the constructor options.
 
 
 
@@ -152,8 +154,8 @@ const { Hyperliquid } = require('hyperliquid');
 
 async function testWebSocket() {
     // Create a new Hyperliquid instance
-    // You can pass a private key here if you need authenticated access
-    const sdk = new Hyperliquid();
+    // You can pass a privateKey in the options if you need authenticated access
+    const sdk = new Hyperliquid({ enableWs: true });
 
     try {
         // Connect to the WebSocket
