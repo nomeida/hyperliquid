@@ -1,13 +1,13 @@
 {
   "name": "hyperliquid",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "SDK for Hyperliquid API",
   "type": "module",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
@@ -20,7 +20,7 @@
     "clean": "rimraf dist",
     "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node --esm src/index.ts"
+    "dev": "ts-node src/index.ts"
   },
   "keywords": [
     "hyperliquid",
