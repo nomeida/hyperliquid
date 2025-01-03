@@ -79,9 +79,9 @@ export class InfoAPI {
         return this.generalAPI.getUserFills(user, rawResponse);
     }
 
-    async getUserFillsByTime(user: string, startTime: number, endTime: number, rawResponse: boolean = false): Promise<UserFills> {
+    async getUserFillsByTime({user, startTime, endTime, rawResponse, aggregateByTime, reversed}: {user: string, startTime: number, endTime?: number, rawResponse: boolean, aggregateByTime?: boolean, reversed?: boolean}): Promise<UserFills> {
         await this.parent.ensureInitialized();
-        return this.generalAPI.getUserFillsByTime(user, startTime, endTime, rawResponse);
+        return this.generalAPI.getUserFillsByTime({user, startTime, endTime, rawResponse, aggregateByTime, reversed});
     }
 
     async getUserRateLimit(user: string, rawResponse: boolean = false): Promise<UserRateLimit> {
