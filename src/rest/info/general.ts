@@ -64,11 +64,13 @@ export class GeneralInfoAPI {
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getUserFillsByTime(user: string, startTime: number, endTime?: number, rawResponse: boolean = false): Promise<UserFills> {
-        let params: { user: string; startTime: number; type: string; endTime?: number } = {
+    async getUserFillsByTime({user, startTime, endTime, rawResponse, aggregateByTime, reversed}: {user: string, startTime: number, endTime?: number, rawResponse?: boolean, aggregateByTime?: boolean, reversed?: boolean}): Promise<UserFills> {
+        let params: { user: string; startTime: number; type: string; endTime?: number; aggregateByTime?: boolean; reversed?: boolean } = {
             user: user,
             startTime: Math.round(startTime),
-            type: InfoType.USER_FILLS_BY_TIME
+            type: InfoType.USER_FILLS_BY_TIME,
+            aggregateByTime,
+            reversed
         };
         
         if (endTime) {
