@@ -14,7 +14,12 @@ import {
     TwapSliceFill,
     SubAccount,
     VaultDetails,
-    VaultEquity
+    VaultEquity,
+    UserRole,
+    Delegation,
+    DelegatorSummary,
+    DelegatorHistoryEntry,
+    DelegatorReward
 } from '../../types';
 import { HttpApi } from '../../utils/helpers';
 import { SymbolConversion } from '../../utils/symbolConversion';
@@ -155,6 +160,46 @@ export class GeneralInfoAPI {
     async getUserVaultEquities(user: string, rawResponse: boolean = false): Promise<VaultEquity[]> {
         const response = await this.httpApi.makeRequest({
             type: InfoType.USER_VAULT_EQUITIES,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getUserRole(user: string, rawResponse: boolean = false): Promise<UserRole> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.USER_ROLE,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getDelegations(user: string, rawResponse: boolean = false): Promise<Delegation[]> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.DELEGATIONS,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getDelegatorSummary(user: string, rawResponse: boolean = false): Promise<DelegatorSummary> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.DELEGATOR_SUMMARY,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getDelegatorHistory(user: string, rawResponse: boolean = false): Promise<DelegatorHistoryEntry[]> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.DELEGATOR_HISTORY,
+            user
+        });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getDelegatorRewards(user: string, rawResponse: boolean = false): Promise<DelegatorReward[]> {
+        const response = await this.httpApi.makeRequest({
+            type: InfoType.DELEGATOR_REWARDS,
             user
         });
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);

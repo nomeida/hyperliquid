@@ -695,3 +695,39 @@ export interface TwapSliceFill {
     };
     twapId: number;
 }
+
+export interface Delegation {
+    validator: string;
+    amount: string;
+    lockedUntilTimestamp: number;
+}
+
+export interface DelegatorSummary {
+    delegated: string;
+    undelegated: string;
+    totalPendingWithdrawal: string;
+    nPendingWithdrawals: number;
+}
+
+export interface DelegatorHistoryEntry {
+    time: number;
+    hash: string;
+    delta: {
+        delegate: {
+            validator: string;
+            amount: string;
+            isUndelegate: boolean;
+        }
+    }
+}
+
+export interface DelegatorReward {
+    time: number;
+    source: string;
+    totalAmount: string;
+}
+
+export type PerpsAtOpenInterestCap = string[];
+
+export type UserRole = "missing" | "user" | "agent" | "vault" | "subAccount";
+

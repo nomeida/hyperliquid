@@ -40,7 +40,13 @@ export enum InfoType {
     USER_TWAP_SLICE_FILLS = 'userTwapSliceFills',
     SUB_ACCOUNTS = 'subAccounts',
     VAULT_DETAILS = 'vaultDetails',
-    USER_VAULT_EQUITIES = 'userVaultEquities'
+    USER_VAULT_EQUITIES = 'userVaultEquities',
+    USER_ROLE = 'userRole',
+    DELEGATIONS = 'delegations',
+    DELEGATOR_SUMMARY = 'delegatorSummary',
+    PERPS_AT_OPEN_INTEREST_CAP = 'perpsAtOpenInterestCap',
+    DELEGATOR_HISTORY = 'delegatorHistory',
+    DELEGATOR_REWARDS = 'delegatorRewards',
 }
 
 export enum ExchangeType {

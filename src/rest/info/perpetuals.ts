@@ -1,4 +1,4 @@
-import { Meta, MetaAndAssetCtxs, ClearinghouseState, UserFunding, UserNonFundingLedgerUpdates, FundingHistory, PredictedFundings } from '../../types';
+import { Meta, MetaAndAssetCtxs, ClearinghouseState, UserFunding, UserNonFundingLedgerUpdates, FundingHistory, PredictedFundings, PerpsAtOpenInterestCap } from '../../types';
 import { HttpApi } from '../../utils/helpers';
 import { InfoType } from '../../types/constants';
 import { SymbolConversion } from '../../utils/symbolConversion';
@@ -67,5 +67,22 @@ export class PerpetualsInfoAPI {
         }, 20);
         
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
+    async getPerpsAtOpenInterestCap(rawResponse: boolean = false): Promise<PerpsAtOpenInterestCap> {
+        const response = await this.httpApi.makeRequest({ 
+            type: InfoType.PERPS_AT_OPEN_INTEREST_CAP 
+        }) as string[];
+        
+        if (rawResponse) {
+            return response;
+        }
+    
+        // Convert each symbol in the array
+        const convertedResponse = await Promise.all(
+            response.map((symbol: string) => this.symbolConversion.convertSymbol(symbol, "", "PERP"))
+        );
+    
+        return convertedResponse;
     }
 }
