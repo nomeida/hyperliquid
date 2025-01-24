@@ -84,6 +84,26 @@ async function testInfoAPI(sdk) {
     console.log("getUserVaultEquities:");
     console.log(await sdk.info.getUserVaultEquities(user_address, raw_mode));
     await waitForInput("Press Enter to continue...");
+
+    console.log("getUserRole:");
+    console.log(await sdk.info.getUserRole(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getDelegations:");
+    console.log(await sdk.info.getDelegations(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getDelegatorSummary:");
+    console.log(await sdk.info.getDelegatorSummary(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getDelegatorHistory:");
+    console.log(await sdk.info.getDelegatorHistory(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getDelegatorRewards:");
+    console.log(await sdk.info.getDelegatorRewards(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
 }
 
 async function testSpotInfoAPI(sdk) {
@@ -144,6 +164,10 @@ async function testPerpetualsInfoAPI(sdk) {
     console.log("getPredictedFundings:");
     console.log(await sdk.info.perpetuals.getPredictedFundings(raw_mode));
     await waitForInput("Press Enter to continue...");
+
+    console.log("getPerpsAtOpenInterestCap:");
+    console.log(await sdk.info.perpetuals.getPerpsAtOpenInterestCap(raw_mode));
+    await waitForInput("Press Enter to continue...")
 }
 
 async function main() {
