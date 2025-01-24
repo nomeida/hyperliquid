@@ -590,8 +590,6 @@ export interface SpotDeployState {
     };
 }
 
-// Add these to types/index.ts
-
 export interface SubAccount {
     name: string;
     subAccountUser: string;
@@ -741,3 +739,82 @@ export type PerpsAtOpenInterestCap = string[];
 
 export type UserRole = "missing" | "user" | "agent" | "vault" | "subAccount";
 
+
+export interface WsActiveAssetCtx {
+    coin: string;
+    ctx: {
+        dayNtlVlm: string;
+        prevDayPx: string;
+        markPx: string;
+        midPx?: string;
+        funding?: number;
+        openInterest?: number;
+        oraclePx?: number;
+        circulatingSupply?: number;
+    };
+}
+
+export interface WsActiveSpotAssetCtx {
+    coin: string;
+    ctx: {
+        dayNtlVlm: string;
+        prevDayPx: string;
+        markPx: string;
+        midPx?: string;
+        circulatingSupply: string;
+    };
+}
+
+export interface WsTwapState {
+    coin: string;
+    user: string;
+    side: string;
+    sz: number;
+    executedSz: number;
+    executedNtl: number;
+    minutes: number;
+    reduceOnly: boolean;
+    randomize: boolean;
+    timestamp: number;
+}
+
+export type WsTwapStatus = "activated" | "terminated" | "finished" | "error";
+
+export interface WsTwapHistory {
+    state: WsTwapState;
+    status: {
+        status: WsTwapStatus;
+        description: string;
+    };
+    time: number;
+}
+
+export interface WsTwapHistoryResponse {
+    isSnapshot: boolean;
+    user: string;
+    history: WsTwapHistory[];
+}
+
+export interface WsTwapSliceFill {
+    isSnapshot?: boolean;
+    user: string;
+    twapSliceFills: Array<{
+        fill: {
+            closedPnl: string;
+            coin: string;
+            crossed: boolean;
+            dir: string;
+            hash: string;
+            oid: number;
+            px: string;
+            side: string;
+            startPosition: string;
+            sz: string;
+            time: number;
+            fee: string;
+            feeToken: string;
+            tid: number;
+        };
+        twapId: number;
+    }>;
+}
