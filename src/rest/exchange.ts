@@ -10,6 +10,7 @@ import {
   signUserSignedAction,
   signUsdTransferAction,
   signWithdrawFromBridgeAction,
+  signAgent
 } from '../utils/signing';
 import * as CONSTANTS from '../types/constants';
 
@@ -22,7 +23,9 @@ import {
   TwapCancelRequest,
   TwapCancelResponse,
   TwapOrder,
-  TwapOrderResponse
+  TwapOrderResponse,
+  ApproveAgentRequest,
+  ApproveBuilderFeeRequest
 } from '../types/index';
 
 import { ExchangeType, ENDPOINTS } from '../types/constants';
@@ -472,4 +475,60 @@ export class ExchangeAPI {
         }
     }
 
+    async approveAgent(request: ApproveAgentRequest): Promise<any> {
+      await this.parent.ensureInitialized();
+      try {
+          const action = {
+              type: ExchangeType.APPROVE_AGENT,
+              hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+              signatureChainId: '0xa4b1',
+              agentAddress: request.agentAddress,
+              agentName: request.agentName,
+              nonce: Date.now()
+          };
+  
+          const signature = await signAgent(
+              this.wallet,
+              action,
+              this.IS_MAINNET
+          );
+  
+          const payload = { action, nonce: action.nonce, signature };
+          return this.httpApi.makeRequest(payload, 1);
+      } catch (error) {
+          throw error;
+      }
+  }
+  
+  async approveBuilderFee(request: ApproveBuilderFeeRequest): Promise<any> {
+      await this.parent.ensureInitialized();
+      try {
+          const action = {
+              type: ExchangeType.APPROVE_BUILDER_FEE,
+              hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+              signatureChainId: '0xa4b1',
+              maxFeeRate: request.maxFeeRate,
+              builder: request.builder,
+              nonce: Date.now()
+          };
+  
+          const signature = await signUserSignedAction(
+              this.wallet,
+              action,
+              [
+                  { name: 'hyperliquidChain', type: 'string' },
+                  { name: 'maxFeeRate', type: 'string' },
+                  { name: 'builder', type: 'string' },
+                  { name: 'nonce', type: 'uint64' }
+              ],
+              'HyperliquidTransaction:ApproveBuilderFee',
+              this.IS_MAINNET
+          );
+  
+          const payload = { action, nonce: action.nonce, signature };
+          return this.httpApi.makeRequest(payload, 1);
+      } catch (error) {
+          throw error;
+      }
+  }
 }

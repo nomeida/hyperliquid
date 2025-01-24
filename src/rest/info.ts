@@ -20,7 +20,12 @@ import {
     HistoricalOrder,
     TwapSliceFill,
     SubAccount,
-    VaultDetails
+    VaultDetails,
+    DelegatorReward,
+    DelegatorHistoryEntry,
+    DelegatorSummary,
+    Delegation,
+    UserRole
 } from '../types/index';
 
 import { InfoType, ENDPOINTS } from '../types/constants';
@@ -132,5 +137,30 @@ export class InfoAPI {
     async getUserVaultEquities(user: string, rawResponse: boolean = false): Promise<VaultEquity[]> {
         await this.parent.ensureInitialized();
         return this.generalAPI.getUserVaultEquities(user, rawResponse);
+    }
+    
+    async getUserRole(user: string, rawResponse: boolean = false): Promise<UserRole> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getUserRole(user, rawResponse);
+    }
+
+    async getDelegations(user: string, rawResponse: boolean = false): Promise<Delegation[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getDelegations(user, rawResponse);
+    }
+
+    async getDelegatorSummary(user: string, rawResponse: boolean = false): Promise<DelegatorSummary> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getDelegatorSummary(user, rawResponse);
+    }
+
+    async getDelegatorHistory(user: string, rawResponse: boolean = false): Promise<DelegatorHistoryEntry[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getDelegatorHistory(user, rawResponse);
+    }
+
+    async getDelegatorRewards(user: string, rawResponse: boolean = false): Promise<DelegatorReward[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.getDelegatorRewards(user, rawResponse);
     }
 }

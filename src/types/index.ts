@@ -696,6 +696,16 @@ export interface TwapSliceFill {
     twapId: number;
 }
 
+export interface ApproveAgentRequest {
+    agentAddress: string;
+    agentName?: string;
+}
+
+export interface ApproveBuilderFeeRequest {
+    maxFeeRate: string;
+    builder: string;
+}
+
 export interface Delegation {
     validator: string;
     amount: string;

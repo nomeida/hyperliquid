@@ -66,7 +66,9 @@ export enum ExchangeType {
     SET_REFERRER = 'setReferrer',
     USD_CLASS_TRANSFER = 'usdClassTransfer',
     TWAP_ORDER = 'twapOrder',
-    TWAP_CANCEL = 'twapCancel'
+    TWAP_CANCEL = 'twapCancel',
+    APPROVE_AGENT = 'approveAgent',
+    APPROVE_BUILDER_FEE = 'approveBuilderFee'
 }
 
 export const WEBSOCKET = {
