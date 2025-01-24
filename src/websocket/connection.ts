@@ -88,4 +88,15 @@ export class WebSocketClient extends EventEmitter {
         }
         this.stopPingInterval();
     }
+
+    removeListener(event: string | symbol, listener: (...args: any[]) => void): this {
+        super.removeListener(event, listener);
+        return this;
+    }
+
+    removeAllListeners(event?: string | symbol): this {
+        super.removeAllListeners(event);
+        return this;
+    }
+
 }
