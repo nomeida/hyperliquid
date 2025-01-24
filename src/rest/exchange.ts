@@ -255,23 +255,22 @@ export class ExchangeAPI {
   async usdTransfer(destination: string, amount: number): Promise<any> {
     await this.parent.ensureInitialized();
     try {
-      const action = {
-        type: ExchangeType.USD_SEND,
-        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-        signatureChainId: '0xa4b1',
-        destination: destination,
-        amount: amount.toString(),
-        time: Date.now()
-      };
-      const signature = await signUsdTransferAction(this.wallet, action, this.IS_MAINNET);
+        const action = {
+            type: ExchangeType.USD_SEND,
+            hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+            signatureChainId: '0xa4b1',
+            destination: destination,
+            amount: amount.toString(),
+            time: Date.now()
+        };
+        const signature = await signUsdTransferAction(this.wallet, action, this.IS_MAINNET);
 
-      const payload = { action, nonce: action.time, signature };
-      return this.httpApi.makeRequest(payload, 1, this.walletAddress || this.wallet.address);
+        const payload = { action, nonce: action.time, signature };
+        return this.httpApi.makeRequest(payload, 1);  // Remove the third parameter
     } catch (error) {
-      throw error;
+        throw error;
     }
   }
-
   //Transfer SPOT assets i.e PURR to another wallet (doesn't touch bridge, so no fees)
   async spotTransfer(destination: string, token: string, amount: string): Promise<any> {
     await this.parent.ensureInitialized();
