@@ -29,8 +29,8 @@ export class Hyperliquid {
   private vaultAddress?: string | null = null;
   private enableWs: boolean // Disable for client side
 
-  constructor(params: {enableWs?: boolean, privateKey?: string, testnet?: boolean, walletAddress?: string, vaultAddress?: string} = {}) {
-    const { enableWs = true, privateKey, testnet = false, walletAddress, vaultAddress } = params;
+  constructor(params: {enableWs?: boolean, privateKey?: string, testnet?: boolean, walletAddress?: string, vaultAddress?: string,maxReconnectAttempts?:number} = {}) {
+    const { enableWs = true, privateKey, testnet = false, walletAddress, vaultAddress,maxReconnectAttempts } = params;
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
 
     this.rateLimiter = new RateLimiter();
@@ -42,7 +42,7 @@ export class Hyperliquid {
     
     // Initialize WebSocket
     this.enableWs = enableWs;
-    this.ws = new WebSocketClient(testnet);
+    this.ws = new WebSocketClient(testnet,maxReconnectAttempts);
     this.subscriptions = new WebSocketSubscriptions(this.ws, this.symbolConversion);
     
     // Create proxy objects for exchange and custom
