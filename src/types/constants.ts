@@ -40,7 +40,13 @@ export enum InfoType {
     USER_TWAP_SLICE_FILLS = 'userTwapSliceFills',
     SUB_ACCOUNTS = 'subAccounts',
     VAULT_DETAILS = 'vaultDetails',
-    USER_VAULT_EQUITIES = 'userVaultEquities'
+    USER_VAULT_EQUITIES = 'userVaultEquities',
+    USER_ROLE = 'userRole',
+    DELEGATIONS = 'delegations',
+    DELEGATOR_SUMMARY = 'delegatorSummary',
+    PERPS_AT_OPEN_INTEREST_CAP = 'perpsAtOpenInterestCap',
+    DELEGATOR_HISTORY = 'delegatorHistory',
+    DELEGATOR_REWARDS = 'delegatorRewards',
 }
 
 export enum ExchangeType {
@@ -60,7 +66,9 @@ export enum ExchangeType {
     SET_REFERRER = 'setReferrer',
     USD_CLASS_TRANSFER = 'usdClassTransfer',
     TWAP_ORDER = 'twapOrder',
-    TWAP_CANCEL = 'twapCancel'
+    TWAP_CANCEL = 'twapCancel',
+    APPROVE_AGENT = 'approveAgent',
+    APPROVE_BUILDER_FEE = 'approveBuilderFee'
 }
 
 export const WEBSOCKET = {

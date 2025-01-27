@@ -44,9 +44,9 @@ async function testCustomExchangeAPI() {
 
 async function testExchangeAPI() {
   // Initialize the SDK (replace with your actual private key and other necessary parameters)
-  const private_key = "";
+  const private_key = process.env.priv_key;
   const user_address = ""
-  const testnet = true// false for mainnet, true for testnet
+  const testnet = false// false for mainnet, true for testnet
   const vaultAddress = null // or your vault address
   const sdk = new Hyperliquid({
     privateKey: private_key,
@@ -229,6 +229,26 @@ async function testExchangeAPI() {
   } finally {
     rl.close();
   }
+
+  // 17. Approve Agent
+  console.log("\n17. Approve Agent:");
+  const approveAgentResponse = await sdk.exchange.approveAgent({
+    agentAddress : "0x1234567890123456789012345678901234567890", //Replace this with a valid agentAddress, can generate one from the Hyperliquid UI
+    agentName    : "testAgent1" // Optional, just a name so you can identify the agent wallet, max 1 unnammed api agent and 2-3 named ones allowed
+  });
+  console.log(approveAgentResponse);
+
+  await waitForUserInput("Press Enter to continue to Approve Builder Fee...");
+
+  // 18. Approve Builder Fee
+  console.log("\n18. Approve Builder Fee:");
+  const approveBuilderFeeResponse = await sdk.exchange.approveBuilderFee({
+    maxFeeRate : "0.001%", // 0.001% fee rate
+    builder    : "0x1234567890123456789012345678901234567890"
+  });
+  console.log(approveBuilderFeeResponse);
+
+  await waitForUserInput("Press Enter to continue to Deposit to Staking...");
 }
 
 // testCustomExchangeAPI();
