@@ -68,7 +68,8 @@ export enum ExchangeType {
     TWAP_ORDER = 'twapOrder',
     TWAP_CANCEL = 'twapCancel',
     APPROVE_AGENT = 'approveAgent',
-    APPROVE_BUILDER_FEE = 'approveBuilderFee'
+    APPROVE_BUILDER_FEE = 'approveBuilderFee',
+    EVM_USER_MODIFY = 'evmUserModify'
 }
 
 export const WEBSOCKET = {

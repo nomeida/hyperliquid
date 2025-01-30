@@ -410,6 +410,20 @@ export class ExchangeAPI {
     }
   }
 
+  async modifyUserEvm(usingBigBlocks: boolean): Promise<any> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = { type: ExchangeType.EVM_USER_MODIFY, usingBigBlocks };
+      const nonce = Date.now();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async placeTwapOrder(orderRequest: TwapOrder): Promise<TwapOrderResponse> {
         await this.parent.ensureInitialized();
         try {
