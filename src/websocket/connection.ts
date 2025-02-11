@@ -12,11 +12,15 @@ export class WebSocketClient extends EventEmitter {
     private reconnectDelay: number = 5000;
     private initialReconnectDelay: number = 1000;
     private maxReconnectDelay: number = 30000;
+    
 
-    constructor(testnet: boolean = false) {
+
+    constructor(testnet: boolean = false,maxReconnectAttempts:number=5) {
         super();
+        this.maxReconnectAttempts=maxReconnectAttempts;
         this.url = testnet ? CONSTANTS.WSS_URLS.TESTNET : CONSTANTS.WSS_URLS.PRODUCTION;
     }
+
 
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -55,7 +59,9 @@ export class WebSocketClient extends EventEmitter {
                 this.maxReconnectDelay
             );
             console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`);
-            setTimeout(() => this.connect(), delay);
+            setTimeout(() => this.connect().then(()=>{
+                this.emit('reconnect', true);
+            }), delay);
         } else {
             console.error('Max reconnection attempts reached. Please reconnect manually.');
             this.emit('maxReconnectAttemptsReached');
