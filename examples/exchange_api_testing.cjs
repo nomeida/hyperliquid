@@ -248,6 +248,13 @@ async function testExchangeAPI() {
   });
   console.log(approveBuilderFeeResponse);
 
+  await waitForUserInput("Press Enter to continue to Modify User EVM...");
+
+  // 19. Modify User EVM
+  console.log("\n19. Modify User EVM:");
+  const modifyUserEvmResponse = await sdk.exchange.modifyUserEvm(true);
+  console.log(modifyUserEvmResponse);
+
   await waitForUserInput("Press Enter to continue to Deposit to Staking...");
 }
 
