@@ -5,7 +5,7 @@ The Hyperliquid SDK supports browser environments and can be used in several way
 ## Direct Script Include
 
 ```html
-<script src="https://unpkg.com/hyperliquid@latest/dist/index.browser.js"></script>
+<script src="https://unpkg.com/hyperliquid/dist/browser.global.js"></script>
 <script>
     const sdk = new HyperliquidSDK.Hyperliquid({
         testnet: true,
@@ -24,6 +24,8 @@ const sdk = new Hyperliquid({
     enableWs: true
 });
 ```
+
+Note: See /examples/browser-test.html for a complete example of how to use the SDK in a browser with all methods supported. P.s. Try running it in a local server to just test the SDK/API in general
 
 ## Features and Limitations
 
