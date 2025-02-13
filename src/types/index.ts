@@ -112,7 +112,11 @@ export interface OrderResponse {
     data: {
         statuses: Array<{
         resting?: { oid: number };
-        filled?: { oid: number };
+        filled?: {
+            oid: number;
+            totalSz: string;
+            avgPx: string;
+        };
         }>;
     };
     };
