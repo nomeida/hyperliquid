@@ -54,18 +54,22 @@ export class InfoAPI {
     }
 
     async getAssetIndex(assetName: string): Promise<number | undefined> {
+        await this.parent.ensureInitialized();
         return await this.symbolConversion.getAssetIndex(assetName);
     }
 
     async getInternalName(exchangeName: string): Promise<string | undefined> {
+        await this.parent.ensureInitialized();
         return await this.symbolConversion.convertSymbol(exchangeName);
     }
 
     async getAllAssets(): Promise<{ perp: string[], spot: string[] }> {
+        await this.parent.ensureInitialized();
         return await this.symbolConversion.getAllAssets();
     }
 
     async getAllMids(rawResponse: boolean = false): Promise<AllMids> {
+        await this.parent.ensureInitialized();
         return this.generalAPI.getAllMids(rawResponse);
     }
 
