@@ -41,7 +41,7 @@ The SDK provides two browser bundles:
 - `browser.global.js`: UMD bundle that exposes the SDK globally as `HyperliquidSDK`. Use this with regular `<script>` tags.
 - `browser.js`: ESM bundle for use with ES modules (import/export syntax).
 
-For Browser usage, see [Browser Usage Guide](docs/browser-usage.md).
+For Browser usage, see [Browser Usage Guide](/BROWSER.md).
 
 ## Usage
 
