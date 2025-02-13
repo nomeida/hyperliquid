@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hyperliquid SDK Browser Test Interface</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            background: #f0f2f5;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .config-panel {
+            grid-column: 1 / -1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        .methods-container {
+            flex: 1;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .output-panel {
+            background: #1e1e1e;
+            color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        .output-header {
+            position: sticky;
+            top: 0;
+            background: #1e1e1e;
+            z-index: 100;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        .output-content {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .method-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin: 5px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+        .method-button:hover {
+            background: #0056b3;
+        }
+        .input-group {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-group label {
+            min-width: 120px;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        h2 { margin-top: 0; }
+        .clear-button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .param-input {
+            margin: 5px 0;
+            display: none;
+        }
+        .param-input.active {
+            display: block;
+        }
+        .param-input input {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .param-input button {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .param-input button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="config-panel">
+            <h2>SDK Configuration</h2>
+            <div class="input-group">
+                <label>Private Key:</label>
+                <input type="password" id="privateKey" placeholder="Enter private key (optional)">
+            </div>
+            <div class="input-group">
+                <label>Wallet Address:</label>
+                <input type="text" id="walletAddress" placeholder="Enter wallet address (optional)">
+            </div>
+            <div class="input-group">
+                <label>Environment:</label>
+                <select id="environment">
+                    <option value="testnet">Testnet</option>
+                    <option value="mainnet">Mainnet</option>
+                </select>
+                <button onclick="initializeSDK()" style="margin-left: 10px;">Initialize SDK</button>
+            </div>
+            <div id="compatibility"></div>
+        </div>
+
+        <div class="panel">
+            <h2>REST API Methods</h2>
+            <div class="methods-container" id="restMethods">
+                <!-- REST methods will be populated here -->
+            </div>
+        </div>
+
+        <div class="output-panel" id="output">
+            <div class="output-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0;">Output</h3>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="color: white; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="checkbox" id="autoScroll" checked>
+                            Auto-scroll
+                        </label>
+                        <button class="clear-button" onclick="clearOutput()">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <div class="output-content" id="outputContent"></div>
+        </div>
+
+        <div class="panel">
+            <h2>WebSocket Methods</h2>
+            <div class="methods-container" id="wsMethods">
+                <!-- WebSocket methods will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Load the SDK -->
+    <script src="../dist/browser.global.js"></script>
+    <script>
+        let sdk = null;
+        let activeSubscriptions = new Map();
+        let isAutoScrollEnabled = true;
+        let isUserScrolling = false;
+        let scrollTimeout;
+
+        const restMethods = {
+            // Info API - General Methods
+            'Get All Assets': {
+                method: async () => await sdk.custom.getAllAssets(),
+                params: []
+            },
+            'Get All Mids': {
+                method: async () => await sdk.info.getAllMids(),
+                params: []
+            },
+            'Get L2 Book': {
+                method: async (symbol) => await sdk.info.getL2Book(symbol),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' }
+                ]
+            },
+            'Get User Open Orders': {
+                method: async (address) => await sdk.info.getUserOpenOrders(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Frontend Open Orders': {
+                method: async (address) => await sdk.info.getFrontendOpenOrders(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get User Fills': {
+                method: async (address) => await sdk.info.getUserFills(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get User Fills By Time': {
+                method: async (address, startTime, endTime) => await sdk.info.getUserFillsByTime(address, parseInt(startTime), parseInt(endTime)),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' },
+                    { name: 'startTime', type: 'number', placeholder: 'Start timestamp (ms)' },
+                    { name: 'endTime', type: 'number', placeholder: 'End timestamp (ms)' }
+                ]
+            },
+            'Get User Rate Limit': {
+                method: async (address) => await sdk.info.getUserRateLimit(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Order Status': {
+                method: async (address, oid) => await sdk.info.getOrderStatus(address, oid),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' },
+                    { name: 'oid', type: 'number', placeholder: 'Order ID' }
+                ]
+            },
+            'Get Candle Snapshot': {
+                method: async (symbol, interval, startTime, endTime) => 
+                    await sdk.info.getCandleSnapshot(symbol, interval, parseInt(startTime), parseInt(endTime)),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'interval', type: 'text', placeholder: 'e.g. 1m, 5m, 1h' },
+                    { name: 'startTime', type: 'number', placeholder: 'Start timestamp (ms)' },
+                    { name: 'endTime', type: 'number', placeholder: 'End timestamp (ms)' }
+                ]
+            },
+            'Get Max Builder Fee': {
+                method: async (address, builder) => await sdk.info.getMaxBuilderFee(address, builder),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' },
+                    { name: 'builder', type: 'text', placeholder: 'Enter builder address' }
+                ]
+            },
+            'Get Historical Orders': {
+                method: async (address) => await sdk.info.getHistoricalOrders(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get User TWAP Slice Fills': {
+                method: async (address) => await sdk.info.getUserTwapSliceFills(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Sub Accounts': {
+                method: async (address) => await sdk.info.getSubAccounts(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Vault Details': {
+                method: async (vaultAddress, userAddress) => await sdk.info.getVaultDetails(vaultAddress, userAddress),
+                params: [
+                    { name: 'vaultAddress', type: 'text', placeholder: 'Enter vault address' },
+                    { name: 'userAddress', type: 'text', placeholder: 'Enter user address (optional)' }
+                ]
+            },
+            'Get User Vault Equities': {
+                method: async (address) => await sdk.info.getUserVaultEquities(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get User Role': {
+                method: async (address) => await sdk.info.getUserRole(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Delegations': {
+                method: async (address) => await sdk.info.getDelegations(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Delegator Summary': {
+                method: async (address) => await sdk.info.getDelegatorSummary(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Delegator History': {
+                method: async (address) => await sdk.info.getDelegatorHistory(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Delegator Rewards': {
+                method: async (address) => await sdk.info.getDelegatorRewards(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+
+            // Info API - Perpetuals Methods
+            'Get Meta': {
+                method: async () => await sdk.info.perpetuals.getMeta(),
+                params: []
+            },
+            'Get Meta And Asset Contexts': {
+                method: async () => await sdk.info.perpetuals.getMetaAndAssetCtxs(),
+                params: []
+            },
+            'Get Clearinghouse State': {
+                method: async (address) => await sdk.info.perpetuals.getClearinghouseState(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get User Funding': {
+                method: async (address, startTime, endTime) => await sdk.info.perpetuals.getUserFunding(address, parseInt(startTime), parseInt(endTime)),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' },
+                    { name: 'startTime', type: 'number', placeholder: 'Start timestamp (ms)' },
+                    { name: 'endTime', type: 'number', placeholder: 'End timestamp (ms) (optional)' }
+                ]
+            },
+            'Get User Non-Funding Ledger Updates': {
+                method: async (address, startTime, endTime) => await sdk.info.perpetuals.getUserNonFundingLedgerUpdates(address, parseInt(startTime), parseInt(endTime)),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' },
+                    { name: 'startTime', type: 'number', placeholder: 'Start timestamp (ms)' },
+                    { name: 'endTime', type: 'number', placeholder: 'End timestamp (ms) (optional)' }
+                ]
+            },
+            'Get Funding History': {
+                method: async (symbol, startTime, endTime) => await sdk.info.perpetuals.getFundingHistory(symbol, parseInt(startTime), parseInt(endTime)),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'startTime', type: 'number', placeholder: 'Start timestamp (ms)' },
+                    { name: 'endTime', type: 'number', placeholder: 'End timestamp (ms) (optional)' }
+                ]
+            },
+            'Get Predicted Fundings': {
+                method: async () => await sdk.info.perpetuals.getPredictedFundings(),
+                params: []
+            },
+            'Get Perps At Open Interest Cap': {
+                method: async () => await sdk.info.perpetuals.getPerpsAtOpenInterestCap(),
+                params: []
+            },
+
+            // Info API - Spot Methods
+            'Get Spot Meta': {
+                method: async () => await sdk.info.spot.getSpotMeta(),
+                params: []
+            },
+            'Get Spot Clearinghouse State': {
+                method: async (address) => await sdk.info.spot.getSpotClearinghouseState(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Get Spot Meta And Asset Contexts': {
+                method: async () => await sdk.info.spot.getSpotMetaAndAssetCtxs(),
+                params: []
+            },
+            'Get Token Details': {
+                method: async (tokenId) => await sdk.info.spot.getTokenDetails(tokenId),
+                params: [
+                    { name: 'tokenId', type: 'text', placeholder: 'Enter token ID' }
+                ]
+            },
+            'Get Spot Deploy State': {
+                method: async (address) => await sdk.info.spot.getSpotDeployState(address),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+
+            // Exchange API Methods
+            'Place Order': {
+                method: async (symbol, side, size, price, orderType, tif, reduceOnly, cloid, grouping, builder) => await sdk.exchange.placeOrder({
+                    coin: symbol,
+                    is_buy: side.toLowerCase() === 'buy',
+                    sz: parseFloat(size),
+                    limit_px: parseFloat(price),
+                    reduce_only: reduceOnly === 'true',
+                    order_type: { limit: { tif: tif || 'Gtc' } },
+                    ...(cloid ? { cloid } : {}),
+                    ...(grouping ? { grouping } : {}),
+                    ...(builder ? { builder } : {})
+                }),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'side', type: 'text', placeholder: 'buy or sell' },
+                    { name: 'size', type: 'number', placeholder: 'Order size' },
+                    { name: 'price', type: 'number', placeholder: 'Limit price' },
+                    { name: 'tif', type: 'text', placeholder: 'Time in force (Gtc, Ioc, Alo)' },
+                    { name: 'reduceOnly', type: 'text', placeholder: 'true or false' },
+                    { name: 'cloid', type: 'text', placeholder: 'Client order ID (optional)' },
+                    { name: 'grouping', type: 'text', placeholder: 'Order grouping (optional)' },
+                    { name: 'builder', type: 'text', placeholder: 'Builder address (optional)' }
+                ]
+            },
+            'Cancel Order': {
+                method: async (symbol, oids) => await sdk.exchange.cancelOrder(
+                    oids.split(',').map(oid => ({
+                        coin: symbol,
+                        o: parseInt(oid.trim())
+                    }))
+                ),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'oids', type: 'text', placeholder: 'Order IDs (comma-separated for multiple)' }
+                ]
+            },
+            'Cancel Order By CLOID': {
+                method: async (symbol, cloid) => await sdk.exchange.cancelOrderByCloid(symbol, cloid),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'cloid', type: 'text', placeholder: 'Client order ID' }
+                ]
+            },
+            'Modify Order': {
+                method: async (symbol, oid, side, size, price, orderType, tif, reduceOnly, cloid) => await sdk.exchange.modifyOrder(parseInt(oid), {
+                    coin: symbol,
+                    is_buy: side.toLowerCase() === 'buy',
+                    sz: parseFloat(size),
+                    limit_px: parseFloat(price),
+                    reduce_only: reduceOnly === 'true',
+                    order_type: { limit: { tif: tif || 'Gtc' } },
+                    ...(cloid ? { cloid } : {})
+                }),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'oid', type: 'number', placeholder: 'Order ID to modify' },
+                    { name: 'side', type: 'text', placeholder: 'buy or sell' },
+                    { name: 'size', type: 'number', placeholder: 'New order size' },
+                    { name: 'price', type: 'number', placeholder: 'New limit price' },
+                    { name: 'tif', type: 'text', placeholder: 'Time in force (Gtc, Ioc, Alo)' },
+                    { name: 'reduceOnly', type: 'text', placeholder: 'true or false' },
+                    { name: 'cloid', type: 'text', placeholder: 'New client order ID (optional)' }
+                ]
+            },
+            'Update Leverage': {
+                method: async (symbol, mode, leverage) => await sdk.exchange.updateLeverage(
+                    symbol,
+                    mode.toLowerCase(),
+                    parseFloat(leverage)
+                ),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'mode', type: 'text', placeholder: 'cross or isolated' },
+                    { name: 'leverage', type: 'number', placeholder: 'Leverage value' }
+                ]
+            },
+            'Update Isolated Margin': {
+                method: async (symbol, side, ntli) => await sdk.exchange.updateIsolatedMargin(
+                    symbol,
+                    side.toLowerCase() === 'buy',
+                    parseFloat(ntli)
+                ),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'side', type: 'text', placeholder: 'buy or sell' },
+                    { name: 'ntli', type: 'number', placeholder: 'New margin value' }
+                ]
+            },
+            'USD Transfer': {
+                method: async (destination, amount) => await sdk.exchange.usdTransfer(
+                    destination,
+                    parseFloat(amount)
+                ),
+                params: [
+                    { name: 'destination', type: 'text', placeholder: 'Destination address' },
+                    { name: 'amount', type: 'number', placeholder: 'Amount to transfer' }
+                ]
+            },
+            'Spot Transfer': {
+                method: async (destination, token, amount) => await sdk.exchange.spotTransfer(
+                    destination,
+                    token,
+                    amount
+                ),
+                params: [
+                    { name: 'destination', type: 'text', placeholder: 'Destination address' },
+                    { name: 'token', type: 'text', placeholder: 'Token symbol' },
+                    { name: 'amount', type: 'text', placeholder: 'Amount to transfer' }
+                ]
+            },
+            'Initiate Withdrawal': {
+                method: async (destination, amount) => await sdk.exchange.initiateWithdrawal(
+                    destination,
+                    parseFloat(amount)
+                ),
+                params: [
+                    { name: 'destination', type: 'text', placeholder: 'Destination address' },
+                    { name: 'amount', type: 'number', placeholder: 'Amount to withdraw' }
+                ]
+            },
+            'Transfer Between Spot and Perp': {
+                method: async (amount, toPerp) => await sdk.exchange.transferBetweenSpotAndPerp(
+                    parseFloat(amount),
+                    toPerp === 'true'
+                ),
+                params: [
+                    { name: 'amount', type: 'number', placeholder: 'Amount to transfer' },
+                    { name: 'toPerp', type: 'text', placeholder: 'true for to perp, false for to spot' }
+                ]
+            },
+            'Schedule Cancel': {
+                method: async (time) => await sdk.exchange.scheduleCancel(
+                    time ? parseInt(time) : null
+                ),
+                params: [
+                    { name: 'time', type: 'number', placeholder: 'Cancel time in ms (optional)' }
+                ]
+            },
+            'Vault Transfer': {
+                method: async (vaultAddress, isDeposit, amount) => await sdk.exchange.vaultTransfer(
+                    vaultAddress,
+                    isDeposit === 'true',
+                    parseFloat(amount)
+                ),
+                params: [
+                    { name: 'vaultAddress', type: 'text', placeholder: 'Vault address' },
+                    { name: 'isDeposit', type: 'text', placeholder: 'true for deposit, false for withdraw' },
+                    { name: 'amount', type: 'number', placeholder: 'Amount to transfer' }
+                ]
+            },
+            'Set Referrer': {
+                method: async (code) => await sdk.exchange.setReferrer(code),
+                params: [
+                    { name: 'code', type: 'text', placeholder: 'Referral code (optional)' }
+                ]
+            },
+            'Modify User EVM': {
+                method: async (usingBigBlocks) => await sdk.exchange.modifyUserEvm(
+                    usingBigBlocks === 'true'
+                ),
+                params: [
+                    { name: 'usingBigBlocks', type: 'text', placeholder: 'true or false' }
+                ]
+            },
+            'Place TWAP Order': {
+                method: async (symbol, side, size, minutes, randomize, reduceOnly) => await sdk.exchange.placeTwapOrder({
+                    coin: symbol,
+                    is_buy: side.toLowerCase() === 'buy',
+                    sz: parseFloat(size),
+                    minutes: parseInt(minutes),
+                    randomize: randomize === 'true',
+                    reduce_only: reduceOnly === 'true'
+                }),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'side', type: 'text', placeholder: 'buy or sell' },
+                    { name: 'size', type: 'number', placeholder: 'Total order size' },
+                    { name: 'minutes', type: 'number', placeholder: 'Duration in minutes' },
+                    { name: 'randomize', type: 'text', placeholder: 'true or false' },
+                    { name: 'reduceOnly', type: 'text', placeholder: 'true or false' }
+                ]
+            },
+            'Cancel TWAP Order': {
+                method: async (symbol, twapId) => await sdk.exchange.cancelTwapOrder({
+                    coin: symbol,
+                    twap_id: parseInt(twapId)
+                }),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'twapId', type: 'number', placeholder: 'TWAP order ID' }
+                ]
+            },
+            'Approve Agent': {
+                method: async (agentAddress, agentName) => await sdk.exchange.approveAgent({
+                    agentAddress,
+                    agentName
+                }),
+                params: [
+                    { name: 'agentAddress', type: 'text', placeholder: 'Agent address' },
+                    { name: 'agentName', type: 'text', placeholder: 'Agent name' }
+                ]
+            },
+            'Approve Builder Fee': {
+                method: async (maxFeeRate, builder) => await sdk.exchange.approveBuilderFee({
+                    maxFeeRate,
+                    builder
+                }),
+                params: [
+                    { name: 'maxFeeRate', type: 'text', placeholder: 'Maximum fee rate' },
+                    { name: 'builder', type: 'text', placeholder: 'Builder address' }
+                ]
+            },
+
+            // Custom Operations
+            'Cancel All Orders': {
+                method: async (symbol) => {
+                    if (!sdk) {
+                        throw new Error('Please initialize the SDK first');
+                    }
+                    if (!sdk.wallet && !sdk.walletAddress) {
+                        throw new Error('Private key or wallet address is required for this operation');
+                    }
+                    return await sdk.custom.cancelAllOrders(symbol || undefined);
+                },
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP (optional)' }
+                ]
+            },
+            'Market Open': {
+                method: async (symbol, side, size, price, slippage, cloid) => await sdk.custom.marketOpen(
+                    symbol,
+                    side.toLowerCase() === 'buy',
+                    parseFloat(size),
+                    price ? parseFloat(price) : undefined,
+                    slippage ? parseFloat(slippage) : undefined,
+                    cloid
+                ),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'side', type: 'text', placeholder: 'buy or sell' },
+                    { name: 'size', type: 'number', placeholder: 'Order size' },
+                    { name: 'price', type: 'number', placeholder: 'Price (optional)' },
+                    { name: 'slippage', type: 'number', placeholder: 'Slippage (optional, default: 0.05)' },
+                    { name: 'cloid', type: 'text', placeholder: 'Client order ID (optional)' }
+                ]
+            },
+            'Market Close': {
+                method: async (symbol, size, price, slippage, cloid) => await sdk.custom.marketClose(
+                    symbol,
+                    size ? parseFloat(size) : undefined,
+                    price ? parseFloat(price) : undefined,
+                    slippage ? parseFloat(slippage) : undefined,
+                    cloid
+                ),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'size', type: 'number', placeholder: 'Size (optional, defaults to full position)' },
+                    { name: 'price', type: 'number', placeholder: 'Price (optional)' },
+                    { name: 'slippage', type: 'number', placeholder: 'Slippage (optional, default: 0.05)' },
+                    { name: 'cloid', type: 'text', placeholder: 'Client order ID (optional)' }
+                ]
+            },
+            'Close All Positions': {
+                method: async (slippage) => await sdk.custom.closeAllPositions(slippage ? parseFloat(slippage) : undefined),
+                params: [
+                    { name: 'slippage', type: 'number', placeholder: 'Slippage (optional, default: 0.05)' }
+                ]
+            }
+        };
+
+        const wsMethods = {
+            'Subscribe to All Mids': {
+                method: (callback) => sdk.subscriptions.subscribeToAllMids(callback),
+                params: []
+            },
+            'Subscribe to L2 Book': {
+                method: (symbol, callback) => sdk.subscriptions.subscribeToL2Book(symbol, callback),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' }
+                ]
+            },
+            'Subscribe to User Fills': {
+                method: (address, callback) => sdk.subscriptions.subscribeToUserFills(address, callback),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Subscribe to Candle': {
+                method: (symbol, interval, callback) => sdk.subscriptions.subscribeToCandle(symbol, interval, callback),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
+                    { name: 'interval', type: 'text', placeholder: 'e.g. 1m, 5m, 1h' }
+                ]
+            },
+            'Subscribe to Trades': {
+                method: (symbol, callback) => sdk.subscriptions.subscribeToTrades(symbol, callback),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' }
+                ]
+            },
+            'Subscribe to Order Updates': {
+                method: (address, callback) => sdk.subscriptions.subscribeToOrderUpdates(address, callback),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Subscribe to User Events': {
+                method: (address, callback) => sdk.subscriptions.subscribeToUserEvents(address, callback),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Subscribe to User Fundings': {
+                method: (address, callback) => sdk.subscriptions.subscribeToUserFundings(address, callback),
+                params: [
+                    { name: 'address', type: 'text', placeholder: 'Enter wallet address' }
+                ]
+            },
+            'Subscribe to Active Asset Context': {
+                method: (symbol, callback) => sdk.subscriptions.subscribeToActiveAssetCtx(symbol, callback),
+                params: [
+                    { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' }
+                ]
+            }
+        };
+
+        function log(message, type = 'success') {
+            const output = document.getElementById('outputContent');
+            const div = document.createElement('div');
+            div.className = type;
+            
+            if (typeof message === 'object') {
+                // Pretty print JSON with 2 spaces indentation
+                const formatted = JSON.stringify(message, null, 2);
+                // Preserve whitespace and line breaks
+                div.style.whiteSpace = 'pre';
+                div.textContent = formatted;
+            } else {
+                div.textContent = message;
+            }
+            
+            output.appendChild(div);
+            
+            // Only auto-scroll if enabled
+            if (isAutoScrollEnabled) {
+                // Use RAF to ensure DOM update is complete
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        output.scrollTop = output.scrollHeight;
+                    });
+                });
+            }
+        }
+
+        // Initialize scroll handling
+        document.getElementById('outputContent').addEventListener('scroll', function() {
+            if (!isAutoScrollEnabled) return;
+            
+            const isAtBottom = Math.abs((this.scrollHeight - this.clientHeight) - this.scrollTop) < 1;
+            isUserScrolling = !isAtBottom;
+            
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                isUserScrolling = false;
+            }, 150);
+        });
+
+        // Handle auto-scroll toggle
+        document.getElementById('autoScroll').addEventListener('change', function() {
+            isAutoScrollEnabled = this.checked;
+            if (isAutoScrollEnabled) {
+                // Immediately scroll to bottom when re-enabling
+                const output = document.getElementById('outputContent');
+                output.scrollTop = output.scrollHeight;
+            }
+        });
+
+        function clearOutput() {
+            document.getElementById('outputContent').innerHTML = '';
+        }
+
+        async function initializeSDK() {
+            try {
+                const privateKey = document.getElementById('privateKey').value;
+                const walletAddress = document.getElementById('walletAddress').value;
+                const environment = document.getElementById('environment').value;
+
+                const config = {
+                    testnet: environment === 'testnet',
+                    enableWs: true
+                };
+
+                if (privateKey) config.privateKey = privateKey;
+                if (walletAddress) config.walletAddress = walletAddress;
+
+                sdk = new HyperliquidSDK.Hyperliquid(config);
+                await sdk.connect();
+                
+                log('SDK initialized successfully');
+                populateMethods();
+                checkCompatibility();
+            } catch (error) {
+                log(error.message, 'error');
+            }
+        }
+
+        function createMethodButton(name, methodInfo, isWebSocket) {
+            const container = document.createElement('div');
+            container.style.marginBottom = '10px';
+            
+            // Create button
+            const button = document.createElement('button');
+            button.textContent = name;
+            button.className = 'method-button';
+            
+            // Create parameter inputs container
+            const paramsDiv = document.createElement('div');
+            paramsDiv.className = 'param-input';
+            paramsDiv.style.display = 'none';
+            
+            // For methods with no parameters
+            if (methodInfo.params.length === 0) {
+                button.onclick = async () => {
+                    try {
+                        if (!sdk) {
+                            throw new Error('Please initialize the SDK first');
+                        }
+                        if (isWebSocket) {
+                            if (activeSubscriptions.has(name)) {
+                                // Unsubscribe
+                                const unsubscribe = activeSubscriptions.get(name);
+                                if (unsubscribe && typeof unsubscribe === 'function') {
+                                    try {
+                                        await unsubscribe();
+                                        log(`Successfully unsubscribed from ${name}`);
+                                    } catch (error) {
+                                        log(`Error unsubscribing from ${name}: ${error.message}`, 'error');
+                                    }
+                                }
+                                activeSubscriptions.delete(name);
+                                button.textContent = name;
+                            } else {
+                                // Subscribe
+                                try {
+                                    const callback = (data) => log(data);
+                                    await methodInfo.method(callback);
+                                    // Create an unsubscribe function that will clean up the subscription
+                                    const unsubscribe = async () => {
+                                        const methodName = name.replace('Subscribe to ', '').replace(/ /g, '');
+                                        const unsubscribeMethod = `unsubscribeFrom${methodName}`;
+                                        if (sdk.subscriptions[unsubscribeMethod]) {
+                                            await sdk.subscriptions[unsubscribeMethod]();
+                                        }
+                                    };
+                                    activeSubscriptions.set(name, unsubscribe);
+                                    button.textContent = `Unsubscribe from ${name}`;
+                                    log(`Successfully subscribed to ${name}`);
+                                } catch (error) {
+                                    log(`Error subscribing to ${name}: ${error.message}`, 'error');
+                                }
+                            }
+                        } else {
+                            const result = await methodInfo.method();
+                            log(result);
+                        }
+                    } catch (error) {
+                        log(error.message, 'error');
+                    }
+                };
+                container.appendChild(button);
+                return container;
+            }
+            
+            // Create inputs for parameters
+            methodInfo.params.forEach(param => {
+                const inputGroup = document.createElement('div');
+                inputGroup.style.marginBottom = '5px';
+                
+                const label = document.createElement('label');
+                label.textContent = param.name + ': ';
+                label.style.display = 'inline-block';
+                label.style.width = '120px';
+                
+                const input = document.createElement('input');
+                input.type = param.type;
+                input.placeholder = param.placeholder;
+                input.id = `${name}-${param.name}`;
+                input.style.width = '300px';
+                input.style.padding = '5px';
+                
+                // Load value from localStorage if exists
+                const savedValue = localStorage.getItem(`${name}-${param.name}`);
+                if (savedValue) {
+                    input.value = savedValue;
+                }
+                
+                // Save to localStorage on input change
+                input.addEventListener('input', (e) => {
+                    localStorage.setItem(`${name}-${param.name}`, e.target.value);
+                });
+                
+                inputGroup.appendChild(label);
+                inputGroup.appendChild(input);
+                paramsDiv.appendChild(inputGroup);
+            });
+            
+            // Add submit button for methods with parameters
+            const submitBtn = document.createElement('button');
+            submitBtn.textContent = 'Submit';
+            submitBtn.className = 'method-button';
+            submitBtn.style.marginTop = '10px';
+            submitBtn.style.width = 'auto';
+            submitBtn.style.padding = '5px 15px';
+            
+            submitBtn.onclick = async (e) => {
+                e.stopPropagation();
+                try {
+                    if (!sdk) {
+                        throw new Error('Please initialize the SDK first');
+                    }
+
+                    const params = methodInfo.params.map(param => {
+                        const value = document.getElementById(`${name}-${param.name}`).value;
+                        return value;
+                    });
+
+                    if (isWebSocket) {
+                        if (activeSubscriptions.has(name)) {
+                            // Unsubscribe
+                            const unsubscribe = activeSubscriptions.get(name);
+                            if (unsubscribe && typeof unsubscribe === 'function') {
+                                try {
+                                    await unsubscribe();
+                                    log(`Successfully unsubscribed from ${name}`);
+                                } catch (error) {
+                                    log(`Error unsubscribing from ${name}: ${error.message}`, 'error');
+                                }
+                            }
+                            activeSubscriptions.delete(name);
+                            button.textContent = name;
+                        } else {
+                            // Subscribe
+                            try {
+                                const callback = (data) => log(data);
+                                await methodInfo.method(...params, callback);
+                                // Create an unsubscribe function that will clean up the subscription
+                                const unsubscribe = async () => {
+                                    const methodName = name.replace('Subscribe to ', '').replace(/ /g, '');
+                                    const unsubscribeMethod = `unsubscribeFrom${methodName}`;
+                                    if (sdk.subscriptions[unsubscribeMethod]) {
+                                        await sdk.subscriptions[unsubscribeMethod](...params);
+                                    }
+                                };
+                                activeSubscriptions.set(name, unsubscribe);
+                                button.textContent = `Unsubscribe from ${name}`;
+                                log(`Successfully subscribed to ${name}`);
+                            } catch (error) {
+                                log(`Error subscribing to ${name}: ${error.message}`, 'error');
+                            }
+                        }
+                    } else {
+                        const result = await methodInfo.method(...params);
+                        log(result);
+                    }
+                } catch (error) {
+                    log(error.message, 'error');
+                }
+            };
+            
+            paramsDiv.appendChild(submitBtn);
+
+            // Toggle parameter inputs on button click for methods with parameters
+            button.onclick = () => {
+                paramsDiv.style.display = paramsDiv.style.display === 'none' ? 'block' : 'none';
+            };
+
+            container.appendChild(button);
+            container.appendChild(paramsDiv);
+            return container;
+        }
+
+        function populateMethods() {
+            const restContainer = document.getElementById('restMethods');
+            const wsContainer = document.getElementById('wsMethods');
+
+            restContainer.innerHTML = '';
+            wsContainer.innerHTML = '';
+
+            // Helper function to create section headers
+            function createSectionHeader(text) {
+                const header = document.createElement('h3');
+                header.style.marginTop = '20px';
+                header.style.marginBottom = '10px';
+                header.style.borderBottom = '1px solid #ddd';
+                header.style.paddingBottom = '5px';
+                header.textContent = text;
+                return header;
+            }
+
+            // Add REST API sections
+            const sections = [
+                { title: 'Info API - General', methods: {} },
+                { title: 'Info API - Perpetuals', methods: {} },
+                { title: 'Info API - Spot', methods: {} },
+                { title: 'Exchange API', methods: {} },
+                { title: 'Custom Operations', methods: {} }
+            ];
+
+            // Categorize methods
+            Object.entries(restMethods).forEach(([name, info]) => {
+                // Custom Operations (from custom.ts)
+                if (name === 'Cancel All Orders' || name === 'Market Open' || 
+                    name === 'Market Close' || name === 'Close All Positions' ||
+                    name === 'Get All Assets') {
+                    sections[4].methods[name] = info;
+                }
+                // Exchange API (from exchange.ts)
+                else if (name.startsWith('Place Order') || name.startsWith('Cancel Order') || 
+                    name.startsWith('Modify') || name.startsWith('Update') || 
+                    name.startsWith('USD Transfer') || name.startsWith('Spot Transfer') ||
+                    name.startsWith('Initiate') || name.startsWith('Transfer Between') ||
+                    name.startsWith('Schedule') || name.startsWith('Vault Transfer') ||
+                    name.startsWith('Set Referrer') || name.startsWith('Modify User') ||
+                    name.startsWith('Place TWAP') || name.startsWith('Cancel TWAP') ||
+                    name.startsWith('Approve')) {
+                    sections[3].methods[name] = info;
+                }
+                // Info API - Spot (from spot.ts)
+                else if (name.startsWith('Get Spot') || name.startsWith('Get Token')) {
+                    sections[2].methods[name] = info;
+                }
+                // Info API - Perpetuals (from perpetuals.ts)
+                else if (name === 'Get Meta' || name === 'Get Meta And Asset Contexts' ||
+                    name === 'Get Clearinghouse State' || name === 'Get User Funding' ||
+                    name === 'Get User Non-Funding Ledger Updates' || name === 'Get Funding History' ||
+                    name === 'Get Predicted Fundings' || name === 'Get Perps At Open Interest Cap') {
+                    sections[1].methods[name] = info;
+                }
+                // Info API - General (from general.ts)
+                else {
+                    sections[0].methods[name] = info;
+                }
+            });
+
+            // Populate sections
+            sections.forEach(section => {
+                if (Object.keys(section.methods).length > 0) {
+                    restContainer.appendChild(createSectionHeader(section.title));
+                    Object.entries(section.methods).forEach(([name, info]) => {
+                        restContainer.appendChild(createMethodButton(name, info, false));
+                    });
+                }
+            });
+
+            // Add WebSocket section
+            wsContainer.appendChild(createSectionHeader('WebSocket Subscriptions'));
+            Object.entries(wsMethods).forEach(([name, info]) => {
+                wsContainer.appendChild(createMethodButton(name, info, true));
+            });
+        }
+
+        function checkCompatibility() {
+            const compatibility = HyperliquidSDK.utils.checkCompatibility();
+            const compatDiv = document.getElementById('compatibility');
+            compatDiv.innerHTML = `
+                <div style="margin-top: 10px;">
+                    <strong>Browser Compatibility:</strong>
+                    <span class="${compatibility.features.webSocket ? 'success' : 'error'}">
+                        WebSocket: ${compatibility.features.webSocket ? '✓' : '✗'}
+                    </span> |
+                    <span class="${compatibility.features.crypto ? 'success' : 'error'}">
+                        Crypto: ${compatibility.features.crypto ? '✓' : '✗'}
+                    </span> |
+                    <span class="${compatibility.features.secureContext ? 'success' : 'error'}">
+                        Secure Context: ${compatibility.features.secureContext ? '✓' : '✗'}
+                    </span>
+                </div>
+            `;
+        }
+
+        // Initial compatibility check
+        checkCompatibility();
+    </script>
+</body>
+</html> 

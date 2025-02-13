@@ -1,53 +1,54 @@
-import WebSocket from 'ws';
-import { EventEmitter } from 'events';
-
 import * as CONSTANTS from '../types/constants';
 
-export class WebSocketClient extends EventEmitter {
+export class WebSocketClient {
     private ws: WebSocket | null = null;
     private url: string;
-    private pingInterval: NodeJS.Timeout | null = null;
+    private pingInterval: number | null = null;
     private reconnectAttempts: number = 0;
     private maxReconnectAttempts: number = 5;
     private reconnectDelay: number = 5000;
     private initialReconnectDelay: number = 1000;
     private maxReconnectDelay: number = 30000;
-    
+    private eventHandlers: Map<string, Set<Function>> = new Map();
 
-
-    constructor(testnet: boolean = false,maxReconnectAttempts:number=5) {
-        super();
-        this.maxReconnectAttempts=maxReconnectAttempts;
+    constructor(testnet: boolean = false, maxReconnectAttempts:number=5) {
+        this.maxReconnectAttempts = maxReconnectAttempts;
         this.url = testnet ? CONSTANTS.WSS_URLS.TESTNET : CONSTANTS.WSS_URLS.PRODUCTION;
     }
 
-
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.ws = new WebSocket(this.url);
+            try {
+                this.ws = new WebSocket(this.url);
 
-            this.ws.on('open', () => {
-                console.log('WebSocket connected');
-                this.reconnectAttempts = 0;
-                this.startPingInterval();
-                resolve();
-            });
+                this.ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    this.reconnectAttempts = 0;
+                    this.startPingInterval();
+                    this.emit('open');
+                    resolve();
+                };
 
-            this.ws.on('message', (data: WebSocket.Data) => {
-                const message = JSON.parse(data.toString());
-                this.emit('message', message);
-            });
+                this.ws.onmessage = (event: MessageEvent) => {
+                    const message = JSON.parse(event.data);
+                    this.emit('message', message);
+                };
 
-            this.ws.on('error', (error: Error) => {
-                console.error('WebSocket error:', error);
+                this.ws.onerror = (event: Event) => {
+                    console.error('WebSocket error:', event);
+                    this.emit('error', event);
+                    reject(event);
+                };
+
+                this.ws.onclose = () => {
+                    console.log('WebSocket disconnected');
+                    this.stopPingInterval();
+                    this.emit('close');
+                    this.reconnect();
+                };
+            } catch (error) {
                 reject(error);
-            });
-
-            this.ws.on('close', () => {
-                console.log('WebSocket disconnected');
-                this.stopPingInterval();
-                this.reconnect();
-            });
+            }
         });
     }
 
@@ -59,9 +60,19 @@ export class WebSocketClient extends EventEmitter {
                 this.maxReconnectDelay
             );
             console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`);
-            setTimeout(() => this.connect().then(()=>{
-                this.emit('reconnect', true);
-            }), delay);
+            const timer = setTimeout(() => {
+                this.connect().then(() => {
+                    this.emit('reconnect', true);
+                }).catch(err => {
+                    console.error('Reconnection failed:', err);
+                    this.emit('error', err);
+                    this.reconnect();
+                });
+            }, delay);
+            // Only call unref if available (Node.js environment)
+            if (typeof timer.unref === 'function') {
+                timer.unref();
+            }
         } else {
             console.error('Max reconnection attempts reached. Please reconnect manually.');
             this.emit('maxReconnectAttemptsReached');
@@ -71,11 +82,11 @@ export class WebSocketClient extends EventEmitter {
     private startPingInterval(): void {
         this.pingInterval = setInterval(() => {
             this.sendMessage({ method: 'ping' });
-        }, 15000); // Send ping every 15 seconds
+        }, 15000) as unknown as number;
     }
 
     private stopPingInterval(): void {
-        if (this.pingInterval) {
+        if (this.pingInterval !== null) {
             clearInterval(this.pingInterval);
             this.pingInterval = null;
         }
@@ -95,14 +106,32 @@ export class WebSocketClient extends EventEmitter {
         this.stopPingInterval();
     }
 
-    removeListener(event: string | symbol, listener: (...args: any[]) => void): this {
-        super.removeListener(event, listener);
-        return this;
+    on(event: string, handler: Function): void {
+        if (!this.eventHandlers.has(event)) {
+            this.eventHandlers.set(event, new Set());
+        }
+        this.eventHandlers.get(event)?.add(handler);
     }
 
-    removeAllListeners(event?: string | symbol): this {
-        super.removeAllListeners(event);
-        return this;
+    removeListener(event: string, handler: Function): void {
+        const handlers = this.eventHandlers.get(event);
+        if (handlers) {
+            handlers.delete(handler);
+        }
     }
 
+    removeAllListeners(event?: string): void {
+        if (event) {
+            this.eventHandlers.delete(event);
+        } else {
+            this.eventHandlers.clear();
+        }
+    }
+
+    private emit(event: string, ...args: any[]): void {
+        const handlers = this.eventHandlers.get(event);
+        if (handlers) {
+            handlers.forEach(handler => handler(...args));
+        }
+    }
 }

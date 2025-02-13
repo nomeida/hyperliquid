@@ -2,25 +2,34 @@
   "name": "hyperliquid",
   "version": "1.5.8",
   "description": "SDK for Hyperliquid API",
-  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "browser": "./dist/browser.js",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
     }
   },
+  "browser": {
+    "./dist/index.js": "./dist/browser.js"
+  },
   "files": [
+    "dist",
     "src",
-    "dist"
+    "README.md",
+    "LICENSE"
   ],
+  "sideEffects": false,
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
-    "build:watch": "tsc --watch",
-    "clean": "rimraf dist",
+    "build": "tsup",
+    "test": "jest",
     "prepare": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node src/index.ts"
+    "test:node": "node examples/node-test.js",
+    "test:browser": "npx serve -s . -p 3000",
+    "test:all": "npm run build && npm run test:node && echo '\nTo test in browser, run: npm run test:browser and visit http://localhost:3000/examples/browser-test.html'"
   },
   "keywords": [
     "hyperliquid",
@@ -38,18 +47,15 @@
   "license": "MIT",
   "dependencies": {
     "@msgpack/msgpack": "^3.0.0-beta2",
-    "@types/ws": "^8.5.11",
     "axios": "^1.7.2",
-    "ethers": "^6.13.2",
-    "typescript": "^5.5.4",
-    "ws": "^8.18.0"
+    "ethers": "^6.13.2"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "dotenv": "^16.4.5",
-    "rimraf": "^5.0.0",
-    "ts-node": "^10.9.1",
-    "tsup": "^8.3.5"
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "serve": "^14.0.0"
   },
   "directories": {
     "test": "tests"

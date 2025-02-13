@@ -7,7 +7,7 @@ export class SymbolConversion {
     private exchangeToInternalNameMap: Map<string, string> = new Map();
     private httpApi: HttpApi;
     private refreshIntervalMs: number = 60000;
-    private refreshInterval: NodeJS.Timeout | null = null;
+    private refreshInterval: number | null = null;
     private initialized: boolean = false;
 
     constructor(baseURL: string, rateLimiter: any) {
@@ -28,10 +28,18 @@ export class SymbolConversion {
         }
     }
 
-    // Modify all public methods to check initialization
     async getInternalName(exchangeName: string): Promise<string | undefined> {
         this.ensureInitialized();
         return this.exchangeToInternalNameMap.get(exchangeName);
+    }
+
+    private startPeriodicRefresh(): void {
+        if (this.refreshInterval !== null) {
+            window.clearInterval(this.refreshInterval);
+        }
+        this.refreshInterval = window.setInterval(() => {
+            this.refreshAssetMaps().catch(console.error);
+        }, this.refreshIntervalMs) as unknown as number;
     }
 
     private async refreshAssetMaps(): Promise<void> {
@@ -64,19 +72,6 @@ export class SymbolConversion {
             });
         } catch (error) {
             console.error('Failed to refresh asset maps:', error);
-        }
-    }
-
-    private startPeriodicRefresh(): void {
-        this.refreshInterval = setInterval(() => {
-            this.refreshAssetMaps();
-        }, this.refreshIntervalMs);
-    }
-
-    public stopPeriodicRefresh(): void {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
         }
     }
 
