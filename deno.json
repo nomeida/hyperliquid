@@ -1,0 +1,29 @@
+{
+  "name": "@nktkas/hyperliquid",
+  "version": "1.5.8",
+  "exports": {
+    ".": "./mod.ts"
+  },
+  "imports": {
+    "ethers": "npm:ethers@6.13.2",
+    "@msgpack/msgpack": "npm:@msgpack/msgpack@3.0.0-beta2",
+    "axios": "npm:axios@1.7.2"
+  },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "mod.ts",
+      "README.md",
+      "LICENSE"
+    ]
+  },
+  "tasks": {
+    "test": "deno test",
+    "check": "deno check mod.ts"
+  },
+  "fmt": {
+    "include": ["src/", "mod.ts"],
+    "lineWidth": 100,
+    "indentWidth": 2
+  }
+} 
