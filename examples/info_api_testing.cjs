@@ -60,9 +60,9 @@ async function testInfoAPI(sdk) {
     console.log(await sdk.info.getCandleSnapshot("BTC-PERP", "1h", Date.now() - 86400000, Date.now(), raw_mode));
     await waitForInput("Press Enter to continue...");
 
-    console.log("getMaxBuilderFee:");
-    console.log(await sdk.info.getMaxBuilderFee(user_address, "", raw_mode));
-    await waitForInput("Press Enter to continue...");
+    // console.log("getMaxBuilderFee:");
+    // console.log(await sdk.info.getMaxBuilderFee(user_address, "", raw_mode));
+    // await waitForInput("Press Enter to continue...");
 
     console.log("getHistoricalOrders:");
     console.log(await sdk.info.getHistoricalOrders(user_address, raw_mode));
@@ -176,6 +176,9 @@ async function main() {
     });
 
     try {
+        // Initialize the SDK before using any methods
+        // await sdk.connect();
+        
         await testInfoAPI(sdk);
         await testSpotInfoAPI(sdk);
         await testPerpetualsInfoAPI(sdk);

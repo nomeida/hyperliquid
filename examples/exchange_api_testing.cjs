@@ -21,9 +21,9 @@ function waitForUserInput(message) {
 
 async function testCustomExchangeAPI() {
   // Initialize the SDK (replace with your actual private key and other necessary parameters)
-  const private_key = "";
+  const private_key = process.env.priv_key;
   const user_address = ""
-  const testnet = true// false for mainnet, true for testnet
+  const testnet = false// false for mainnet, true for testnet
   const vaultAddress = null // or your vault address
   const sdk = new Hyperliquid({
     privateKey: private_key,
@@ -33,6 +33,7 @@ async function testCustomExchangeAPI() {
   }); 
 
   try {
+    console.log("\nCancelling all orders...");
     const cancelResponse = await sdk.custom.cancelAllOrders();
     console.log(cancelResponse);
   } catch (error) {
@@ -258,5 +259,5 @@ async function testExchangeAPI() {
   await waitForUserInput("Press Enter to continue to Deposit to Staking...");
 }
 
-// testCustomExchangeAPI();
-testExchangeAPI();
+testCustomExchangeAPI();
+// testExchangeAPI();
