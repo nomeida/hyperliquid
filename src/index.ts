@@ -21,7 +21,7 @@ export interface HyperliquidConfig {
 
 export class Hyperliquid {
     public info: InfoAPI;
-    public exchange: ExchangeAPI;
+    public exchange: ExchangeAPI = {} as ExchangeAPI;
     public ws: WebSocketClient;
     public subscriptions: WebSocketSubscriptions;
     public custom: CustomOperations;
@@ -36,6 +36,8 @@ export class Hyperliquid {
     private _walletAddress?: string;
     private vaultAddress?: string | null = null;
     private enableWs: boolean;
+    private baseUrl: string;
+    private testnet: boolean;
 
     constructor(params: HyperliquidConfig = {}) {
         const { enableWs = true, privateKey, testnet = false, walletAddress, vaultAddress, maxReconnectAttempts } = params;
@@ -50,34 +52,47 @@ export class Hyperliquid {
             }
         }
 
-        const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
-
+        this.testnet = testnet;
+        this.baseUrl = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
+        this.enableWs = enableWs;
         this.rateLimiter = new RateLimiter();
-        this.symbolConversion = new SymbolConversion(baseURL, this.rateLimiter);
+        this.symbolConversion = new SymbolConversion(this.baseUrl, this.rateLimiter);
         this.walletAddress = walletAddress || null;
         this.vaultAddress = vaultAddress || null;
         
-        // Initialize info API
-        this.info = new InfoAPI(baseURL, this.rateLimiter, this.symbolConversion, this);
+        // Initialize REST API clients
+        this.info = new InfoAPI(this.baseUrl, this.rateLimiter, this.symbolConversion, this);
         
-        // Initialize WebSocket only if enabled and supported
-        this.enableWs = enableWs && environment.supportsWebSocket();
-        if (this.enableWs && !environment.supportsWebSocket()) {
-            console.warn('WebSocket support is not available in this environment. WebSocket features will be disabled.');
-            this.enableWs = false;
+        // Initialize custom operations
+        this.custom = new CustomOperations(this);
+        
+        // Initialize WebSocket client if enabled
+        if (enableWs) {
+            if (!environment.hasNativeWebSocket() && environment.isNode) {
+                console.warn('Native WebSocket support is not available in this Node.js version. Attempting to use ws package...');
+            }
+            
+            // Create WebSocket client - it will attempt to use ws package if native WebSocket is not available
+            this.ws = new WebSocketClient(testnet, maxReconnectAttempts);
+            this.subscriptions = new WebSocketSubscriptions(this.ws, this.symbolConversion);
+            
+            // Only disable WebSocket if the client fails to initialize
+            if (!environment.supportsWebSocket()) {
+                console.warn('WebSocket support is not available. Please install the ws package to enable WebSocket features:\n\nnpm install ws\n');
+                this.enableWs = false;
+            }
+        } else {
+            // Initialize with dummy objects if WebSocket is disabled
+            this.ws = {} as WebSocketClient;
+            this.subscriptions = {} as WebSocketSubscriptions;
         }
         
-        this.ws = new WebSocketClient(testnet, maxReconnectAttempts);
-        this.subscriptions = new WebSocketSubscriptions(this.ws, this.symbolConversion);
-        
-        // Create proxy objects for exchange and custom
-        this.exchange = this.createAuthenticatedProxy(ExchangeAPI);
-        this.custom = this.createAuthenticatedProxy(CustomOperations);
-
+        // Set up authentication if private key is provided
         if (privateKey) {
-            this._privateKey = privateKey;
+            this.initializeWithPrivateKey(privateKey, testnet);
+        } else if (walletAddress) {
             this._walletAddress = walletAddress;
-            this.initializePrivateKey(privateKey, testnet);
+            this.walletAddress = walletAddress;
         }
     }
 
@@ -97,9 +112,19 @@ export class Hyperliquid {
             // Initialize symbol conversion first
             await this.symbolConversion.initialize();
             
-            // Connect WebSocket if enabled and supported
-            if (this.enableWs && environment.supportsWebSocket()) {
-                await this.ws.connect();
+            // Connect WebSocket if enabled
+            if (this.enableWs) {
+                try {
+                    await this.ws.connect();
+                } catch (wsError: unknown) {
+                    const errorMessage = wsError instanceof Error ? wsError.message : String(wsError);
+                    console.warn('Failed to establish WebSocket connection:', errorMessage);
+                    if (errorMessage.includes('Please install the ws package')) {
+                        console.warn('To enable WebSocket support, please run: npm install ws');
+                        this.enableWs = false;
+                    }
+                    // Don't throw here - we want to continue initialization even if WebSocket fails
+                }
             }
             
             this._initialized = true;
@@ -185,9 +210,22 @@ export class Hyperliquid {
         return this.isValidPrivateKey;
     }
 
+    public isWebSocketConnected(): boolean {
+        return this.ws?.isConnected() ?? false;
+    }
+
     disconnect(): void {
-        this.ensureInitialized();
-        this.ws.close();
+        if (this.ws) {
+            this.ws.close();
+        }
+    }
+
+    public getBaseUrl(): string {
+        return this.baseUrl;
+    }
+
+    public getRateLimiter(): RateLimiter {
+        return this.rateLimiter;
     }
 }
 

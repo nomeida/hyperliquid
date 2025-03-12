@@ -104,6 +104,63 @@ async function testInfoAPI(sdk) {
     console.log("getDelegatorRewards:");
     console.log(await sdk.info.getDelegatorRewards(user_address, raw_mode));
     await waitForInput("Press Enter to continue...");
+
+    // New methods tests
+    console.log("validatorSummaries:");
+    console.log(await sdk.info.validatorSummaries(raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("vaultSummaries:");
+    console.log(await sdk.info.vaultSummaries(raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("userFees:");
+    console.log(await sdk.info.userFees(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("portfolio:");
+    console.log(await sdk.info.portfolio(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("preTransferCheck:");
+    // Source is typically another user address
+    const sourceAddress = "0x0000000000000000000000000000000000000000";
+    console.log(await sdk.info.preTransferCheck(user_address, sourceAddress, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("referral:");
+    console.log(await sdk.info.referral(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("extraAgents:");
+    console.log(await sdk.info.extraAgents(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("isVip:");
+    console.log(await sdk.info.isVip(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("legalCheck:");
+    console.log(await sdk.info.legalCheck(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("userTwapSliceFillsByTime:");
+    console.log(await sdk.info.userTwapSliceFillsByTime(
+        user_address, 
+        Date.now() - 86400000, // 24 hours ago
+        Date.now(),           // now
+        false,                // don't aggregate by time
+        raw_mode
+    ));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("twapHistory:");
+    console.log(await sdk.info.twapHistory(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
+
+    console.log("userToMultiSigSigners:");
+    console.log(await sdk.info.userToMultiSigSigners(user_address, raw_mode));
+    await waitForInput("Press Enter to continue...");
 }
 
 async function testSpotInfoAPI(sdk) {

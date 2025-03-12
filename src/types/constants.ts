@@ -47,6 +47,21 @@ export enum InfoType {
     PERPS_AT_OPEN_INTEREST_CAP = 'perpsAtOpenInterestCap',
     DELEGATOR_HISTORY = 'delegatorHistory',
     DELEGATOR_REWARDS = 'delegatorRewards',
+    VALIDATOR_SUMMARIES = 'validatorSummaries',
+    VAULT_SUMMARIES = 'vaultSummaries',
+    BLOCK_DETAILS = 'blockDetails',
+    TX_DETAILS = 'txDetails',
+    USER_DETAILS = 'userDetails',
+    USER_FEES = 'userFees',
+    PORTFOLIO = 'portfolio',
+    PRE_TRANSFER_CHECK = 'preTransferCheck',
+    REFERRAL = 'referral',
+    EXTRA_AGENTS = 'extraAgents',
+    IS_VIP = 'isVip',
+    LEGAL_CHECK = 'legalCheck',
+    USER_TWAP_SLICE_FILLS_BY_TIME = 'userTwapSliceFillsByTime',
+    TWAP_HISTORY = 'twapHistory',
+    USER_TO_MULTI_SIG_SIGNERS = 'userToMultiSigSigners'
 }
 
 export enum ExchangeType {

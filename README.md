@@ -4,6 +4,15 @@ Typescript SDK to more easily interact with Hyperliquid's API
 
 All info on the Hyperliquid API can be found here: [HyperLiquid API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs)
 
+## Features
+
+- Complete API coverage for both REST and WebSocket endpoints
+- TypeScript support with comprehensive type definitions
+- Browser and Node.js compatibility
+- Automatic handling of trailing zeros in price and size fields
+- Rate limiting support
+- Comprehensive error handling
+
 ## Installation
 
 Choose your preferred installation method:
@@ -22,6 +31,14 @@ pnpm add hyperliquid
 
 # bun
 bun i hyperliquid
+```
+
+### Node.js Version Requirements for WebSocket Functionality
+
+This SDK uses native WebSocket implementation which requires Node.js version 22 or higher. If you're using an earlier version of Node.js, you'll need to install the `ws` package to use the WebSocket functionality:
+
+```bash
+npm install ws
 ```
 
 ### Direct Web Usage
@@ -57,7 +74,8 @@ const sdk = new Hyperliquid({
   privateKey: <private_key - string>,
   testnet: <testnet - boolean (OPTIONAL)>,
   walletAddress: <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>,
-  vaultAddress: <vaultAddress - string (OPTIONAL)>
+  vaultAddress: <vaultAddress - string (OPTIONAL)>,
+  maxReconnectAttempts: <number (OPTIONAL)> // Default is 5, controls WebSocket reconnection attempts
 });
 
 // Use the SDK methods
@@ -69,7 +87,31 @@ sdk.info.getAllMids().then(allMids => {
 use the exchange API to place, cancel or modify orders or access your accounts assets.
 WebSocket functionality is enabled by default but can be disabled by setting `enableWs: false` in the constructor options.
 
+## Key Features
 
+### Rate Limiting
+
+The SDK implements Hyperliquid's token bucket rate limiting system:
+- 100 tokens maximum capacity
+- 10 tokens per second refill rate
+- Automatic handling of rate limits with proper backoff
+
+The SDK will automatically wait when rate limits are reached, ensuring your API calls succeed without overwhelming the server.
+
+### WebSocket Management
+
+The SDK provides robust WebSocket connection handling:
+- Automatic reconnection with exponential backoff
+- Ping/pong heartbeat mechanism to detect stale connections
+- Subscription limit tracking (maximum 1000 subscriptions per IP)
+- Proper cleanup of subscriptions when no longer needed
+
+### Secure Nonce Generation
+
+For authenticated requests, the SDK uses a secure nonce generation system:
+- Monotonically increasing timestamps
+- Handles multiple requests in the same millisecond
+- Ensures compliance with Hyperliquid's nonce requirements
 
 ## Symbol Naming Convention
 
@@ -80,10 +122,7 @@ Instead of using native symbols (which can be confusing, like @1, @4, @5 for spo
 
 This convention makes it easier to distinguish between spot and perpetual markets.
 
-
-
 ## Examples
-
 
 ### Exchange API Methods
 
@@ -148,8 +187,6 @@ sdk.exchange.transferBetweenSpotAndPerp(100, true) // Transfer 100 USDC from spo
 ```
 All methods supported can be found here: [Hyperliquid Exchange Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)
 
-
-
 ### General Info Methods
 
 ```typescript
@@ -176,7 +213,6 @@ sdk.info.getL2Book('BTC-PERP').then(l2Book => {
 ```
 
 All methods supported can be found here: [Hyperliquid Info Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
-
 
 ### WebSocket Methods
 
@@ -218,6 +254,38 @@ async function testWebSocket() {
 testWebSocket();
 ```
 
+## Automatic Handling of Trailing Zeros
+
+The Hyperliquid API requires that price (`p`) and size (`s`) fields do not contain trailing zeros. For example:
+- `12345.0` should be `12345`
+- `0.123450` should be `0.12345`
+
+This SDK automatically handles this requirement for you in all relevant methods. When you use methods like `placeOrder`, `modifyOrder`, or `batchModifyOrders`, the SDK will automatically remove trailing zeros from price and size values.
+
+You can also use string values for price and size fields, which will be properly formatted:
+
+```typescript
+// Both of these will work correctly
+await sdk.exchange.placeOrder({
+  coin: "BTC-PERP",
+  is_buy: true,
+  sz: "1.0000",  // Will be automatically converted to "1"
+  limit_px: "50000.00",  // Will be automatically converted to "50000"
+  reduce_only: false,
+  order_type: { limit: { tif: 'Gtc' } }
+});
+
+await sdk.exchange.placeOrder({
+  coin: "BTC-PERP",
+  is_buy: true,
+  sz: 1,  // Numeric values also work
+  limit_px: 50000,
+  reduce_only: false,
+  order_type: { limit: { tif: 'Gtc' } }
+});
+```
+
+If you're using the low-level `signL1Action` function directly, the SDK will also automatically normalize the action object to remove trailing zeros.
 
 ### Spot Info Methods
 
@@ -238,8 +306,6 @@ sdk.info.spot.getSpotClearinghouseState('user_address_here').then(spotClearingho
 ```
 All methods supported can be found here: [Hyperliquid Spot Info Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot)
 
-
-
 ### Perpetuals Info Methods
 
 ```typescript
@@ -258,7 +324,6 @@ sdk.info.perpetuals.getClearinghouseState('user_address_here').then(clearinghous
 });
 ```
 All methods supported can be found here: [Hyperliquid Perpetuals Info Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
-
 
 ### Custom Methods
 
@@ -283,16 +348,14 @@ console.log(allAssets);
 ```
 All Custom methods are listed above. These are custom methods that are not part of the official Hyperliquid API. As more are added we will add examples for them here.
 
+## WebSocket Subscription Limits
 
-## Star History
+The Hyperliquid API imposes a limit of 1000 WebSocket subscriptions per IP address. The SDK automatically tracks and manages these subscriptions to prevent exceeding this limit. If you attempt to create more than 1000 subscriptions, the SDK will throw an error.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=nomeida/hyperliquid&type=Date)](https://star-history.com/#nomeida/hyperliquid&Date)
-
-
-
-## Documentation
-
-For more detailed documentation on all available methods and their parameters, please refer to the [official Hyperliquid API documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/).
+To manage your subscriptions effectively:
+- Unsubscribe from feeds you no longer need
+- Reuse existing subscriptions where possible
+- Monitor your subscription count with `sdk.ws.getSubscriptionCount()`
 
 ## Initialization
 
@@ -304,11 +367,18 @@ await sdk.connect();
 
 p.s. You only need to worry about this if the SDK throws you an error telling you that it needs to be initialized.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=nomeida/hyperliquid&type=Date)](https://star-history.com/#nomeida/hyperliquid&Date)
+
+## Documentation
+
+For more detailed documentation on all available methods and their parameters, please refer to the [official Hyperliquid API documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/).
+
 ## Disclaimer
 If you don't have an existing referral and use this SDK then your referral will be set by the SDK. This gives you a 4% discount on fees and gives me a percentage of the fees you pay so that I can keep working on and maintaining the SDK. You get a 4% fee discount & an easy-to-use SDK and in return I get some compensation for maintaining it, win-win
 
 *p.s. All referral commissions from this SDK will go towards buying HYPE and other HL-related coins, so it will function as an extension of the assistance fund essentially*
-
 
 ## License
 

@@ -25,7 +25,17 @@ import {
     DelegatorHistoryEntry,
     DelegatorSummary,
     Delegation,
-    UserRole
+    UserRole,
+    ValidatorSummary,
+    VaultSummary,
+    UserFees,
+    PortfolioPeriods,
+    PreTransferCheck,
+    Referral,
+    ExtraAgent,
+    LegalCheck,
+    TwapHistory,
+    MultiSigSigners
 } from '../types/index';
 
 import { InfoType, ENDPOINTS } from '../types/constants';
@@ -166,5 +176,71 @@ export class InfoAPI {
     async getDelegatorRewards(user: string, rawResponse: boolean = false): Promise<DelegatorReward[]> {
         await this.parent.ensureInitialized();
         return this.generalAPI.getDelegatorRewards(user, rawResponse);
+    }
+
+    async validatorSummaries(rawResponse: boolean = false): Promise<ValidatorSummary[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.validatorSummaries(rawResponse);
+    }
+
+    async vaultSummaries(rawResponse: boolean = false): Promise<VaultSummary[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.vaultSummaries(rawResponse);
+    }
+
+    async userFees(user: string, rawResponse: boolean = false): Promise<UserFees> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.userFees(user, rawResponse);
+    }
+
+    async portfolio(user: string, rawResponse: boolean = false): Promise<PortfolioPeriods> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.portfolio(user, rawResponse);
+    }
+
+    async preTransferCheck(user: string, source: string, rawResponse: boolean = false): Promise<PreTransferCheck> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.preTransferCheck(user, source, rawResponse);
+    }
+
+    async referral(user: string, rawResponse: boolean = false): Promise<Referral> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.referral(user, rawResponse);
+    }
+
+    async extraAgents(user: string, rawResponse: boolean = false): Promise<ExtraAgent[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.extraAgents(user, rawResponse);
+    }
+
+    async isVip(user: string, rawResponse: boolean = false): Promise<boolean> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.isVip(user, rawResponse);
+    }
+
+    async legalCheck(user: string, rawResponse: boolean = false): Promise<LegalCheck> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.legalCheck(user, rawResponse);
+    }
+
+    async userTwapSliceFillsByTime(
+        user: string, 
+        startTime: number, 
+        endTime?: number, 
+        aggregateByTime?: boolean, 
+        rawResponse: boolean = false
+    ): Promise<TwapSliceFill[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.userTwapSliceFillsByTime(user, startTime, endTime, aggregateByTime, rawResponse);
+    }
+
+    async twapHistory(user: string, rawResponse: boolean = false): Promise<TwapHistory[]> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.twapHistory(user, rawResponse);
+    }
+
+    async userToMultiSigSigners(user: string, rawResponse: boolean = false): Promise<MultiSigSigners | null> {
+        await this.parent.ensureInitialized();
+        return this.generalAPI.userToMultiSigSigners(user, rawResponse);
     }
 }

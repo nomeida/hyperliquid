@@ -33,9 +33,99 @@ async function testCustomExchangeAPI() {
   }); 
 
   try {
-    console.log("\nCancelling all orders...");
+    await sdk.initialize();
+    console.log("Testing CustomOperations methods:");
+
+    // 1. Get All Assets
+    console.log("\n1. Getting All Assets...");
+    const assets = await sdk.custom.getAllAssets();
+    console.log("Available assets:", assets);
+    await waitForUserInput("Press Enter to continue to Market Open...");
+
+    // 2. Market Open (place a market order)
+    console.log("\n2. Market Open (Buy)...");
+    const marketOpenResponse = await sdk.custom.marketOpen(
+      "SOL-PERP",  // symbol
+      true,        // isBuy
+      0.1,         // size
+    );
+    console.log("Market Open Response:", marketOpenResponse);
+    await waitForUserInput("Press Enter to continue to Market Close...");
+
+    // 3. Market Close (close a specific position)
+    console.log("\n3. Market Close...");
+    try {
+      const marketCloseResponse = await sdk.custom.marketClose(
+        "SOL-PERP",  // symbol
+      );
+      console.log("Market Close Response:", marketCloseResponse);
+    } catch (error) {
+      console.log("Market Close Error (may occur if no position exists):", error.message);
+      
+      // If no position exists, open a new one to close
+      console.log("Creating a new position to close...");
+      await sdk.custom.marketOpen("SOL-PERP", true, 0.1);
+      const marketCloseResponse = await sdk.custom.marketClose("SOL-PERP");
+      console.log("Market Close Response (after creating position):", marketCloseResponse);
+    }
+    await waitForUserInput("Press Enter to continue to Close All Positions...");
+
+    // 4. Close All Positions
+    console.log("\n4. Close All Positions...");
+    try {
+      // First create some positions if needed
+      await sdk.custom.marketOpen("SOL-PERP", true, 0.1);
+      await sdk.custom.marketOpen("ETH-PERP", false, 0.01);
+      
+      const closeAllResponse = await sdk.custom.closeAllPositions(0.05); // 5% slippage
+      console.log("Close All Positions Response:", closeAllResponse);
+    } catch (error) {
+      console.log("Close All Positions Error:", error.message);
+    }
+    await waitForUserInput("Press Enter to continue to Cancel All Orders...");
+
+    // 5. Cancel All Orders
+    console.log("\n5. Cancelling All Orders...");
+    // Place some orders first
+    await sdk.exchange.placeOrder({
+      coin: "SOL-PERP",
+      is_buy: true,
+      sz: 0.1,
+      limit_px: 100.0, // Far from market price to avoid execution
+      order_type: { limit: { tif: "Gtc" } },
+      reduce_only: false,
+      cloid: cloid
+    });
+    
+    await sdk.exchange.placeOrder({
+      coin: "BTC-PERP",
+      is_buy: false,
+      sz: 0.001,
+      limit_px: 100000.0, // Far from market price to avoid execution
+      order_type: { limit: { tif: "Gtc" } },
+      reduce_only: false,
+      cloid: cloid
+    });
+    
     const cancelResponse = await sdk.custom.cancelAllOrders();
-    console.log(cancelResponse);
+    console.log("Cancel All Orders Response:", cancelResponse);
+    
+    // 6. Cancel All Orders for a specific symbol
+    console.log("\n6. Cancelling All Orders for a specific symbol...");
+    // Place an order first
+    await sdk.exchange.placeOrder({
+      coin: "ETH-PERP",
+      is_buy: true,
+      sz: 0.01,
+      limit_px: 1000.0, // Far from market price to avoid execution
+      order_type: { limit: { tif: "Gtc" } },
+      reduce_only: false,
+      cloid: cloid
+    });
+    
+    const cancelSymbolResponse = await sdk.custom.cancelAllOrders("ETH-PERP");
+    console.log("Cancel Symbol Orders Response:", cancelSymbolResponse);
+    
   } catch (error) {
     console.error("An error occurred:", error);
   } finally {
@@ -58,16 +148,41 @@ async function testExchangeAPI() {
   try {
     console.log("Testing ExchangeAPI endpoints:");
 
+
+    await waitForUserInput("Press Enter to continue to Place Order...");
+
     // 1. Place Order
     const orderRequest = {
       coin: "SOL-PERP",
       is_buy: true,
-      sz: 15,
-      limit_px: 180,
+      sz: 0.30,
+      limit_px: 127.500000000,
       order_type: { limit: { tif: "Gtc" } },
       reduce_only: false,
-      cloid: cloid,
+      cloid: cloid
     };
+
+    // If you want to place multiple orders, you need to call placeOrder separately for each order
+    // const secondOrderRequest = {
+    //   coin: "SOL-PERP",
+    //   is_buy: false,
+    //   sz: 0.2,
+    //   limit_px: 125.15,
+    //   order_type: { limit: { tif: "Gtc" } },
+    //   reduce_only: false,
+    //   cloid: cloid
+    // };
+
+    await sdk.initialize();
+    const state = await sdk.info.perpetuals.getClearinghouseState(user_address);
+    console.log('Account Value:', state.marginSummary.accountValue);
+
+    // const approveFeeResponse = await sdk.exchange.approveBuilderFee({
+    //   builder: "0xd272c0adCc36f5bAEF44BCcEa23A61E9cc6B8EF3",
+    //   maxFeeRate: "0.01%",
+    // });
+    // console.log(approveFeeResponse);
+    
 
     console.log("\n1. Place Order:");
     const placeOrderResponse = await sdk.exchange.placeOrder(orderRequest);
@@ -88,8 +203,8 @@ async function testExchangeAPI() {
 
     // 3. Cancel Order by CLOID
     console.log("\n3. Cancel Order by CLOID:");
-    // const placeOrderResponse = await sdk.exchange.placeOrder(orderRequest);
-    // console.log(JSON.stringify(placeOrderResponse));
+    const placeOrderResponse2 = await sdk.exchange.placeOrder(orderRequest);
+    console.log(JSON.stringify(placeOrderResponse2));
     const cancelByCloidResponse = await sdk.exchange.cancelOrderByCloid(
       "SOL-PERP",
       cloid
@@ -103,7 +218,7 @@ async function testExchangeAPI() {
       placeOrderResponse.response.data.statuses[0].resting.oid,
       {
         ...orderRequest,
-        limit_px: 170,
+        limit_px: 121.49,
       }
     );
     console.log(modifyOrderResponse);

@@ -1,0 +1,26 @@
+
+# Version 1.7.0
+
+## New things introduced:
+- **Automatic Trailing Zeros Handling:** Added automatic removal of trailing zeros for price and size fields to prevent "L1 error: User or API Wallet 0x... does not exist" errors
+- **Rate Limiting:** Implemented official token bucket system (100 tokens, 10/sec refill)
+- **WebSocket:** Added heartbeat detection, better reconnection, and subscription limit tracking (prevent 429 errors)
+- **Nonce Generation:** Enhanced for reliability with monotonically increasing values
+- **API Methods: Added 15 new methods
+```
+  - validatorSummaries: Get summaries of all validators
+  - vaultSummaries: Get summaries of all vaults
+  - blockDetails: Get details of a specific block
+  - txDetails: Get details of a specific transaction
+  - userDetails: Get details of a specific user
+  - userFees: Get fee information for a user
+  - portfolio: Get portfolio information for a user
+  - preTransferCheck: Check if a transfer is possible between addresses
+  - referral: Get referral information for a user
+  - extraAgents: Get extra agent information for a user
+  - isVip: Check if a user has VIP status
+  - legalCheck: Perform legal compliance check for a user
+  - userTwapSliceFillsByTime: Get TWAP slice fills for a user in a time range
+  - twapHistory: Get TWAP history for a user
+  - userToMultiSigSigners: Get multi-sig signers for a user
+```

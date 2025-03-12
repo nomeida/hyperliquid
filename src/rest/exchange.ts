@@ -10,7 +10,8 @@ import {
   signUserSignedAction,
   signUsdTransferAction,
   signWithdrawFromBridgeAction,
-  signAgent
+  signAgent,
+  removeTrailingZeros
 } from '../utils/signing';
 import * as CONSTANTS from '../types/constants';
 
@@ -44,6 +45,10 @@ export class ExchangeAPI {
   private _i = 0;
   private parent: Hyperliquid;
   private vaultAddress: string | null;
+  // Properties for unique nonce generation
+  private nonceCounter = 0;
+  private lastNonceTimestamp = 0;
+  
   constructor(
     testnet: boolean,
     privateKey: string,
@@ -82,14 +87,33 @@ export class ExchangeAPI {
 
   async placeOrder(orderRequest: OrderRequest): Promise<any> {
     await this.parent.ensureInitialized();
-    const { orders, vaultAddress = this.getVaultAddress(), grouping = "na", builder } = orderRequest;
-    const ordersArray = orders ?? [orderRequest as Order];
-  
+    const vaultAddress = this.getVaultAddress();
+    const grouping = (orderRequest as any).grouping || "na";
+    const builder = (orderRequest as any).builder;
+    const ordersArray = [(orderRequest as Order)];
+
     try {
       const assetIndexCache = new Map<string, number>();
-  
+
+      // Normalize price and size values to remove trailing zeros
+      const normalizedOrders = ordersArray.map((order: Order) => {
+        const normalizedOrder = { ...order };
+        
+        // Handle price normalization
+        if (typeof normalizedOrder.limit_px === 'string') {
+          normalizedOrder.limit_px = removeTrailingZeros(normalizedOrder.limit_px);
+        }
+        
+        // Handle size normalization
+        if (typeof normalizedOrder.sz === 'string') {
+          normalizedOrder.sz = removeTrailingZeros(normalizedOrder.sz);
+        }
+        
+        return normalizedOrder;
+      });
+
       const orderWires = await Promise.all(
-        ordersArray.map(async o => {
+        normalizedOrders.map(async (o: Order) => {
           let assetIndex = assetIndexCache.get(o.coin);
           if (assetIndex === undefined) {
             assetIndex = await this.getAssetIndex(o.coin);
@@ -98,12 +122,12 @@ export class ExchangeAPI {
           return orderToWire(o, assetIndex);
         })
       );
-  
+
       const actions = orderWireToAction(orderWires, grouping, builder);
-  
-      const nonce = Date.now();
+
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, actions, vaultAddress, nonce, this.IS_MAINNET);
-  
+
       const payload = { action: actions, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
@@ -127,7 +151,7 @@ export class ExchangeAPI {
         cancels: cancelsWithIndices.map(({ a, o }) => ({ a, o }))
       };
   
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
   
       const payload = { action, nonce, signature, vaultAddress };
@@ -147,7 +171,7 @@ export class ExchangeAPI {
         type: ExchangeType.CANCEL_BY_CLOID,
         cancels: [{ asset: assetIndex, cloid }]
       };
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature, vaultAddress };
@@ -164,13 +188,26 @@ export class ExchangeAPI {
       const assetIndex = await this.getAssetIndex(orderRequest.coin);
       const vaultAddress = this.getVaultAddress();
 
-      const orderWire = orderToWire(orderRequest, assetIndex);
+      // Normalize price and size values to remove trailing zeros
+      const normalizedOrder = { ...orderRequest };
+      
+      // Handle price normalization
+      if (typeof normalizedOrder.limit_px === 'string') {
+        normalizedOrder.limit_px = removeTrailingZeros(normalizedOrder.limit_px);
+      }
+      
+      // Handle size normalization
+      if (typeof normalizedOrder.sz === 'string') {
+        normalizedOrder.sz = removeTrailingZeros(normalizedOrder.sz);
+      }
+
+      const orderWire = orderToWire(normalizedOrder, assetIndex);
       const action = {
         type: ExchangeType.MODIFY,
         oid,
         order: orderWire
       };
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature, vaultAddress };
@@ -189,15 +226,32 @@ export class ExchangeAPI {
         modifies.map(m => this.getAssetIndex(m.order.coin))
       );
 
+      // Normalize price and size values to remove trailing zeros
+      const normalizedModifies = modifies.map(m => {
+        const normalizedOrder = { ...m.order };
+        
+        // Handle price normalization
+        if (typeof normalizedOrder.limit_px === 'string') {
+          normalizedOrder.limit_px = removeTrailingZeros(normalizedOrder.limit_px);
+        }
+        
+        // Handle size normalization
+        if (typeof normalizedOrder.sz === 'string') {
+          normalizedOrder.sz = removeTrailingZeros(normalizedOrder.sz);
+        }
+        
+        return { oid: m.oid, order: normalizedOrder };
+      });
+
       const action = {
         type: ExchangeType.BATCH_MODIFY,
-        modifies: modifies.map((m, index) => ({
+        modifies: normalizedModifies.map((m, index) => ({
           oid: m.oid,
           order: orderToWire(m.order, assetIndices[index])
         }))
       };
 
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature, vaultAddress };
@@ -219,7 +273,7 @@ export class ExchangeAPI {
         isCross: leverageMode === "cross",
         leverage: leverage
       };
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature, vaultAddress };
@@ -241,7 +295,7 @@ export class ExchangeAPI {
         isBuy,
         ntli
       };
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature, vaultAddress };
@@ -329,13 +383,14 @@ export class ExchangeAPI {
   async transferBetweenSpotAndPerp(usdc: number, toPerp: boolean): Promise<any> {
     await this.parent.ensureInitialized();
     try {
+        const nonce = this.generateUniqueNonce();
         const action = {
             type: ExchangeType.USD_CLASS_TRANSFER,
             hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
             signatureChainId: '0xa4b1',  // Arbitrum chain ID
             amount: usdc.toString(),  // API expects string
             toPerp: toPerp,
-            nonce: Date.now()
+            nonce: nonce
         };
 
         const signature = await signUserSignedAction(
@@ -363,7 +418,7 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     try {
       const action = { type: ExchangeType.SCHEDULE_CANCEL, time };
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
@@ -383,7 +438,7 @@ export class ExchangeAPI {
         isDeposit,
         usd
       };
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
@@ -400,7 +455,7 @@ export class ExchangeAPI {
         type: ExchangeType.SET_REFERRER,
         code
       };
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
@@ -414,7 +469,7 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     try {
       const action = { type: ExchangeType.EVM_USER_MODIFY, usingBigBlocks };
-      const nonce = Date.now();
+      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
@@ -444,7 +499,7 @@ export class ExchangeAPI {
                 twap: twapWire
             };
 
-            const nonce = Date.now();
+            const nonce = this.generateUniqueNonce();
             const signature = await signL1Action(
                 this.wallet, 
                 action, 
@@ -472,7 +527,7 @@ export class ExchangeAPI {
                 t: cancelRequest.twap_id
             };
 
-            const nonce = Date.now();
+            const nonce = this.generateUniqueNonce();
             const signature = await signL1Action(
                 this.wallet, 
                 action, 
@@ -491,13 +546,14 @@ export class ExchangeAPI {
     async approveAgent(request: ApproveAgentRequest): Promise<any> {
       await this.parent.ensureInitialized();
       try {
+          const nonce = this.generateUniqueNonce();
           const action = {
               type: ExchangeType.APPROVE_AGENT,
               hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
               signatureChainId: '0xa4b1',
               agentAddress: request.agentAddress,
               agentName: request.agentName,
-              nonce: Date.now()
+              nonce: nonce
           };
   
           const signature = await signAgent(
@@ -514,34 +570,60 @@ export class ExchangeAPI {
   }
   
   async approveBuilderFee(request: ApproveBuilderFeeRequest): Promise<any> {
-      await this.parent.ensureInitialized();
-      try {
-          const action = {
-              type: ExchangeType.APPROVE_BUILDER_FEE,
-              hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-              signatureChainId: '0xa4b1',
-              maxFeeRate: request.maxFeeRate,
-              builder: request.builder,
-              nonce: Date.now()
-          };
-  
-          const signature = await signUserSignedAction(
-              this.wallet,
-              action,
-              [
-                  { name: 'hyperliquidChain', type: 'string' },
-                  { name: 'maxFeeRate', type: 'string' },
-                  { name: 'builder', type: 'string' },
-                  { name: 'nonce', type: 'uint64' }
-              ],
-              'HyperliquidTransaction:ApproveBuilderFee',
-              this.IS_MAINNET
-          );
-  
-          const payload = { action, nonce: action.nonce, signature };
-          return this.httpApi.makeRequest(payload, 1);
-      } catch (error) {
-          throw error;
-      }
+    await this.parent.ensureInitialized();
+    try {
+        const nonce = this.generateUniqueNonce();
+        const action = {
+            type: ExchangeType.APPROVE_BUILDER_FEE,
+            hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+            signatureChainId: '0xa4b1',
+            maxFeeRate: request.maxFeeRate,
+            builder: request.builder,
+            nonce: nonce
+        };
+
+        // Fix: Remove user field from action - it should only be in the EIP712 types
+        const signature = await signUserSignedAction(
+            this.wallet,
+            action,
+            [
+                { name: 'hyperliquidChain', type: 'string' },
+                { name: 'maxFeeRate', type: 'string' },
+                { name: 'builder', type: 'string' },
+                { name: 'nonce', type: 'uint64' }
+            ],
+            'HyperliquidTransaction:ApproveBuilderFee',
+            this.IS_MAINNET
+        );
+
+        const payload = { 
+            action, 
+            nonce: action.nonce, 
+            signature 
+        };
+        return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+        throw error;
+    }
+}
+
+  /**
+   * Generates a unique nonce by using the current timestamp in milliseconds
+   * If multiple calls happen in the same millisecond, it ensures the nonce is still increasing
+   * @returns A unique nonce value
+   */
+  private generateUniqueNonce(): number {
+    const timestamp = Date.now();
+    
+    // Ensure the nonce is always greater than the previous one
+    if (timestamp <= this.lastNonceTimestamp) {
+      // If we're in the same millisecond, increment by 1 from the last nonce
+      this.lastNonceTimestamp += 1;
+      return this.lastNonceTimestamp;
+    }
+    
+    // Otherwise use the current timestamp
+    this.lastNonceTimestamp = timestamp;
+    return timestamp;
   }
 }

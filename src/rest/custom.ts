@@ -8,25 +8,46 @@ import { OrderResponse, CancelOrderRequest, OrderRequest, OrderType } from '../t
 import { CancelOrderResponse } from '../utils/signing'
 import { SymbolConversion } from '../utils/symbolConversion';
 import { floatToWire } from '../utils/signing';
+import { Hyperliquid } from '../index';
 
 export class CustomOperations {
     private exchange: ExchangeAPI;
     private infoApi: InfoAPI;
-    private wallet: ethers.Wallet;
+    private wallet?: ethers.Wallet;
     private symbolConversion: SymbolConversion;
     private walletAddress: string | null;
+    private parent?: Hyperliquid;
 
-    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion, walletAddress: string | null = null) {
-        this.exchange = exchange;
-        this.infoApi = infoApi;
-        this.wallet = new ethers.Wallet(privateKey);
-        this.symbolConversion = symbolConversion;
-        this.walletAddress = walletAddress;
+    constructor(exchangeOrParent: ExchangeAPI | Hyperliquid, infoApiOrPrivateKey?: InfoAPI | string, privateKeyOrSymbolConversion?: string | SymbolConversion, symbolConversionOrWalletAddress?: SymbolConversion | string | null, walletAddress?: string | null) {
+        // Check if first argument is Hyperliquid instance
+        if (exchangeOrParent instanceof Hyperliquid) {
+            this.parent = exchangeOrParent;
+            this.exchange = exchangeOrParent.exchange;
+            this.infoApi = exchangeOrParent.info;
+            this.symbolConversion = exchangeOrParent.symbolConversion;
+            this.walletAddress = exchangeOrParent.isAuthenticated() ? exchangeOrParent.isAuthenticated().toString() : null;
+        } else {
+            // Original constructor
+            this.exchange = exchangeOrParent;
+            this.infoApi = infoApiOrPrivateKey as InfoAPI;
+            if (privateKeyOrSymbolConversion && typeof privateKeyOrSymbolConversion === 'string') {
+                this.wallet = new ethers.Wallet(privateKeyOrSymbolConversion);
+            }
+            this.symbolConversion = symbolConversionOrWalletAddress as SymbolConversion;
+            this.walletAddress = walletAddress || null;
+        }
+    }
+
+    private getUserAddress(): string {
+        if (!this.walletAddress && !this.wallet?.address) {
+            throw new Error('No wallet address available. Please provide a wallet address or private key.');
+        }
+        return this.walletAddress || this.wallet!.address;
     }
 
     async cancelAllOrders(symbol?: string): Promise<CancelOrderResponse> {
         try {
-            const address = this.walletAddress || this.wallet.address;
+            const address = this.getUserAddress();
             const openOrders: UserOpenOrders = await this.infoApi.getUserOpenOrders(address);
 
             let ordersToCancel: UserOpenOrders;
@@ -122,7 +143,7 @@ export class CustomOperations {
         cloid?: string
     ): Promise<OrderResponse> {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
-        const address = this.walletAddress || this.wallet.address;
+        const address = this.getUserAddress();
         const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
         for (const position of positions.assetPositions) {
             const item = position.position;
@@ -158,7 +179,7 @@ export class CustomOperations {
 
     async closeAllPositions(slippage: number = this.DEFAULT_SLIPPAGE): Promise<OrderResponse[]> {
         try {
-            const address = this.walletAddress || this.wallet.address;
+            const address = this.getUserAddress();
             const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
             const closeOrders: Promise<OrderResponse>[] = [];
 

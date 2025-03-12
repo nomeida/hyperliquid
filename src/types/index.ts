@@ -11,14 +11,24 @@ export interface Order extends BaseOrder {
     orders?: undefined;
     coin: string;
     is_buy: boolean;
-    sz: number;
-    limit_px: number;
+    sz: number | string;
+    limit_px: number | string;
     order_type: OrderType;
     reduce_only: boolean;
     cloid?: Cloid;
 }
 
-export type OrderRequest = Order| MultiOrder;
+export interface OrderRequest {
+    coin: string;
+    is_buy: boolean;
+    sz: number | string;
+    limit_px: number | string;
+    order_type: OrderType;
+    reduce_only: boolean;
+    cloid?: string;
+    grouping?: Grouping;
+    builder?: Builder;
+}
 
 interface BaseOrder {
     vaultAddress?: string;
@@ -821,4 +831,207 @@ export interface WsTwapSliceFill {
         };
         twapId: number;
     }>;
+}
+
+export interface ValidatorStats {
+    uptimeFraction: string;
+    predictedApr: string;
+    nSamples: number;
+}
+
+export interface ValidatorSummary {
+    validator: string;
+    signer: string;
+    name: string;
+    description: string;
+    nRecentBlocks: number;
+    stake: number;
+    isJailed: boolean;
+    unjailableAfter: number | null;
+    isActive: boolean;
+    commission: string;
+    stats: [
+        ["day", ValidatorStats],
+        ["week", ValidatorStats],
+        ["month", ValidatorStats],
+    ];
+}
+
+export interface VaultRelationship {
+    type: "normal" | "child" | "parent";
+    data?: {
+        childAddresses: string[];
+    };
+}
+
+export interface VaultSummary {
+    name: string;
+    vaultAddress: string;
+    leader: string;
+    tvl: string;
+    isClosed: boolean;
+    relationship: VaultRelationship;
+    createTimeMillis: number;
+}
+
+export interface TxDetails {
+    action: {
+        type: string;
+        [key: string]: unknown;
+    };
+    block: number;
+    error: string | null;
+    hash: string;
+    time: number;
+    user: string;
+}
+
+export interface BlockDetails {
+    blockTime: number;
+    hash: string;
+    height: number;
+    numTxs: number;
+    proposer: string;
+    txs: TxDetails[];
+}
+
+export interface BlockDetailsResponse {
+    type: "blockDetails";
+    blockDetails: BlockDetails;
+}
+
+export interface TxDetailsResponse {
+    type: "txDetails";
+    tx: TxDetails;
+}
+
+export interface UserDetailsResponse {
+    type: "userDetails";
+    txs: TxDetails[];
+}
+
+export interface UserFees {
+    dailyUserVlm: {
+        date: string;
+        userCross: string;
+        userAdd: string;
+        exchange: string;
+    }[];
+    feeSchedule: {
+        cross: string;
+        add: string;
+        tiers: {
+            vip: {
+                ntlCutoff: string;
+                cross: string;
+                add: string;
+            }[];
+            mm: {
+                makerFractionCutoff: string;
+                add: string;
+            }[];
+        };
+        referralDiscount: string;
+    };
+    userCrossRate: string;
+    userAddRate: string;
+    activeReferralDiscount: string;
+    trial: unknown | null;
+    feeTrialReward: string;
+    nextTrialAvailableTimestamp: unknown | null;
+}
+
+export interface Portfolio {
+    accountValueHistory: [number, string][];
+    pnlHistory: [number, string][];
+    vlm: string;
+}
+
+export type PortfolioPeriods = [
+    ["day", Portfolio],
+    ["week", Portfolio],
+    ["month", Portfolio],
+    ["allTime", Portfolio],
+    ["perpDay", Portfolio],
+    ["perpWeek", Portfolio],
+    ["perpMonth", Portfolio],
+    ["perpAllTime", Portfolio],
+];
+
+export interface PreTransferCheck {
+    fee: string;
+    isSanctioned: boolean;
+    userExists: boolean;
+}
+
+export interface Referral {
+    referredBy: {
+        referrer: string;
+        code: string;
+    } | null;
+    cumVlm: string;
+    unclaimedRewards: string;
+    claimedRewards: string;
+    builderRewards: string;
+    referrerState: {
+        stage: "ready" | "needToCreateCode" | "needToTrade";
+        data?: {
+            code?: string;
+            referralStates?: {
+                cumVlm: string;
+                cumRewardedFeesSinceReferred: string;
+                cumFeesRewardedToReferrer: string;
+                timeJoined: number;
+                user: string;
+            }[];
+            required?: string;
+        };
+    };
+    rewardHistory: {
+        earned: string;
+        vlm: string;
+        referralVlm: string;
+        time: number;
+    }[];
+}
+
+export interface ExtraAgent {
+    address: string;
+    name: string;
+    validUntil: number;
+}
+
+export interface LegalCheck {
+    ipAllowed: boolean;
+    acceptedTerms: boolean;
+    userAllowed: boolean;
+}
+
+export interface TwapState {
+    coin: string;
+    executedNtl: string;
+    executedSz: string;
+    minutes: number;
+    randomize: boolean;
+    reduceOnly: boolean;
+    side: "B" | "A";
+    sz: string;
+    timestamp: number;
+    user: string;
+}
+
+export interface TwapStatus {
+    status: "finished" | "activated" | "terminated" | "error";
+    description?: string;
+}
+
+export interface TwapHistory {
+    time: number;
+    state: TwapState;
+    status: TwapStatus;
+}
+
+export interface MultiSigSigners {
+    authorizedUsers: string[];
+    threshold: number;
 }

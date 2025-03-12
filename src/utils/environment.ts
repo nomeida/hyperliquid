@@ -5,12 +5,39 @@ export const environment = {
     isServiceWorker: typeof self === 'object' && self.constructor && self.constructor.name === 'ServiceWorkerGlobalScope',
     
     // Helper methods
+    hasNativeWebSocket(): boolean {
+        if (this.isBrowser || this.isWebWorker) {
+            return 'WebSocket' in (this.isBrowser ? window : self);
+        }
+        
+        if (this.isNode) {
+            // Node.js v23+ has native WebSocket support
+            const nodeVersion = process.versions.node;
+            const major = parseInt(nodeVersion.split('.')[0], 10);
+            return major >= 23;
+        }
+        
+        return false;
+    },
+
     supportsWebSocket(): boolean {
-        return (
-            (this.isBrowser && 'WebSocket' in window) ||
-            (this.isWebWorker && 'WebSocket' in self) ||
-            (this.isNode && typeof global !== 'undefined' && 'WebSocket' in global)
-        );
+        // First check for native support
+        if (this.hasNativeWebSocket()) {
+            return true;
+        }
+
+        // For Node.js without native support, try to load ws package
+        if (this.isNode) {
+            try {
+                // Dynamic require to avoid bundling ws package in browser builds
+                const WebSocket = (globalThis as any).require?.('ws');
+                return typeof WebSocket === 'function';
+            } catch {
+                return false;
+            }
+        }
+
+        return false;
     },
     
     supportsLocalStorage(): boolean {
