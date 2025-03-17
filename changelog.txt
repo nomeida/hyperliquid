@@ -1,3 +1,23 @@
+# Version 1.7.1
+
+## Bug Fixes:
+- **WebSocket:** Fixed issue with WebSockets reconnecting automatically after a user-initiated manual disconnect
+
+## New API Methods: Added 12 new methods
+```
+  - claimRewards: Claim available rewards
+  - createSubAccount: Create a new sub-account
+  - setDisplayName: Set display name for an account
+  - spotUser: Perform spot user operations
+  - createVault: Create a new vault
+  - vaultDistribute: Distribute assets from a vault
+  - vaultModify: Modify vault parameters
+  - cDeposit: Make a collateral deposit
+  - cWithdraw: Withdraw collateral
+  - tokenDelegate: Delegate tokens to validators
+  - subAccountSpotTransfer: Transfer spot assets between sub-accounts
+  - subAccountTransfer: Transfer assets between sub-accounts
+```
 
 # Version 1.7.0
 
@@ -24,3 +44,4 @@
   - twapHistory: Get TWAP history for a user
   - userToMultiSigSigners: Get multi-sig signers for a user
 ```
+
