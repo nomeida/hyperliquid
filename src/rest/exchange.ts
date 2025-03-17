@@ -26,7 +26,20 @@ import {
   TwapOrder,
   TwapOrderResponse,
   ApproveAgentRequest,
-  ApproveBuilderFeeRequest
+  ApproveBuilderFeeRequest,
+  CreateVaultRequest,
+  CreateVaultResponse,
+  VaultDistributeRequest,
+  VaultModifyRequest,
+  CreateSubAccountResponse,
+  ClaimRewardsResponse,
+  SetDisplayNameResponse,
+  SpotUserResponse,
+  CDepositResponse,
+  CWithdrawResponse,
+  TokenDelegateResponse,
+  SubAccountSpotTransferResponse,
+  SubAccountTransferResponse
 } from '../types/index';
 
 import { ExchangeType, ENDPOINTS } from '../types/constants';
@@ -448,6 +461,65 @@ export class ExchangeAPI {
     }
   }
 
+  // Create a new vault
+  async createVault(name: string, description: string, initialUsd: number): Promise<CreateVaultResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.CREATE_VAULT,
+        name,
+        description,
+        initialUsd
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Distribute funds from a vault between followers
+  async vaultDistribute(vaultAddress: string, usd: number): Promise<any> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.VAULT_DISTRIBUTE,
+        vaultAddress,
+        usd
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Modify a vault's configuration
+  async vaultModify(vaultAddress: string, allowDeposits: boolean | null, alwaysCloseOnWithdraw: boolean | null): Promise<any> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.VAULT_MODIFY,
+        vaultAddress,
+        allowDeposits,
+        alwaysCloseOnWithdraw
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async setReferrer(code: string = CONSTANTS.SDK_CODE): Promise<any> {
     await this.parent.ensureInitialized();
     try {
@@ -606,6 +678,208 @@ export class ExchangeAPI {
         throw error;
     }
 }
+
+  // Claim staking rewards
+  async claimRewards(): Promise<ClaimRewardsResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.CLAIM_REWARDS
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Create a sub-account
+  async createSubAccount(name: string): Promise<CreateSubAccountResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.CREATE_SUB_ACCOUNT,
+        name
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Set display name in the leaderboard
+  async setDisplayName(displayName: string): Promise<SetDisplayNameResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.SET_DISPLAY_NAME,
+        displayName
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Opt out of spot dusting
+  async spotUser(optOut: boolean): Promise<SpotUserResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.SPOT_USER,
+        toggleSpotDusting: {
+          optOut
+        }
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Deposit into staking
+  async cDeposit(wei: bigint): Promise<CDepositResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const nonce = this.generateUniqueNonce();
+      const action = {
+        type: ExchangeType.C_DEPOSIT,
+        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+        signatureChainId: '0xa4b1',
+        wei: wei.toString(),
+        nonce
+      };
+
+      const signature = await signUserSignedAction(
+        this.wallet,
+        action,
+        [
+          { name: 'hyperliquidChain', type: 'string' },
+          { name: 'wei', type: 'string' },
+          { name: 'nonce', type: 'uint64' }
+        ],
+        'HyperliquidTransaction:CDeposit',
+        this.IS_MAINNET
+      );
+
+      const payload = { action, nonce: action.nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Withdraw from staking
+  async cWithdraw(wei: bigint): Promise<CWithdrawResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const nonce = this.generateUniqueNonce();
+      const action = {
+        type: ExchangeType.C_WITHDRAW,
+        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+        signatureChainId: '0xa4b1',
+        wei: wei.toString(),
+        nonce
+      };
+
+      const signature = await signUserSignedAction(
+        this.wallet,
+        action,
+        [
+          { name: 'hyperliquidChain', type: 'string' },
+          { name: 'wei', type: 'string' },
+          { name: 'nonce', type: 'uint64' }
+        ],
+        'HyperliquidTransaction:CWithdraw',
+        this.IS_MAINNET
+      );
+
+      const payload = { action, nonce: action.nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Delegate or undelegate stake from validator
+  async tokenDelegate(validator: string, isUndelegate: boolean, wei: bigint): Promise<TokenDelegateResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const nonce = this.generateUniqueNonce();
+      const action = {
+        type: ExchangeType.TOKEN_DELEGATE,
+        validator,
+        isUndelegate,
+        wei: wei.toString(),
+        nonce
+      };
+
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Transfer between sub-accounts (spot)
+  async subAccountSpotTransfer(subAccountUser: string, isDeposit: boolean, token: number, amount: string): Promise<SubAccountSpotTransferResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const nonce = this.generateUniqueNonce();
+      const action = {
+        type: ExchangeType.SUB_ACCOUNT_SPOT_TRANSFER,
+        subAccountUser,
+        isDeposit,
+        token,
+        amount
+      };
+
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Transfer between sub-accounts (perp)
+  async subAccountTransfer(subAccountUser: string, isDeposit: boolean, usd: number): Promise<SubAccountTransferResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const nonce = this.generateUniqueNonce();
+      const action = {
+        type: ExchangeType.SUB_ACCOUNT_TRANSFER,
+        subAccountUser,
+        isDeposit,
+        usd
+      };
+
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
 
   /**
    * Generates a unique nonce by using the current timestamp in milliseconds

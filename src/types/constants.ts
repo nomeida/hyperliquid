@@ -78,13 +78,24 @@ export enum ExchangeType {
     WITHDRAW = 'withdraw3',
     SPOT_USER = 'spotUser',
     VAULT_TRANSFER = 'vaultTransfer',
+    CREATE_VAULT = 'createVault',
+    VAULT_DISTRIBUTE = 'vaultDistribute',
+    VAULT_MODIFY = 'vaultModify',
     SET_REFERRER = 'setReferrer',
     USD_CLASS_TRANSFER = 'usdClassTransfer',
     TWAP_ORDER = 'twapOrder',
     TWAP_CANCEL = 'twapCancel',
     APPROVE_AGENT = 'approveAgent',
     APPROVE_BUILDER_FEE = 'approveBuilderFee',
-    EVM_USER_MODIFY = 'evmUserModify'
+    EVM_USER_MODIFY = 'evmUserModify',
+    CLAIM_REWARDS = 'claimRewards',
+    CREATE_SUB_ACCOUNT = 'createSubAccount',
+    SET_DISPLAY_NAME = 'setDisplayName',
+    C_DEPOSIT = 'cDeposit',
+    C_WITHDRAW = 'cWithdraw',
+    TOKEN_DELEGATE = 'tokenDelegate',
+    SUB_ACCOUNT_SPOT_TRANSFER = 'subAccountSpotTransfer',
+    SUB_ACCOUNT_TRANSFER = 'subAccountTransfer'
 }
 
 export const WEBSOCKET = {

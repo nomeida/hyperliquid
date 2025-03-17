@@ -1035,3 +1035,94 @@ export interface MultiSigSigners {
     authorizedUsers: string[];
     threshold: number;
 }
+
+// Vault-related types
+export interface CreateVaultRequest {
+  name: string;
+  description: string;
+  initialUsd: number;
+}
+
+export interface CreateVaultResponse {
+  status: string;
+  response: {
+    type: string;
+    data: string; // Vault address
+  };
+}
+
+export interface VaultDistributeRequest {
+  vaultAddress: string;
+  usd: number;
+}
+
+export interface VaultModifyRequest {
+  vaultAddress: string;
+  allowDeposits: boolean | null;
+  alwaysCloseOnWithdraw: boolean | null;
+}
+
+// Response types
+export interface ClaimRewardsResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
+
+export interface CreateSubAccountResponse {
+  status: string;
+  response: {
+    type: string;
+    data: string; // Sub-account address
+  };
+}
+
+export interface SetDisplayNameResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
+
+export interface SpotUserResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
+
+export interface CDepositResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
+
+export interface CWithdrawResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
+
+export interface TokenDelegateResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
+
+export interface SubAccountSpotTransferResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
+
+export interface SubAccountTransferResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
