@@ -216,7 +216,7 @@ export class Hyperliquid {
 
     disconnect(): void {
         if (this.ws) {
-            this.ws.close();
+            this.ws.close(true);
         }
     }
 

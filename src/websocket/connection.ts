@@ -17,6 +17,7 @@ export class WebSocketClient {
     private connectionPromise: Promise<void> | null = null;
     private subscriptionCount: number = 0;
     private lastPongReceived: number = 0;
+    private manualDisconnect: boolean = false; // Flag to track if disconnect was manually initiated
     private readonly MAX_SUBSCRIPTIONS: number = 1000; // Maximum subscriptions per IP as per API docs
 
     constructor(testnet: boolean = false, maxReconnectAttempts:number=5) {
@@ -41,6 +42,9 @@ export class WebSocketClient {
     }
 
     connect(): Promise<void> {
+        // Reset the manualDisconnect flag when connecting
+        this.manualDisconnect = false;
+        
         // If already connected, return immediately
         if (this.isConnected()) {
             return Promise.resolve();
@@ -101,7 +105,14 @@ export class WebSocketClient {
                     this.connecting = false;
                     this.stopPingInterval();
                     this.emit('close');
-                    this.reconnect();
+                    
+                    // Only attempt to reconnect if not manually disconnected
+                    if (!this.manualDisconnect) {
+                        this.reconnect();
+                    } else {
+                        console.log('Manual disconnect detected, not attempting to reconnect');
+                        this.emit('manualDisconnect');
+                    }
                 };
             } catch (error) {
                 this.connecting = false;
@@ -150,9 +161,12 @@ export class WebSocketClient {
                 if (now - this.lastPongReceived > 30000) {
                     console.warn('No pong received in the last 30 seconds, reconnecting...');
                     this.close();
-                    this.connect().catch(err => {
-                        console.error('Failed to reconnect after ping timeout:', err);
-                    });
+                    // Only attempt to reconnect if not manually disconnected
+                    if (!this.manualDisconnect) {
+                        this.connect().catch(err => {
+                            console.error('Failed to reconnect after ping timeout:', err);
+                        });
+                    }
                 }
             }
         }, 15000) as unknown as number;
@@ -172,7 +186,8 @@ export class WebSocketClient {
         this.ws.send(JSON.stringify(message));
     }
 
-    close(): void {
+    close(manualDisconnect: boolean = false): void {
+        this.manualDisconnect = manualDisconnect;
         if (this.ws) {
             this.connected = false;
             this.connecting = false;
