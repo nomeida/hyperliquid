@@ -1,4 +1,4 @@
-# Version 1.7.1
+# Version 1.7.2
 
 ## Bug Fixes:
 - **WebSocket:** Fixed issue with WebSockets reconnecting automatically after a user-initiated manual disconnect
