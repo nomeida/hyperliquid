@@ -1,4 +1,4 @@
-# Version 1.7.2
+# Version 1.7.3
 
 ## Bug Fixes:
 - **WebSocket:** Fixed issue with WebSockets reconnecting automatically after a user-initiated manual disconnect
@@ -7,14 +7,14 @@
 ```
   - claimRewards: Claim available rewards
   - createSubAccount: Create a new sub-account
-  - setDisplayName: Set display name for an account
-  - spotUser: Perform spot user operations
+  - setDisplayName: Set display name for an account (leaderboard)
+  - spotUser: Opt in/out of spot dusting (HL removing small balances from your account each day)
   - createVault: Create a new vault
   - vaultDistribute: Distribute assets from a vault
   - vaultModify: Modify vault parameters
-  - cDeposit: Make a collateral deposit
-  - cWithdraw: Withdraw collateral
-  - tokenDelegate: Delegate tokens to validators
+  - cDeposit: Deposit for staking
+  - cWithdraw: Withdraw staking
+  - tokenDelegate: Delegate tokens to validators (or undelegate)
   - subAccountSpotTransfer: Transfer spot assets between sub-accounts
   - subAccountTransfer: Transfer assets between sub-accounts
 ```
