@@ -98,12 +98,12 @@ export class ExchangeAPI {
     return index;
   }
 
-  async placeOrder(orderRequest: OrderRequest): Promise<any> {
+  async placeOrder(orderRequest: OrderRequest | Order): Promise<any> {
     await this.parent.ensureInitialized();
     const vaultAddress = this.getVaultAddress();
     const grouping = (orderRequest as any).grouping || "na";
     const builder = (orderRequest as any).builder;
-    const ordersArray = [(orderRequest as Order)];
+    const ordersArray = (orderRequest as Order).orders ?? [orderRequest as OrderRequest];
 
     try {
       const assetIndexCache = new Map<string, number>();
