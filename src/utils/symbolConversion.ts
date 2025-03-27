@@ -56,6 +56,16 @@ export class SymbolConversion {
                 this.httpApi.makeRequest<SpotMetaAndAssetCtxs>({ "type": CONSTANTS.InfoType.SPOT_META_AND_ASSET_CTXS })
             ]);
 
+            // Verify responses are valid before proceeding
+            if (!perpMeta || !perpMeta[0] || !perpMeta[0].universe || !Array.isArray(perpMeta[0].universe)) {
+                throw new Error('Invalid perpetual metadata response');
+            }
+
+            if (!spotMeta || !spotMeta[0] || !spotMeta[0].tokens || !Array.isArray(spotMeta[0].tokens) || 
+                !spotMeta[0].universe || !Array.isArray(spotMeta[0].universe)) {
+                throw new Error('Invalid spot metadata response');
+            }
+
             this.assetToIndexMap.clear();
             this.exchangeToInternalNameMap.clear();
             
@@ -79,6 +89,8 @@ export class SymbolConversion {
             });
         } catch (error) {
             console.error('Failed to refresh asset maps:', error);
+            // Don't throw here to prevent crashing the application
+            // but ensure that refresh attempt will be made again
         }
     }
 
