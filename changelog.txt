@@ -1,3 +1,20 @@
+# Version 1.7.4
+
+Mostly just bug fixes this time around, but sghould make for a better user experience
+
+Bug Fixes:
+- `approveBuilderFee` and using builder codes for orders works now
+
+- Multi-order placement works again (accidentally broken in last version)
+
+- Edge case with BTC-PERP market orders fixed
+
+- Testnet now works without problems
+
+- Fixed a problem where a background API call would fail and create tons of error logs
+
+
+
 # Version 1.7.3
 
 ## Bug Fixes:
