@@ -102,7 +102,16 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     const vaultAddress = this.getVaultAddress();
     const grouping = (orderRequest as any).grouping || "na";
-    const builder = (orderRequest as any).builder;
+    let builder = (orderRequest as any).builder;
+    
+    // Normalize builder address to lowercase if it exists
+    if (builder) {
+      builder = {
+        ...builder,
+        address: builder.address?.toLowerCase() || builder.b?.toLowerCase()
+      };
+    }
+    
     const ordersArray = (orderRequest as Order).orders ?? [orderRequest as OrderRequest];
 
     try {
@@ -649,19 +658,20 @@ export class ExchangeAPI {
             type: ExchangeType.APPROVE_BUILDER_FEE,
             hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
             signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
-            maxFeeRate: request.maxFeeRate,
+            // Ensure maxFeeRate always includes the % symbol
+            maxFeeRate: request.maxFeeRate.endsWith('%') ? request.maxFeeRate : `${request.maxFeeRate}%`,
             builder: request.builder,
             nonce: nonce
         };
 
-        // Fix: Remove user field from action - it should only be in the EIP712 types
+        // Fix: The builder field should be of type 'address' not 'string'
         const signature = await signUserSignedAction(
             this.wallet,
             action,
             [
                 { name: 'hyperliquidChain', type: 'string' },
                 { name: 'maxFeeRate', type: 'string' },
-                { name: 'builder', type: 'string' },
+                { name: 'builder', type: 'address' },
                 { name: 'nonce', type: 'uint64' }
             ],
             'HyperliquidTransaction:ApproveBuilderFee',

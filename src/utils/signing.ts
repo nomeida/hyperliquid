@@ -226,7 +226,12 @@ export function orderWireToAction(orders: OrderWire[], grouping: Grouping = "na"
         type: 'order',
         orders: orders,
         grouping: grouping,
-        ...(builder !== undefined ? { builder: builder } : {})
+        ...(builder !== undefined ? { 
+            builder: {
+                b: builder.address.toLowerCase(),
+                f: builder.fee
+            } 
+        } : {})
     };
 }
 
