@@ -104,7 +104,7 @@ export class CustomOperations {
         console.log(decimals)
 
         px *= isBuy ? (1 + slippage) : (1 - slippage);
-        return Number(px.toFixed(isSpot ? 8 : decimals-1));
+        return Number(px.toFixed(isSpot ? 8 : Math.max(0, decimals-1)));
     }
 
     async marketOpen(
