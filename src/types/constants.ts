@@ -8,6 +8,11 @@ export const WSS_URLS = {
     TESTNET: 'wss://api.hyperliquid-testnet.xyz/ws'
 };
 
+export const CHAIN_IDS = {
+    ARBITRUM_MAINNET: '0xa4b1', // 42161
+    ARBITRUM_TESTNET: '0x66eee' // 421614 - testnet//Arbitrum Sepolia
+};
+
 export const ENDPOINTS = {
     INFO: '/info',
     EXCHANGE: '/exchange'

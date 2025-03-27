@@ -42,7 +42,7 @@ import {
   SubAccountTransferResponse
 } from '../types/index';
 
-import { ExchangeType, ENDPOINTS } from '../types/constants';
+import { ExchangeType, ENDPOINTS, CHAIN_IDS } from '../types/constants';
 import { SymbolConversion } from '../utils/symbolConversion';
 import { Hyperliquid } from '../index';
 
@@ -325,7 +325,7 @@ export class ExchangeAPI {
         const action = {
             type: ExchangeType.USD_SEND,
             hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-            signatureChainId: '0xa4b1',
+            signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
             destination: destination,
             amount: amount.toString(),
             time: Date.now()
@@ -345,7 +345,7 @@ export class ExchangeAPI {
       const action = {
         type: ExchangeType.SPOT_SEND,
         hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-        signatureChainId: '0xa4b1',
+        signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
         destination,
         token,
         amount,
@@ -378,7 +378,7 @@ export class ExchangeAPI {
       const action = {
         type: ExchangeType.WITHDRAW,
         hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-        signatureChainId: '0xa4b1',
+        signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
         destination: destination,
         amount: amount.toString(),
         time: Date.now()
@@ -400,7 +400,7 @@ export class ExchangeAPI {
         const action = {
             type: ExchangeType.USD_CLASS_TRANSFER,
             hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-            signatureChainId: '0xa4b1',  // Arbitrum chain ID
+            signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
             amount: usdc.toString(),  // API expects string
             toPerp: toPerp,
             nonce: nonce
@@ -622,7 +622,7 @@ export class ExchangeAPI {
           const action = {
               type: ExchangeType.APPROVE_AGENT,
               hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-              signatureChainId: '0xa4b1',
+              signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
               agentAddress: request.agentAddress,
               agentName: request.agentName,
               nonce: nonce
@@ -648,7 +648,7 @@ export class ExchangeAPI {
         const action = {
             type: ExchangeType.APPROVE_BUILDER_FEE,
             hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-            signatureChainId: '0xa4b1',
+            signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
             maxFeeRate: request.maxFeeRate,
             builder: request.builder,
             nonce: nonce
@@ -760,7 +760,7 @@ export class ExchangeAPI {
       const action = {
         type: ExchangeType.C_DEPOSIT,
         hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-        signatureChainId: '0xa4b1',
+        signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
         wei: wei.toString(),
         nonce
       };
@@ -792,7 +792,7 @@ export class ExchangeAPI {
       const action = {
         type: ExchangeType.C_WITHDRAW,
         hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-        signatureChainId: '0xa4b1',
+        signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
         wei: wei.toString(),
         nonce
       };
