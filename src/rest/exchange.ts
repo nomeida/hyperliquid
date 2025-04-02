@@ -474,13 +474,14 @@ export class ExchangeAPI {
   async createVault(name: string, description: string, initialUsd: number): Promise<CreateVaultResponse> {
     await this.parent.ensureInitialized();
     try {
+      const nonce = this.generateUniqueNonce();
       const action = {
         type: ExchangeType.CREATE_VAULT,
         name,
         description,
-        initialUsd
+        initialUsd,
+        nonce
       };
-      const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
