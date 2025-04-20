@@ -155,6 +155,12 @@ export interface WsBook {
   time: number;
 }
 
+export interface WsBbo {
+  coin: string;
+  time: number;
+  bbo: [WsLevel | null, WsLevel | null];
+}
+
 export interface WsLevel {
   px: string;
   sz: string;
