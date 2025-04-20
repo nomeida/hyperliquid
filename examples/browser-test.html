@@ -3,13 +3,13 @@
 <head>
     <title>Hyperliquid SDK Browser Test Interface</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
+        body {
+            font-family: Arial, sans-serif;
             margin: 20px;
             background: #f0f2f5;
         }
-        .container { 
-            max-width: 1200px; 
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -245,7 +245,7 @@
                 ]
             },
             'Get Candle Snapshot': {
-                method: async (symbol, interval, startTime, endTime) => 
+                method: async (symbol, interval, startTime, endTime) =>
                     await sdk.info.getCandleSnapshot(symbol, interval, parseInt(startTime), parseInt(endTime)),
                 params: [
                     { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
@@ -444,18 +444,22 @@
                 ]
             },
             'Modify Order': {
-                method: async (symbol, oid, side, size, price, orderType, tif, reduceOnly, cloid) => await sdk.exchange.modifyOrder(parseInt(oid), {
-                    coin: symbol,
-                    is_buy: side.toLowerCase() === 'buy',
-                    sz: parseFloat(size),
-                    limit_px: parseFloat(price),
-                    reduce_only: reduceOnly === 'true',
-                    order_type: { limit: { tif: tif || 'Gtc' } },
-                    ...(cloid ? { cloid } : {})
-                }),
+                method: async (symbol, oid, side, size, price, orderType, tif, reduceOnly, cloid) => {
+                    // Check if oid is a number or a string (cloid)
+                    const orderId = /^\d+$/.test(oid) ? parseInt(oid) : oid;
+                    return await sdk.exchange.modifyOrder(orderId, {
+                        coin: symbol,
+                        is_buy: side.toLowerCase() === 'buy',
+                        sz: parseFloat(size),
+                        limit_px: parseFloat(price),
+                        reduce_only: reduceOnly === 'true',
+                        order_type: { limit: { tif: tif || 'Gtc' } },
+                        ...(cloid ? { cloid } : {})
+                    });
+                },
                 params: [
                     { name: 'symbol', type: 'text', placeholder: 'e.g. BTC-PERP' },
-                    { name: 'oid', type: 'number', placeholder: 'Order ID to modify' },
+                    { name: 'oid', type: 'text', placeholder: 'Order ID or Client Order ID to modify' },
                     { name: 'side', type: 'text', placeholder: 'buy or sell' },
                     { name: 'size', type: 'number', placeholder: 'New order size' },
                     { name: 'price', type: 'number', placeholder: 'New limit price' },
@@ -730,7 +734,7 @@
             const output = document.getElementById('outputContent');
             const div = document.createElement('div');
             div.className = type;
-            
+
             if (typeof message === 'object') {
                 // Pretty print JSON with 2 spaces indentation
                 const formatted = JSON.stringify(message, null, 2);
@@ -740,9 +744,9 @@
             } else {
                 div.textContent = message;
             }
-            
+
             output.appendChild(div);
-            
+
             // Only auto-scroll if enabled
             if (isAutoScrollEnabled) {
                 // Use RAF to ensure DOM update is complete
@@ -757,10 +761,10 @@
         // Initialize scroll handling
         document.getElementById('outputContent').addEventListener('scroll', function() {
             if (!isAutoScrollEnabled) return;
-            
+
             const isAtBottom = Math.abs((this.scrollHeight - this.clientHeight) - this.scrollTop) < 1;
             isUserScrolling = !isAtBottom;
-            
+
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
                 isUserScrolling = false;
@@ -797,7 +801,7 @@
 
                 sdk = new HyperliquidSDK.Hyperliquid(config);
                 await sdk.connect();
-                
+
                 log('SDK initialized successfully');
                 populateMethods();
                 checkCompatibility();
@@ -809,17 +813,17 @@
         function createMethodButton(name, methodInfo, isWebSocket) {
             const container = document.createElement('div');
             container.style.marginBottom = '10px';
-            
+
             // Create button
             const button = document.createElement('button');
             button.textContent = name;
             button.className = 'method-button';
-            
+
             // Create parameter inputs container
             const paramsDiv = document.createElement('div');
             paramsDiv.className = 'param-input';
             paramsDiv.style.display = 'none';
-            
+
             // For methods with no parameters
             if (methodInfo.params.length === 0) {
                 button.onclick = async () => {
@@ -872,40 +876,40 @@
                 container.appendChild(button);
                 return container;
             }
-            
+
             // Create inputs for parameters
             methodInfo.params.forEach(param => {
                 const inputGroup = document.createElement('div');
                 inputGroup.style.marginBottom = '5px';
-                
+
                 const label = document.createElement('label');
                 label.textContent = param.name + ': ';
                 label.style.display = 'inline-block';
                 label.style.width = '120px';
-                
+
                 const input = document.createElement('input');
                 input.type = param.type;
                 input.placeholder = param.placeholder;
                 input.id = `${name}-${param.name}`;
                 input.style.width = '300px';
                 input.style.padding = '5px';
-                
+
                 // Load value from localStorage if exists
                 const savedValue = localStorage.getItem(`${name}-${param.name}`);
                 if (savedValue) {
                     input.value = savedValue;
                 }
-                
+
                 // Save to localStorage on input change
                 input.addEventListener('input', (e) => {
                     localStorage.setItem(`${name}-${param.name}`, e.target.value);
                 });
-                
+
                 inputGroup.appendChild(label);
                 inputGroup.appendChild(input);
                 paramsDiv.appendChild(inputGroup);
             });
-            
+
             // Add submit button for methods with parameters
             const submitBtn = document.createElement('button');
             submitBtn.textContent = 'Submit';
@@ -913,7 +917,7 @@
             submitBtn.style.marginTop = '10px';
             submitBtn.style.width = 'auto';
             submitBtn.style.padding = '5px 15px';
-            
+
             submitBtn.onclick = async (e) => {
                 e.stopPropagation();
                 try {
@@ -968,7 +972,7 @@
                     log(error.message, 'error');
                 }
             };
-            
+
             paramsDiv.appendChild(submitBtn);
 
             // Toggle parameter inputs on button click for methods with parameters
@@ -1011,14 +1015,14 @@
             // Categorize methods
             Object.entries(restMethods).forEach(([name, info]) => {
                 // Custom Operations (from custom.ts)
-                if (name === 'Cancel All Orders' || name === 'Market Open' || 
+                if (name === 'Cancel All Orders' || name === 'Market Open' ||
                     name === 'Market Close' || name === 'Close All Positions' ||
                     name === 'Get All Assets') {
                     sections[4].methods[name] = info;
                 }
                 // Exchange API (from exchange.ts)
-                else if (name.startsWith('Place Order') || name.startsWith('Cancel Order') || 
-                    name.startsWith('Modify') || name.startsWith('Update') || 
+                else if (name.startsWith('Place Order') || name.startsWith('Cancel Order') ||
+                    name.startsWith('Modify') || name.startsWith('Update') ||
                     name.startsWith('USD Transfer') || name.startsWith('Spot Transfer') ||
                     name.startsWith('Initiate') || name.startsWith('Transfer Between') ||
                     name.startsWith('Schedule') || name.startsWith('Vault Transfer') ||
@@ -1084,4 +1088,4 @@
         checkCompatibility();
     </script>
 </body>
-</html> 
+</html>

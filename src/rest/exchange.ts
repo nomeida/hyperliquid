@@ -61,7 +61,7 @@ export class ExchangeAPI {
   // Properties for unique nonce generation
   private nonceCounter = 0;
   private lastNonceTimestamp = 0;
-  
+
   constructor(
     testnet: boolean,
     privateKey: string,
@@ -103,7 +103,7 @@ export class ExchangeAPI {
     const vaultAddress = this.getVaultAddress();
     const grouping = (orderRequest as any).grouping || "na";
     let builder = (orderRequest as any).builder;
-    
+
     // Normalize builder address to lowercase if it exists
     if (builder) {
       builder = {
@@ -111,7 +111,7 @@ export class ExchangeAPI {
         address: builder.address?.toLowerCase() || builder.b?.toLowerCase()
       };
     }
-    
+
     const ordersArray = (orderRequest as Order).orders ?? [orderRequest as OrderRequest];
 
     try {
@@ -120,17 +120,17 @@ export class ExchangeAPI {
       // Normalize price and size values to remove trailing zeros
       const normalizedOrders = ordersArray.map((order: Order) => {
         const normalizedOrder = { ...order };
-        
+
         // Handle price normalization
         if (typeof normalizedOrder.limit_px === 'string') {
           normalizedOrder.limit_px = removeTrailingZeros(normalizedOrder.limit_px);
         }
-        
+
         // Handle size normalization
         if (typeof normalizedOrder.sz === 'string') {
           normalizedOrder.sz = removeTrailingZeros(normalizedOrder.sz);
         }
-        
+
         return normalizedOrder;
       });
 
@@ -162,20 +162,20 @@ export class ExchangeAPI {
     try {
       const cancels = Array.isArray(cancelRequests) ? cancelRequests : [cancelRequests];
       const vaultAddress = this.getVaultAddress();
-  
+
       const cancelsWithIndices = await Promise.all(cancels.map(async (req) => ({
         ...req,
         a: await this.getAssetIndex(req.coin)
       })));
-  
+
       const action = {
         type: ExchangeType.CANCEL,
         cancels: cancelsWithIndices.map(({ a, o }) => ({ a, o }))
       };
-  
+
       const nonce = this.generateUniqueNonce();
       const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
-  
+
       const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
@@ -204,7 +204,7 @@ export class ExchangeAPI {
   }
 
   //Modify a single order
-  async modifyOrder(oid: number, orderRequest: Order): Promise<any> {
+  async modifyOrder(oid: number | string, orderRequest: Order): Promise<any> {
     await this.parent.ensureInitialized();
     try {
       const assetIndex = await this.getAssetIndex(orderRequest.coin);
@@ -212,12 +212,12 @@ export class ExchangeAPI {
 
       // Normalize price and size values to remove trailing zeros
       const normalizedOrder = { ...orderRequest };
-      
+
       // Handle price normalization
       if (typeof normalizedOrder.limit_px === 'string') {
         normalizedOrder.limit_px = removeTrailingZeros(normalizedOrder.limit_px);
       }
-      
+
       // Handle size normalization
       if (typeof normalizedOrder.sz === 'string') {
         normalizedOrder.sz = removeTrailingZeros(normalizedOrder.sz);
@@ -240,7 +240,7 @@ export class ExchangeAPI {
   }
 
   //Modify multiple orders at once
-  async batchModifyOrders(modifies: Array<{ oid: number, order: Order }>): Promise<any> {
+  async batchModifyOrders(modifies: Array<{ oid: number | string, order: Order }>): Promise<any> {
     await this.parent.ensureInitialized();
     try {
       const vaultAddress = this.getVaultAddress();
@@ -251,17 +251,17 @@ export class ExchangeAPI {
       // Normalize price and size values to remove trailing zeros
       const normalizedModifies = modifies.map(m => {
         const normalizedOrder = { ...m.order };
-        
+
         // Handle price normalization
         if (typeof normalizedOrder.limit_px === 'string') {
           normalizedOrder.limit_px = removeTrailingZeros(normalizedOrder.limit_px);
         }
-        
+
         // Handle size normalization
         if (typeof normalizedOrder.sz === 'string') {
           normalizedOrder.sz = removeTrailingZeros(normalizedOrder.sz);
         }
-        
+
         return { oid: m.oid, order: normalizedOrder };
       });
 
@@ -566,7 +566,7 @@ export class ExchangeAPI {
         try {
             const assetIndex = await this.getAssetIndex(orderRequest.coin);
             const vaultAddress = this.getVaultAddress();
-            
+
             const twapWire = {
                 a: assetIndex,
                 b: orderRequest.is_buy,
@@ -583,10 +583,10 @@ export class ExchangeAPI {
 
             const nonce = this.generateUniqueNonce();
             const signature = await signL1Action(
-                this.wallet, 
-                action, 
-                vaultAddress, 
-                nonce, 
+                this.wallet,
+                action,
+                vaultAddress,
+                nonce,
                 this.IS_MAINNET
             );
 
@@ -602,7 +602,7 @@ export class ExchangeAPI {
         try {
             const assetIndex = await this.getAssetIndex(cancelRequest.coin);
             const vaultAddress = this.getVaultAddress();
-            
+
             const action = {
                 type: ExchangeType.TWAP_CANCEL,
                 a: assetIndex,
@@ -611,10 +611,10 @@ export class ExchangeAPI {
 
             const nonce = this.generateUniqueNonce();
             const signature = await signL1Action(
-                this.wallet, 
-                action, 
-                vaultAddress, 
-                nonce, 
+                this.wallet,
+                action,
+                vaultAddress,
+                nonce,
                 this.IS_MAINNET
             );
 
@@ -637,20 +637,20 @@ export class ExchangeAPI {
               agentName: request.agentName,
               nonce: nonce
           };
-  
+
           const signature = await signAgent(
               this.wallet,
               action,
               this.IS_MAINNET
           );
-  
+
           const payload = { action, nonce: action.nonce, signature };
           return this.httpApi.makeRequest(payload, 1);
       } catch (error) {
           throw error;
       }
   }
-  
+
   async approveBuilderFee(request: ApproveBuilderFeeRequest): Promise<any> {
     await this.parent.ensureInitialized();
     try {
@@ -679,10 +679,10 @@ export class ExchangeAPI {
             this.IS_MAINNET
         );
 
-        const payload = { 
-            action, 
-            nonce: action.nonce, 
-            signature 
+        const payload = {
+            action,
+            nonce: action.nonce,
+            signature
         };
         return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
@@ -899,14 +899,14 @@ export class ExchangeAPI {
    */
   private generateUniqueNonce(): number {
     const timestamp = Date.now();
-    
+
     // Ensure the nonce is always greater than the previous one
     if (timestamp <= this.lastNonceTimestamp) {
       // If we're in the same millisecond, increment by 1 from the last nonce
       this.lastNonceTimestamp += 1;
       return this.lastNonceTimestamp;
     }
-    
+
     // Otherwise use the current timestamp
     this.lastNonceTimestamp = timestamp;
     return timestamp;
