@@ -142,6 +142,14 @@ sdk.exchange.placeOrder({
   console.error('Error placing order:', error);
 });
 
+// Reserve additional actions for rate limits
+// This costs 0.0005 USDC per request instead of trading to increase rate limits
+sdk.exchange.reserveRequestWeight(1).then(result => {
+  console.log('Reserved additional actions:', result);
+}).catch(error => {
+  console.error('Error reserving actions:', error);
+});
+
 // Multiple orders can be passed as an array or order objects
 // The grouping, vaultAddress and builder properties are optional
 // Grouping determines how multiple orders are treated by the exchange endpoint in terms
@@ -216,10 +224,12 @@ All methods supported can be found here: [Hyperliquid Info Endpoint API Document
 
 ### WebSocket Methods
 
+#### WebSocket Subscriptions
+
 ```typescript
 const { Hyperliquid } = require('hyperliquid');
 
-async function testWebSocket() {
+async function testWebSocketSubscriptions() {
     // Create a new Hyperliquid instance
     // You can pass a privateKey in the options if you need authenticated access
     const sdk = new Hyperliquid({ enableWs: true });
@@ -251,8 +261,75 @@ async function testWebSocket() {
     }
 }
 
-testWebSocket();
+testWebSocketSubscriptions();
 ```
+
+#### WebSocket POST Requests
+
+You can also use WebSocket to send POST requests instead of using HTTP. This is useful for high-frequency trading or when you need to minimize latency.
+
+```typescript
+const { Hyperliquid } = require('hyperliquid');
+
+async function testWebSocketPostRequests() {
+    // Create a new Hyperliquid instance
+    const sdk = new Hyperliquid({
+        enableWs: true,
+        // Include privateKey for authorized requests
+        privateKey: 'your_private_key' // Optional, only needed for authorized requests
+    });
+
+    try {
+        // Connect to the WebSocket
+        await sdk.connect();
+        console.log('Connected to WebSocket');
+
+        // Wait a moment to ensure connection is fully established
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Example 1: Unauthorized POST request (info endpoint)
+        const l2BookResponse = await sdk.subscriptions.postRequest('info', {
+            type: 'l2Book',
+            coin: 'BTC'
+        });
+        console.log('L2 Book Response:', l2BookResponse);
+
+        // Example 2: Authorized POST request (exchange endpoint)
+        // Only works if privateKey is provided
+        if (sdk.isAuthenticated()) {
+            // Generate order payload
+            const orderPayload = await sdk.exchange.getOrderPayload({
+                coin: 'BTC',
+                is_buy: true,
+                sz: '0.001',
+                limit_px: '50000', // Far from market price for safety
+                order_type: { limit: { tif: 'Gtc' } },
+                reduce_only: false
+            });
+
+            // Send the order via WebSocket
+            const orderResponse = await sdk.subscriptions.postRequest('action', orderPayload);
+            console.log('Place Order Response:', orderResponse);
+
+            // Cancel all orders
+            const cancelAllPayload = await sdk.exchange.getCancelAllPayload();
+            const cancelAllResponse = await sdk.subscriptions.postRequest('action', cancelAllPayload);
+            console.log('Cancel All Orders Response:', cancelAllResponse);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    } finally {
+        // Disconnect WebSocket when done
+        sdk.disconnect();
+    }
+}
+
+testWebSocketPostRequests();
+```
+
+**Notes:**
+- The WebSocket connection must be fully established before sending POST requests. It's recommended to add a short delay after connecting before sending the first request.
+- For authorized requests, the SDK will use the wallet address as the vault address if no vault address is explicitly provided. If you're using a specific vault, make sure to provide the vault address when initializing the SDK.
 
 ## Automatic Handling of Trailing Zeros
 
@@ -359,7 +436,7 @@ To manage your subscriptions effectively:
 
 ## Initialization
 
-In most cases the SDK will automatically initialize itself when required. However, in some cases you may need to explicitly initialize the SDK. You can use this method to initialize the SDK: 
+In most cases the SDK will automatically initialize itself when required. However, in some cases you may need to explicitly initialize the SDK. You can use this method to initialize the SDK:
 
 ```typescript
 await sdk.connect();
@@ -379,6 +456,24 @@ For more detailed documentation on all available methods and their parameters, p
 If you don't have an existing referral and use this SDK then your referral will be set by the SDK. This gives you a 4% discount on fees and gives me a percentage of the fees you pay so that I can keep working on and maintaining the SDK. You get a 4% fee discount & an easy-to-use SDK and in return I get some compensation for maintaining it, win-win
 
 *p.s. All referral commissions from this SDK will go towards buying HYPE and other HL-related coins, so it will function as an extension of the assistance fund essentially*
+
+## Reporting Issues
+
+If you encounter any issues with the SDK, please use the bug report template when creating a new issue on GitHub. This helps us gather all the necessary information to diagnose and fix the problem efficiently.
+
+To report a bug:
+1. Go to the [Issues tab](https://github.com/nomeida/hyperliquid/issues)
+2. Click "New Issue"
+3. Select the "Bug Report" template
+4. Fill in all the requested information, including:
+   - Description of the issue
+   - Steps to reproduce
+   - Expected behavior
+   - Actual behavior
+   - Environment details (OS, Node.js version, etc.)
+   - Any relevant logs or screenshots
+
+Using the bug report template ensures we have all the necessary information to address your issue quickly and effectively.
 
 ## License
 

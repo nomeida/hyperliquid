@@ -411,43 +411,184 @@ export class WebSocketSubscriptions {
     await this.subscribe({ type: 'activeAssetData', user: user, coin: coin });
   }
 
-  async postRequest(requestType: 'info' | 'action', payload: any): Promise<any> {
-    const id = Date.now();
-    const convertedPayload = await this.symbolConversion.convertSymbolsInObject(payload);
+  /**
+   * Send a POST request via WebSocket
+   * @param requestType - The type of request ('info' or 'action')
+   * @param payload - The payload to send with the request
+   * @param timeout - Optional timeout in milliseconds (default: 30000)
+   * @returns A promise that resolves with the response data
+   */
+  async postRequest(
+    requestType: 'info' | 'action',
+    payload: any,
+    timeout: number = 30000
+  ): Promise<any> {
+    // Ensure WebSocket is connected
+    if (!this.ws.isConnected()) {
+      throw new Error('WebSocket is not connected');
+    }
 
-    await this.ws.sendMessage({
+    // Generate a unique request ID
+    const id = Date.now() + Math.floor(Math.random() * 1000);
+
+    console.log(`Preparing WebSocket POST request (ID: ${id}):`, JSON.stringify(payload));
+
+    // For WebSocket POST requests, we need to use the exchange format (e.g., 'BTC' instead of 'BTC-PERP')
+    // We need to ensure all coin references are in the exchange format
+    let convertedPayload = { ...payload };
+
+    // Helper function to convert a coin to exchange format
+    const convertCoinToExchangeFormat = (coin: string): string => {
+      if (coin && coin.includes('-')) {
+        const parts = coin.split('-');
+        return parts[0]; // Return just the base symbol (e.g., 'BTC' from 'BTC-PERP')
+      }
+      return coin;
+    };
+
+    // Process coin field if it exists
+    if (convertedPayload.coin) {
+      convertedPayload.coin = convertCoinToExchangeFormat(convertedPayload.coin);
+    }
+
+    // Process arrays of coins if they exist
+    if (Array.isArray(convertedPayload.coins)) {
+      convertedPayload.coins = convertedPayload.coins.map(convertCoinToExchangeFormat);
+    }
+
+    // For nested objects like in order requests
+    if (convertedPayload.orders) {
+      convertedPayload.orders = convertedPayload.orders.map((order: any) => {
+        if (order.coin) {
+          return { ...order, coin: convertCoinToExchangeFormat(order.coin) };
+        }
+        return order;
+      });
+    }
+
+    // For cancels which might have coin field
+    if (convertedPayload.cancels) {
+      convertedPayload.cancels = convertedPayload.cancels.map((cancel: any) => {
+        if (cancel.coin) {
+          return { ...cancel, coin: convertCoinToExchangeFormat(cancel.coin) };
+        }
+        return cancel;
+      });
+    }
+
+    // Create the request object according to Hyperliquid API format
+    const request = {
       method: 'post',
       id: id,
       request: {
         type: requestType,
         payload: convertedPayload,
       },
-    });
+    };
 
+    console.log(`Sending WebSocket POST request (ID: ${id}):`, JSON.stringify(request));
+
+    // Send the request
+    this.ws.sendMessage(request);
+
+    // Wait for and process the response
     return new Promise((resolve, reject) => {
+      let receivedMessages = 0;
+
       const responseHandler = (message: any) => {
-        if (typeof message === 'object' && message !== null) {
-          const data = message.data || message;
-          if (data.channel === 'post' && data.id === id) {
+        // Skip if not an object
+        if (typeof message !== 'object' || message === null) {
+          return;
+        }
+
+        receivedMessages++;
+
+        // For debugging - log every 10th message to avoid flooding the console
+        if (receivedMessages % 10 === 0) {
+          console.log(
+            `Received ${receivedMessages} WebSocket messages while waiting for response to request ${id}`
+          );
+        }
+
+        // Check if this is a post response
+        if (message.channel === 'post') {
+          console.log(`Received post response:`, JSON.stringify(message));
+
+          // Check if this is a response to our request
+          if (message.data && message.data.id === id) {
+            console.log(`Found matching response for request ID ${id}`);
+
+            // Clean up the event listener
             this.ws.removeListener('message', responseHandler);
-            if (data.response && data.response.type === 'error') {
-              reject(new Error(data.response.payload));
-            } else {
-              const convertedResponse = this.symbolConversion.convertSymbolsInObject(
-                data.response ? data.response.payload : data
-              );
-              resolve(convertedResponse);
+
+            // Handle error responses
+            if (message.data.response && message.data.response.type === 'error') {
+              reject(new Error(message.data.response.payload));
+              return;
+            }
+
+            try {
+              // Extract and convert the response payload
+              let responseData;
+
+              if (message.data.response && message.data.response.payload) {
+                responseData = message.data.response.payload;
+              } else if (message.data.response) {
+                responseData = message.data.response;
+              } else {
+                responseData = message.data;
+              }
+
+              // For the response, we want to convert exchange format back to our internal format
+              // This means adding the '-PERP' suffix to coin symbols
+              const processResponse = (data: any): any => {
+                if (!data || typeof data !== 'object') {
+                  return data;
+                }
+
+                if (Array.isArray(data)) {
+                  return data.map(item => processResponse(item));
+                }
+
+                const result: any = {};
+
+                for (const [key, value] of Object.entries(data)) {
+                  if (key === 'coin' && typeof value === 'string') {
+                    // Convert coin to internal format (add -PERP suffix if not present)
+                    result[key] = value.includes('-') ? value : `${value}-PERP`;
+                  } else if (typeof value === 'object' && value !== null) {
+                    // Recursively process nested objects
+                    result[key] = processResponse(value);
+                  } else {
+                    // Keep other values as is
+                    result[key] = value;
+                  }
+                }
+
+                return result;
+              };
+
+              const processedResponse = processResponse(responseData);
+              resolve(processedResponse);
+            } catch (error) {
+              console.error('Error processing response:', error);
+              reject(error);
             }
           }
         }
       };
 
+      // Register the response handler
       this.ws.on('message', responseHandler);
 
+      // Set a timeout to prevent hanging requests
       setTimeout(() => {
         this.ws.removeListener('message', responseHandler);
-        reject(new Error('Request timeout'));
-      }, 30000);
+        console.log(
+          `Request ${id} timed out after ${timeout}ms. Received ${receivedMessages} messages.`
+        );
+        reject(new Error(`WebSocket request timeout after ${timeout}ms`));
+      }, timeout);
     });
   }
 

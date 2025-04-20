@@ -86,7 +86,18 @@ export class ExchangeAPI {
   }
 
   private getVaultAddress(): string | null {
-    return this.vaultAddress || null;
+    // If a vault address is explicitly set, use it
+    if (this.vaultAddress) {
+      return this.vaultAddress;
+    }
+
+    // Otherwise, use the wallet address as the vault address
+    // This is needed for authorized requests to work correctly
+    if (this.wallet) {
+      return this.wallet.address;
+    }
+
+    return null;
   }
 
   private async getAssetIndex(symbol: string): Promise<number> {
@@ -452,6 +463,146 @@ export class ExchangeAPI {
 
       const payload = { action, nonce: action.time, signature };
       return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a payload for placing an order that can be used with WebSocket POST requests
+   * @param orderRequest Order parameters
+   * @returns A signed payload that can be used with WebSocket POST requests
+   */
+  async getOrderPayload(orderRequest: OrderRequest | Order | BulkOrderRequest): Promise<any> {
+    await this.parent.ensureInitialized();
+    const vaultAddress = this.getVaultAddress();
+    const grouping = (orderRequest as any).grouping || 'na';
+    let builder = (orderRequest as any).builder;
+
+    // Normalize builder address to lowercase if it exists
+    if (builder) {
+      builder = {
+        ...builder,
+        address: builder.address?.toLowerCase() || builder.b?.toLowerCase(),
+      };
+    }
+
+    // Determine if this is a bulk order request (has 'orders' array)
+    const isBulkOrder = 'orders' in orderRequest && Array.isArray(orderRequest.orders);
+    const ordersArray = isBulkOrder
+      ? (orderRequest as BulkOrderRequest).orders
+      : [orderRequest as OrderRequest];
+
+    try {
+      // Cache asset indices to avoid redundant lookups
+      const assetIndexCache = new Map<string, number>();
+
+      // Normalize orders to ensure consistent format
+      const normalizedOrders = ordersArray.map((order: OrderRequest) => {
+        const normalizedOrder = { ...order };
+
+        // Handle price normalization
+        if (typeof normalizedOrder.limit_px === 'string') {
+          normalizedOrder.limit_px = removeTrailingZeros(normalizedOrder.limit_px);
+        }
+
+        // Handle size normalization
+        if (typeof normalizedOrder.sz === 'string') {
+          normalizedOrder.sz = removeTrailingZeros(normalizedOrder.sz);
+        }
+
+        return normalizedOrder;
+      });
+
+      const orderWires = await Promise.all(
+        normalizedOrders.map(async (o: OrderRequest) => {
+          let assetIndex = assetIndexCache.get(o.coin);
+          if (assetIndex === undefined) {
+            assetIndex = await this.getAssetIndex(o.coin);
+            assetIndexCache.set(o.coin, assetIndex);
+          }
+          return orderToWire(o, assetIndex);
+        })
+      );
+
+      const actions = orderWireToAction(orderWires, grouping, builder);
+
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(
+        this.wallet,
+        actions,
+        vaultAddress,
+        nonce,
+        this.IS_MAINNET
+      );
+
+      return { action: actions, nonce, signature, vaultAddress };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a payload for canceling an order that can be used with WebSocket POST requests
+   * @param cancelRequests Cancel order parameters
+   * @returns A signed payload that can be used with WebSocket POST requests
+   */
+  async getCancelOrderPayload(
+    cancelRequests: CancelOrderRequest | CancelOrderRequest[]
+  ): Promise<any> {
+    await this.parent.ensureInitialized();
+    try {
+      const cancels = Array.isArray(cancelRequests) ? cancelRequests : [cancelRequests];
+      const vaultAddress = this.getVaultAddress();
+
+      const cancelsWithIndices = await Promise.all(
+        cancels.map(async req => ({
+          ...req,
+          a: await this.getAssetIndex(req.coin),
+        }))
+      );
+
+      const action = {
+        type: ExchangeType.CANCEL,
+        cancels: cancelsWithIndices.map(({ a, o }) => ({ a, o })),
+      };
+
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(
+        this.wallet,
+        action,
+        vaultAddress,
+        nonce,
+        this.IS_MAINNET
+      );
+
+      return { action, nonce, signature, vaultAddress };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a payload for canceling all orders that can be used with WebSocket POST requests
+   * @returns A signed payload that can be used with WebSocket POST requests
+   */
+  async getCancelAllPayload(): Promise<any> {
+    await this.parent.ensureInitialized();
+    try {
+      const vaultAddress = this.getVaultAddress();
+      const action = {
+        type: 'cancelAll',
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(
+        this.wallet,
+        action,
+        vaultAddress,
+        nonce,
+        this.IS_MAINNET
+      );
+
+      return { action, nonce, signature, vaultAddress };
     } catch (error) {
       throw error;
     }

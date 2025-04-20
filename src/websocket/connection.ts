@@ -82,14 +82,24 @@ export class WebSocketClient {
         };
 
         this.ws.onmessage = (event: MessageEvent) => {
-          const message = JSON.parse(event.data);
+          try {
+            const message = JSON.parse(event.data);
 
-          // Handle pong responses
-          if (message.channel === 'pong') {
-            this.lastPongReceived = Date.now();
+            // Debug log for post responses
+            if (message.channel === 'post') {
+              console.log('Received WebSocket post response:', JSON.stringify(message));
+            }
+
+            // Handle pong responses
+            if (message.channel === 'pong') {
+              this.lastPongReceived = Date.now();
+            }
+
+            this.emit('message', message);
+          } catch (error) {
+            console.error('Error processing WebSocket message:', error);
+            console.error('Raw message data:', event.data);
           }
-
-          this.emit('message', message);
         };
 
         this.ws.onerror = (event: Event) => {

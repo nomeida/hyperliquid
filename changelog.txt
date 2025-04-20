@@ -1,3 +1,23 @@
+# Version 1.7.5
+
+## Improvements:
+- After auto-reconnecting to websocket we also auto-resubscribe to all the subscriptions the user previously had
+
+- BBO WebSocket topic added
+
+- Reserve Rate limit endpoint added
+
+## Bug Fixes:
+- Modify Order Endpoint can be used with both CLOID and Order ID now
+
+- Bulk order requests fixed so they work properly again
+
+- Fixed issue with infinite refreshing of asset maps
+
+## For the Nerds
+- Added prettier for consistent code formatting/styling, check .prettierrc.js for style rules
+
+
 # Version 1.7.4
 
 Mostly just bug fixes this time around, but sghould make for a better user experience
