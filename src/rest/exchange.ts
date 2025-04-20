@@ -42,6 +42,8 @@ import {
   TokenDelegateResponse,
   SubAccountSpotTransferResponse,
   SubAccountTransferResponse,
+  ReserveRequestWeightRequest,
+  ReserveRequestWeightResponse,
 } from '../types/index';
 
 import { ExchangeType, ENDPOINTS, CHAIN_IDS } from '../types/constants';
@@ -943,6 +945,36 @@ export class ExchangeAPI {
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Reserve additional actions for 0.0005 USDC per request instead of trading to increase rate limits
+   * @param weight The weight to reserve (as a number)
+   * @returns Response indicating success or failure
+   */
+  async reserveRequestWeight(weight: number): Promise<ReserveRequestWeightResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const vaultAddress = this.getVaultAddress();
+      const action = {
+        type: ExchangeType.RESERVE_REQUEST_WEIGHT,
+        weight: weight,
+      };
+
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(
+        this.wallet,
+        action,
+        vaultAddress,
+        nonce,
+        this.IS_MAINNET
+      );
+
+      const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;

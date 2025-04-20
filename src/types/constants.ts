@@ -101,6 +101,7 @@ export enum ExchangeType {
   TOKEN_DELEGATE = 'tokenDelegate',
   SUB_ACCOUNT_SPOT_TRANSFER = 'subAccountSpotTransfer',
   SUB_ACCOUNT_TRANSFER = 'subAccountTransfer',
+  RESERVE_REQUEST_WEIGHT = 'reserveRequestWeight',
 }
 
 export const WEBSOCKET = {

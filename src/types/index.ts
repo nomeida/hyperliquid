@@ -1126,3 +1126,14 @@ export interface SubAccountTransferResponse {
     type: string;
   };
 }
+
+export interface ReserveRequestWeightRequest {
+  weight: number;
+}
+
+export interface ReserveRequestWeightResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}
