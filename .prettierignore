@@ -1,0 +1,23 @@
+# Build outputs
+dist/
+build/
+coverage/
+
+# Package files
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Generated files
+*.min.js
+*.bundle.js
+
+# Specific directories
+.github/
+.vscode/
+
+# Misc
+.DS_Store
+.env
+.env.*
