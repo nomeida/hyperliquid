@@ -1,7 +1,7 @@
 import { encode } from '@msgpack/msgpack';
 import { ethers, getBytes, HDNodeWallet, keccak256, type Wallet } from 'ethers';
 
-import type { Builder, Order, OrderRequest, OrderType, OrderWire, Signature, CancelOrderRequest, Grouping } from '../types';
+import type { Builder, Order, OrderRequest, OrderType, OrderWire, Signature, CancelOrderRequest, Grouping, BulkOrderRequest } from '../types';
 
 const phantomDomain = {
     name: 'Exchange',
@@ -206,7 +206,7 @@ export function getTimestampMs(): number {
     return Date.now();
 }
 
-export function orderToWire(order: Order, asset: number): OrderWire {
+export function orderToWire(order: Order | OrderRequest, asset: number): OrderWire {
     const orderWire: OrderWire = {
         a: asset,
         b: order.is_buy,

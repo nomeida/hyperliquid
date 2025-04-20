@@ -21,6 +21,8 @@ import {
   Grouping,
   Order,
   OrderRequest,
+  MultiOrder,
+  BulkOrderRequest,
   TwapCancelRequest,
   TwapCancelResponse,
   TwapOrder,
@@ -98,7 +100,7 @@ export class ExchangeAPI {
     return index;
   }
 
-  async placeOrder(orderRequest: OrderRequest | Order): Promise<any> {
+  async placeOrder(orderRequest: OrderRequest | Order | BulkOrderRequest): Promise<any> {
     await this.parent.ensureInitialized();
     const vaultAddress = this.getVaultAddress();
     const grouping = (orderRequest as any).grouping || "na";
@@ -112,13 +114,15 @@ export class ExchangeAPI {
       };
     }
 
-    const ordersArray = (orderRequest as Order).orders ?? [orderRequest as OrderRequest];
+    // Determine if this is a bulk order request (has 'orders' array)
+    const isBulkOrder = 'orders' in orderRequest && Array.isArray(orderRequest.orders);
+    const ordersArray = isBulkOrder ? (orderRequest as BulkOrderRequest).orders : [orderRequest as OrderRequest];
 
     try {
       const assetIndexCache = new Map<string, number>();
 
       // Normalize price and size values to remove trailing zeros
-      const normalizedOrders = ordersArray.map((order: Order) => {
+      const normalizedOrders = ordersArray.map((order: OrderRequest) => {
         const normalizedOrder = { ...order };
 
         // Handle price normalization
@@ -135,7 +139,7 @@ export class ExchangeAPI {
       });
 
       const orderWires = await Promise.all(
-        normalizedOrders.map(async (o: Order) => {
+        normalizedOrders.map(async (o: OrderRequest) => {
           let assetIndex = assetIndexCache.get(o.coin);
           if (assetIndex === undefined) {
             assetIndex = await this.getAssetIndex(o.coin);

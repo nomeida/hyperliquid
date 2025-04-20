@@ -36,9 +36,22 @@ interface BaseOrder {
     builder?: Builder;
 }
 
-interface MultiOrder extends BaseOrder {
-    orders: Order[];
+export interface Order extends BaseOrder {
+    coin: string;
+    is_buy: boolean;
+    sz: number | string;
+    limit_px: number | string;
+    order_type: OrderType;
+    reduce_only: boolean;
+    cloid?: Cloid;
+    orders?: undefined;
 }
+
+export interface MultiOrder extends BaseOrder {
+    orders: OrderRequest[];
+}
+
+export type BulkOrderRequest = MultiOrder;
 
 export interface Builder {
     address: string;
