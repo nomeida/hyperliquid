@@ -13,10 +13,16 @@ export class WebSocketSubscriptions {
     private ws: WebSocketClient;
     private symbolConversion: SymbolConversion;
     private activeSubscriptions: Map<string, Set<Function>> = new Map();
+    private subscriptionDetails: Map<string, { type: string; params: any }> = new Map();
 
     constructor(ws: WebSocketClient, symbolConversion: SymbolConversion) {
         this.ws = ws;
         this.symbolConversion = symbolConversion;
+
+        // Listen for reconnect events to resubscribe
+        this.ws.on('reconnect', () => {
+            this.resubscribeAll();
+        });
     }
 
     private getSubscriptionKey(type: string, params: any = {}): string {
@@ -45,9 +51,13 @@ export class WebSocketSubscriptions {
         if (!this.ws.incrementSubscriptionCount()) {
             throw new Error('Maximum subscription limit reached (1000 subscriptions per IP)');
         }
-        
+
         try {
             await this.ws.sendMessage({ method: 'subscribe', subscription: subscription });
+
+            // Store subscription details for resubscription
+            const subscriptionKey = this.getSubscriptionKey(subscription.type, subscription);
+            this.subscriptionDetails.set(subscriptionKey, { type: subscription.type, params: subscription });
         } catch (error) {
             // If subscription fails, decrement the count
             this.ws.decrementSubscriptionCount();
@@ -60,6 +70,10 @@ export class WebSocketSubscriptions {
         await this.ws.sendMessage({ method: 'unsubscribe', subscription: convertedSubscription });
         // Decrement subscription count when unsubscribing
         this.ws.decrementSubscriptionCount();
+
+        // Remove subscription details
+        const subscriptionKey = this.getSubscriptionKey(subscription.type, subscription);
+        this.subscriptionDetails.delete(subscriptionKey);
     }
 
     private handleMessage(message: any, callback: (data: any) => void, channel: string, additionalChecks: (data: any) => boolean = () => true) {
@@ -348,7 +362,7 @@ export class WebSocketSubscriptions {
     async postRequest(requestType: 'info' | 'action', payload: any): Promise<any> {
         const id = Date.now();
         const convertedPayload = await this.symbolConversion.convertSymbolsInObject(payload);
-        
+
         await this.ws.sendMessage({
             method: 'post',
             id: id,
@@ -605,89 +619,89 @@ export class WebSocketSubscriptions {
     async subscribeToActiveAssetCtx(coin: string, callback: (data: WsActiveAssetCtx) => void): Promise<void> {
         const convertedCoin = await this.symbolConversion.convertSymbol(coin, "reverse");
         const subscriptionKey = this.getSubscriptionKey('activeAssetCtx', { coin: convertedCoin });
-    
+
         if (this.activeSubscriptions.has(subscriptionKey)) {
             await this.unsubscribeFromActiveAssetCtx(coin);
         }
-    
+
         this.addSubscriptionCallback(subscriptionKey, callback);
-    
+
         const messageHandler = async (message: any) => {
             if (message.channel === 'activeAssetCtx' && message.data.coin === convertedCoin) {
                 const convertedMessage = await this.symbolConversion.convertSymbolsInObject(message);
                 callback(convertedMessage.data);
             }
         };
-    
+
         (callback as any).__messageHandler = messageHandler;
         this.ws.on('message', messageHandler);
         await this.subscribe({ type: 'activeAssetCtx', coin: convertedCoin });
     }
-    
+
     async subscribeToActiveSpotAssetCtx(coin: string, callback: (data: WsActiveSpotAssetCtx) => void): Promise<void> {
         const convertedCoin = await this.symbolConversion.convertSymbol(coin, "reverse");
         const subscriptionKey = this.getSubscriptionKey('activeSpotAssetCtx', { coin: convertedCoin });
-    
+
         if (this.activeSubscriptions.has(subscriptionKey)) {
             await this.unsubscribeFromActiveSpotAssetCtx(coin);
         }
-    
+
         this.addSubscriptionCallback(subscriptionKey, callback);
-    
+
         const messageHandler = async (message: any) => {
             if (message.channel === 'activeSpotAssetCtx' && message.data.coin === convertedCoin) {
                 const convertedMessage = await this.symbolConversion.convertSymbolsInObject(message);
                 callback(convertedMessage.data);
             }
         };
-    
+
         (callback as any).__messageHandler = messageHandler;
         this.ws.on('message', messageHandler);
         await this.subscribe({ type: 'activeSpotAssetCtx', coin: convertedCoin });
     }
-    
+
     async subscribeToUserTwapSliceFills(user: string, callback: (data: WsTwapSliceFill & { user: string }) => void): Promise<void> {
         const subscriptionKey = this.getSubscriptionKey('userTwapSliceFills', { user });
-    
+
         if (this.activeSubscriptions.has(subscriptionKey)) {
             await this.unsubscribeFromUserTwapSliceFills(user);
         }
-    
+
         this.addSubscriptionCallback(subscriptionKey, callback);
-    
+
         const messageHandler = async (message: any) => {
             if (message.channel === 'userTwapSliceFills') {
                 const convertedMessage = await this.symbolConversion.convertSymbolsInObject(message);
                 callback(convertedMessage.data);
             }
         };
-    
+
         (callback as any).__messageHandler = messageHandler;
         this.ws.on('message', messageHandler);
         await this.subscribe({ type: 'userTwapSliceFills', user });
     }
-    
+
     async subscribeToUserTwapHistory(user: string, callback: (data: WsTwapHistoryResponse) => void): Promise<void> {
         const subscriptionKey = this.getSubscriptionKey('userTwapHistory', { user });
-    
+
         if (this.activeSubscriptions.has(subscriptionKey)) {
             await this.unsubscribeFromUserTwapHistory(user);
         }
-    
+
         this.addSubscriptionCallback(subscriptionKey, callback);
-    
+
         const messageHandler = async (message: any) => {
             if (message.channel === 'userTwapHistory') {
                 const convertedMessage = await this.symbolConversion.convertSymbolsInObject(message);
                 callback(convertedMessage.data);
             }
         };
-    
+
         (callback as any).__messageHandler = messageHandler;
         this.ws.on('message', messageHandler);
         await this.subscribe({ type: 'userTwapHistory', user });
     }
-    
+
     async unsubscribeFromActiveAssetCtx(coin: string): Promise<void> {
         const convertedCoin = await this.symbolConversion.convertSymbol(coin, "reverse");
         const subscriptionKey = this.getSubscriptionKey('activeAssetCtx', { coin: convertedCoin });
@@ -706,7 +720,7 @@ export class WebSocketSubscriptions {
 
         await this.unsubscribe({ type: 'activeAssetCtx', coin: convertedCoin });
     }
-    
+
     async unsubscribeFromActiveSpotAssetCtx(coin: string): Promise<void> {
         const convertedCoin = await this.symbolConversion.convertSymbol(coin, "reverse");
         const subscriptionKey = this.getSubscriptionKey('activeSpotAssetCtx', { coin: convertedCoin });
@@ -725,7 +739,7 @@ export class WebSocketSubscriptions {
 
         await this.unsubscribe({ type: 'activeSpotAssetCtx', coin: convertedCoin });
     }
-    
+
     async unsubscribeFromUserTwapSliceFills(user: string): Promise<void> {
         const subscriptionKey = this.getSubscriptionKey('userTwapSliceFills', { user });
         const callbacks = this.activeSubscriptions.get(subscriptionKey);
@@ -743,7 +757,7 @@ export class WebSocketSubscriptions {
 
         await this.unsubscribe({ type: 'userTwapSliceFills', user });
     }
-    
+
     async unsubscribeFromUserTwapHistory(user: string): Promise<void> {
         const subscriptionKey = this.getSubscriptionKey('userTwapHistory', { user });
         const callbacks = this.activeSubscriptions.get(subscriptionKey);
@@ -760,5 +774,33 @@ export class WebSocketSubscriptions {
         }
 
         await this.unsubscribe({ type: 'userTwapHistory', user });
+    }
+
+    /**
+     * Resubscribes to all active subscriptions after a WebSocket reconnection
+     */
+    async resubscribeAll(): Promise<void> {
+        console.log('Resubscribing to all active subscriptions after reconnection...');
+
+        // Reset the subscription count since we're starting fresh after reconnection
+        // The count will be incremented for each subscription as we resubscribe
+
+        // Create a copy of the subscription details to avoid modification during iteration
+        const subscriptionsToRestore = new Map(this.subscriptionDetails);
+
+        // Clear the current subscription details as we'll rebuild it
+        this.subscriptionDetails.clear();
+
+        // Resubscribe to each subscription
+        for (const [key, details] of subscriptionsToRestore.entries()) {
+            try {
+                console.log(`Resubscribing to ${details.type}`);
+                await this.subscribe(details.params);
+            } catch (error) {
+                console.error(`Failed to resubscribe to ${details.type}:`, error);
+            }
+        }
+
+        console.log('Resubscription complete');
     }
 }
