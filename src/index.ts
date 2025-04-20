@@ -238,9 +238,17 @@ export class Hyperliquid {
   }
 
   disconnect(): void {
-    if (this.ws) {
-      this.ws.close(true);
+    // Stop the asset map refresh interval
+    this.symbolConversion.stopPeriodicRefresh();
+
+    // Close WebSocket connection if enabled
+    if (this.enableWs && this.ws && typeof this.ws.close === 'function') {
+      this.ws.close(true); // Pass true to indicate manual disconnect
     }
+
+    // Reset initialization state
+    this._initialized = false;
+    this._initializing = null;
   }
 
   public getBaseUrl(): string {

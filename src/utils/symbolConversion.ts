@@ -9,6 +9,9 @@ export class SymbolConversion {
   private refreshIntervalMs: number = 60000;
   private refreshInterval: any = null;
   private initialized: boolean = false;
+  private consecutiveFailures: number = 0;
+  private maxConsecutiveFailures: number = 5;
+  private baseRetryDelayMs: number = 1000;
 
   constructor(baseURL: string, rateLimiter: any) {
     this.httpApi = new HttpApi(baseURL, CONSTANTS.ENDPOINTS.INFO, rateLimiter);
@@ -45,8 +48,37 @@ export class SymbolConversion {
 
     // Use standard setInterval that works in both Node.js and browser
     this.refreshInterval = setInterval(() => {
-      this.refreshAssetMaps().catch(console.error);
+      this.refreshAssetMaps().catch(error => {
+        console.error('Failed to refresh asset maps:', error);
+        // Increment consecutive failures counter
+        this.consecutiveFailures++;
+
+        // If we've reached the maximum number of consecutive failures, stop refreshing
+        if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
+          console.warn(
+            `Maximum consecutive failures (${this.maxConsecutiveFailures}) reached. Stopping automatic refresh.`
+          );
+          this.stopPeriodicRefresh();
+        }
+      });
     }, this.refreshIntervalMs);
+  }
+
+  // Check if max failures has been reached and stop refresh if needed
+  private checkMaxFailures(): void {
+    if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
+      console.warn(
+        `Maximum consecutive failures (${this.maxConsecutiveFailures}) reached. Stopping automatic refresh.`
+      );
+      this.stopPeriodicRefresh();
+    }
+  }
+
+  public stopPeriodicRefresh(): void {
+    if (this.refreshInterval !== null) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
   }
 
   private async refreshAssetMaps(): Promise<void> {
@@ -104,10 +136,18 @@ export class SymbolConversion {
           this.exchangeToInternalNameMap.set(exchangeName, internalName);
         }
       });
+
+      // Reset consecutive failures counter on success
+      this.consecutiveFailures = 0;
     } catch (error) {
-      console.error('Failed to refresh asset maps:', error);
-      // Don't throw here to prevent crashing the application
-      // but ensure that refresh attempt will be made again
+      // Increment consecutive failures counter
+      this.consecutiveFailures++;
+
+      // Check if we've reached the maximum number of consecutive failures
+      this.checkMaxFailures();
+
+      // Propagate the error to be handled by the caller
+      throw error;
     }
   }
 
