@@ -125,9 +125,9 @@ export class InfoAPI {
     return this.generalAPI.getOrderStatus(user, oid, rawResponse);
   }
 
-  async getL2Book(coin: string, rawResponse: boolean = false): Promise<L2Book> {
+  async getL2Book(coin: string, rawResponse: boolean = false, nSigFigs: number = 5, mantissa: number = undefined): Promise<L2Book> {
     await this.parent.ensureInitialized();
-    return this.generalAPI.getL2Book(coin, rawResponse);
+    return this.generalAPI.getL2Book(coin, rawResponse, nSigFigs, mantissa);
   }
 
   async getCandleSnapshot(
