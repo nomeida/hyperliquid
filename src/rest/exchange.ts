@@ -86,18 +86,7 @@ export class ExchangeAPI {
   }
 
   private getVaultAddress(): string | null {
-    // If a vault address is explicitly set, use it
-    if (this.vaultAddress) {
-      return this.vaultAddress;
-    }
-
-    // Otherwise, use the wallet address as the vault address
-    // This is needed for authorized requests to work correctly
-    if (this.wallet) {
-      return this.wallet.address;
-    }
-
-    return null;
+    return this.vaultAddress;
   }
 
   private async getAssetIndex(symbol: string): Promise<number> {
