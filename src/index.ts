@@ -2,6 +2,10 @@ import { InfoAPI } from './rest/info';
 import { ExchangeAPI } from './rest/exchange';
 import { WebSocketClient } from './websocket/connection';
 import { WebSocketSubscriptions } from './websocket/subscriptions';
+import {
+  WebSocketPayloadManager,
+  createWebSocketPayloadManager,
+} from './websocket/payload-manager';
 import { RateLimiter } from './utils/rateLimiter';
 import * as CONSTANTS from './types/constants';
 import { CustomOperations } from './rest/custom';
@@ -26,6 +30,7 @@ export class Hyperliquid {
   public exchange: ExchangeAPI = {} as ExchangeAPI;
   public ws: WebSocketClient;
   public subscriptions: WebSocketSubscriptions;
+  public wsPayloads: WebSocketPayloadManager = {} as WebSocketPayloadManager;
   public custom: CustomOperations;
   public symbolConversion: SymbolConversion;
 
@@ -107,6 +112,7 @@ export class Hyperliquid {
       // Initialize with dummy objects if WebSocket is disabled
       this.ws = {} as WebSocketClient;
       this.subscriptions = {} as WebSocketSubscriptions;
+      this.wsPayloads = {} as WebSocketPayloadManager;
     }
 
     // Set up authentication if private key is provided
@@ -210,7 +216,7 @@ export class Hyperliquid {
       const formattedPrivateKey = privateKey.startsWith('0x')
         ? privateKey
         : (`0x${privateKey}` as `0x${string}`);
-      new ethers.Wallet(formattedPrivateKey); // Validate the private key
+      const wallet = new ethers.Wallet(formattedPrivateKey); // Validate the private key
 
       this.exchange = new ExchangeAPI(
         testnet,
@@ -229,6 +235,20 @@ export class Hyperliquid {
         this.symbolConversion,
         this.walletAddress
       );
+
+      // Initialize WebSocket payload manager if WebSocket is enabled
+      if (this.enableWs && this.subscriptions) {
+        this.wsPayloads = createWebSocketPayloadManager({
+          wallet,
+          isMainnet: !testnet,
+          symbolConversion: this.symbolConversion,
+          subscriptions: this.subscriptions,
+          vaultAddress: this.vaultAddress,
+          generateNonce: () => Date.now(),
+          customOperations: this.custom,
+        });
+      }
+
       this.isValidPrivateKey = true;
     } catch (error) {
       console.warn('Invalid private key provided. Some functionalities will be limited.');

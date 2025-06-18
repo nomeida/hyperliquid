@@ -476,6 +476,16 @@ export class WebSocketSubscriptions {
       });
     }
 
+    // For action.cancels which might have coin field
+    if (convertedPayload.action && convertedPayload.action.cancels) {
+      convertedPayload.action.cancels = convertedPayload.action.cancels.map((cancel: any) => {
+        if (cancel.coin) {
+          return { ...cancel, coin: convertCoinToExchangeFormat(cancel.coin) };
+        }
+        return cancel;
+      });
+    }
+
     // Create the request object according to Hyperliquid API format
     const request = {
       method: 'post',
@@ -494,6 +504,7 @@ export class WebSocketSubscriptions {
     // Wait for and process the response
     return new Promise((resolve, reject) => {
       let receivedMessages = 0;
+      let timeoutId: NodeJS.Timeout;
 
       const responseHandler = (message: any) => {
         // Skip if not an object
@@ -518,8 +529,11 @@ export class WebSocketSubscriptions {
           if (message.data && message.data.id === id) {
             console.log(`Found matching response for request ID ${id}`);
 
-            // Clean up the event listener
+            // Clean up the event listener and timeout
             this.ws.removeListener('message', responseHandler);
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
 
             // Handle error responses
             if (message.data.response && message.data.response.type === 'error') {
@@ -582,7 +596,7 @@ export class WebSocketSubscriptions {
       this.ws.on('message', responseHandler);
 
       // Set a timeout to prevent hanging requests
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         this.ws.removeListener('message', responseHandler);
         console.log(
           `Request ${id} timed out after ${timeout}ms. Received ${receivedMessages} messages.`
