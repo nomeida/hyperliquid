@@ -20,12 +20,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # First try npm ci, if it fails due to optional dependencies, use workaround
-          npm ci --ignore-scripts || {
-            echo "npm ci failed, applying workaround for optional dependencies bug"
-            rm -rf node_modules package-lock.json
-            npm install --ignore-scripts
-          }
+          # Apply workaround for npm optional dependencies bug with Rollup
+          echo "Applying workaround for Rollup optional dependencies issue"
+          rm -rf node_modules package-lock.json
+          npm install --ignore-scripts
+
+          # Verify Rollup binary is available
+          if ! npm list @rollup/rollup-linux-x64-gnu >/dev/null 2>&1; then
+            echo "Installing Rollup Linux binary explicitly"
+            npm install @rollup/rollup-linux-x64-gnu --no-save || echo "Manual Rollup install failed"
+          fi
 
       - name: Run tests (if any)
         continue-on-error: true
