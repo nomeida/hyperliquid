@@ -67,6 +67,8 @@ export enum InfoType {
   USER_TWAP_SLICE_FILLS_BY_TIME = 'userTwapSliceFillsByTime',
   TWAP_HISTORY = 'twapHistory',
   USER_TO_MULTI_SIG_SIGNERS = 'userToMultiSigSigners',
+  BUILDER_FEE_APPROVAL = 'builderFeeApproval',
+  USER_ORDER_HISTORY = 'userOrderHistory',
 }
 
 export enum ExchangeType {
@@ -87,6 +89,7 @@ export enum ExchangeType {
   VAULT_DISTRIBUTE = 'vaultDistribute',
   VAULT_MODIFY = 'vaultModify',
   SET_REFERRER = 'setReferrer',
+  REGISTER_REFERRER = 'registerReferrer',
   USD_CLASS_TRANSFER = 'usdClassTransfer',
   TWAP_ORDER = 'twapOrder',
   TWAP_CANCEL = 'twapCancel',

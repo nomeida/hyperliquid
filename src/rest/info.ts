@@ -36,6 +36,8 @@ import {
   LegalCheck,
   TwapHistory,
   MultiSigSigners,
+  BuilderFeeApproval,
+  UserOrderHistory,
 } from '../types/index';
 
 import { InfoType, ENDPOINTS } from '../types/constants';
@@ -125,7 +127,12 @@ export class InfoAPI {
     return this.generalAPI.getOrderStatus(user, oid, rawResponse);
   }
 
-  async getL2Book(coin: string, rawResponse: boolean = false, nSigFigs: number = 5, mantissa: number = undefined): Promise<L2Book> {
+  async getL2Book(
+    coin: string,
+    rawResponse: boolean = false,
+    nSigFigs: number = 5,
+    mantissa?: number
+  ): Promise<L2Book> {
     await this.parent.ensureInitialized();
     return this.generalAPI.getL2Book(coin, rawResponse, nSigFigs, mantissa);
   }
@@ -293,5 +300,24 @@ export class InfoAPI {
   ): Promise<MultiSigSigners | null> {
     await this.parent.ensureInitialized();
     return this.generalAPI.userToMultiSigSigners(user, rawResponse);
+  }
+
+  async getBuilderFeeApproval(
+    user: string,
+    builderAddress: string,
+    rawResponse: boolean = false
+  ): Promise<BuilderFeeApproval> {
+    await this.parent.ensureInitialized();
+    return this.generalAPI.getBuilderFeeApproval(user, builderAddress, rawResponse);
+  }
+
+  async getUserOrderHistory(
+    user: string,
+    startTime: number,
+    endTime?: number,
+    rawResponse: boolean = false
+  ): Promise<UserOrderHistory> {
+    await this.parent.ensureInitialized();
+    return this.generalAPI.getUserOrderHistory(user, startTime, endTime, rawResponse);
   }
 }

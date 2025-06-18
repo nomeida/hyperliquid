@@ -6,15 +6,23 @@ export class SymbolConversion {
   private assetToIndexMap: Map<string, number> = new Map();
   private exchangeToInternalNameMap: Map<string, string> = new Map();
   private httpApi: HttpApi;
-  private refreshIntervalMs: number = 60000;
+  private refreshIntervalMs: number;
   private refreshInterval: any = null;
   private initialized: boolean = false;
   private consecutiveFailures: number = 0;
   private maxConsecutiveFailures: number = 5;
   private baseRetryDelayMs: number = 1000;
+  private disableAssetMapRefresh: boolean;
 
-  constructor(baseURL: string, rateLimiter: any) {
+  constructor(
+    baseURL: string,
+    rateLimiter: any,
+    disableAssetMapRefresh: boolean = false,
+    refreshIntervalMs: number = 60000
+  ) {
     this.httpApi = new HttpApi(baseURL, CONSTANTS.ENDPOINTS.INFO, rateLimiter);
+    this.disableAssetMapRefresh = disableAssetMapRefresh;
+    this.refreshIntervalMs = refreshIntervalMs;
   }
 
   async initialize(): Promise<void> {
@@ -22,7 +30,12 @@ export class SymbolConversion {
 
     try {
       await this.refreshAssetMaps();
-      this.startPeriodicRefresh();
+
+      // Only start periodic refresh if not disabled
+      if (!this.disableAssetMapRefresh) {
+        this.startPeriodicRefresh();
+      }
+
       this.initialized = true;
     } catch (error) {
       console.error('Failed to initialize SymbolConversion:', error);
@@ -30,14 +43,14 @@ export class SymbolConversion {
     }
   }
 
-  private ensureInitialized(): void {
+  private async ensureInitialized(): Promise<void> {
     if (!this.initialized) {
-      throw new Error('SymbolConversion must be initialized before use. Call initialize() first.');
+      await this.initialize();
     }
   }
 
   async getInternalName(exchangeName: string): Promise<string | undefined> {
-    this.ensureInitialized();
+    await this.ensureInitialized();
     return this.exchangeToInternalNameMap.get(exchangeName);
   }
 
@@ -81,15 +94,48 @@ export class SymbolConversion {
     }
   }
 
+  public enablePeriodicRefresh(): void {
+    if (!this.disableAssetMapRefresh && this.initialized) {
+      this.startPeriodicRefresh();
+    }
+  }
+
+  public disablePeriodicRefresh(): void {
+    this.stopPeriodicRefresh();
+  }
+
+  public isRefreshEnabled(): boolean {
+    return !this.disableAssetMapRefresh && this.refreshInterval !== null;
+  }
+
+  public getRefreshInterval(): number {
+    return this.refreshIntervalMs;
+  }
+
+  public setRefreshInterval(intervalMs: number): void {
+    this.refreshIntervalMs = intervalMs;
+    if (this.refreshInterval !== null) {
+      // Restart with new interval
+      this.stopPeriodicRefresh();
+      this.startPeriodicRefresh();
+    }
+  }
+
   private async refreshAssetMaps(): Promise<void> {
     try {
       const [perpMeta, spotMeta] = await Promise.all([
-        this.httpApi.makeRequest<MetaAndAssetCtxs>({
-          type: CONSTANTS.InfoType.PERPS_META_AND_ASSET_CTXS,
-        }),
-        this.httpApi.makeRequest<SpotMetaAndAssetCtxs>({
-          type: CONSTANTS.InfoType.SPOT_META_AND_ASSET_CTXS,
-        }),
+        this.httpApi.makeRequest<MetaAndAssetCtxs>(
+          {
+            type: CONSTANTS.InfoType.PERPS_META_AND_ASSET_CTXS,
+          },
+          20
+        ), // Correct weight according to Hyperliquid documentation
+        this.httpApi.makeRequest<SpotMetaAndAssetCtxs>(
+          {
+            type: CONSTANTS.InfoType.SPOT_META_AND_ASSET_CTXS,
+          },
+          20
+        ), // Correct weight according to Hyperliquid documentation
       ]);
 
       // Verify responses are valid before proceeding

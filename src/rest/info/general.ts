@@ -2,7 +2,6 @@
 
 import {
   AllMids,
-  Meta,
   UserOpenOrders,
   FrontendOpenOrders,
   UserFills,
@@ -30,6 +29,8 @@ import {
   LegalCheck,
   TwapHistory,
   MultiSigSigners,
+  BuilderFeeApproval,
+  UserOrderHistory,
 } from '../../types';
 import { HttpApi } from '../../utils/helpers';
 import { SymbolConversion } from '../../utils/symbolConversion';
@@ -65,7 +66,10 @@ export class GeneralInfoAPI {
 
   async getUserOpenOrders(user: string, rawResponse: boolean = false): Promise<UserOpenOrders> {
     await this.parent.ensureInitialized();
-    const response = await this.httpApi.makeRequest({ type: InfoType.OPEN_ORDERS, user: user });
+    const response = await this.httpApi.makeRequest<UserOpenOrders>({
+      type: InfoType.OPEN_ORDERS,
+      user: user,
+    });
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 
@@ -73,7 +77,7 @@ export class GeneralInfoAPI {
     user: string,
     rawResponse: boolean = false
   ): Promise<FrontendOpenOrders> {
-    const response = await this.httpApi.makeRequest(
+    const response = await this.httpApi.makeRequest<FrontendOpenOrders>(
       { type: InfoType.FRONTEND_OPEN_ORDERS, user: user },
       20
     );
@@ -81,7 +85,10 @@ export class GeneralInfoAPI {
   }
 
   async getUserFills(user: string, rawResponse: boolean = false): Promise<UserFills> {
-    const response = await this.httpApi.makeRequest({ type: InfoType.USER_FILLS, user: user }, 20);
+    const response = await this.httpApi.makeRequest<UserFills>(
+      { type: InfoType.USER_FILLS, user: user },
+      20
+    );
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 
@@ -101,12 +108,12 @@ export class GeneralInfoAPI {
       params.endTime = Math.round(endTime);
     }
 
-    const response = await this.httpApi.makeRequest(params, 20);
+    const response = await this.httpApi.makeRequest<UserFills>(params, 20);
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 
   async getUserRateLimit(user: string, rawResponse: boolean = false): Promise<UserRateLimit> {
-    const response = await this.httpApi.makeRequest(
+    const response = await this.httpApi.makeRequest<UserRateLimit>(
       { type: InfoType.USER_RATE_LIMIT, user: user },
       20
     );
@@ -118,7 +125,7 @@ export class GeneralInfoAPI {
     oid: number | string,
     rawResponse: boolean = false
   ): Promise<OrderStatus> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<OrderStatus>({
       type: InfoType.ORDER_STATUS,
       user: user,
       oid: oid,
@@ -126,12 +133,17 @@ export class GeneralInfoAPI {
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 
-  async getL2Book(coin: string, rawResponse: boolean = false, nSigFigs: number = 5, mantissa: number= undefined): Promise<L2Book> {
-    const response = await this.httpApi.makeRequest({
+  async getL2Book(
+    coin: string,
+    rawResponse: boolean = false,
+    nSigFigs: number = 5,
+    mantissa?: number
+  ): Promise<L2Book> {
+    const response = await this.httpApi.makeRequest<L2Book>({
       type: InfoType.L2_BOOK,
       coin: await this.symbolConversion.convertSymbol(coin, 'reverse'),
       nSigFigs,
-      mantissa
+      mantissa,
     });
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
@@ -143,7 +155,7 @@ export class GeneralInfoAPI {
     endTime: number,
     rawResponse: boolean = false
   ): Promise<CandleSnapshot> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<CandleSnapshot>({
       type: InfoType.CANDLE_SNAPSHOT,
       req: {
         coin: await this.symbolConversion.convertSymbol(coin, 'reverse'),
@@ -163,7 +175,7 @@ export class GeneralInfoAPI {
     builder: string,
     rawResponse: boolean = false
   ): Promise<number> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<number>({
       type: InfoType.MAX_BUILDER_FEE,
       user,
       builder,
@@ -175,7 +187,7 @@ export class GeneralInfoAPI {
     user: string,
     rawResponse: boolean = false
   ): Promise<HistoricalOrder[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<HistoricalOrder[]>({
       type: InfoType.HISTORICAL_ORDERS,
       user,
     });
@@ -186,7 +198,7 @@ export class GeneralInfoAPI {
     user: string,
     rawResponse: boolean = false
   ): Promise<TwapSliceFill[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<TwapSliceFill[]>({
       type: InfoType.USER_TWAP_SLICE_FILLS,
       user,
     });
@@ -194,7 +206,7 @@ export class GeneralInfoAPI {
   }
 
   async getSubAccounts(user: string, rawResponse: boolean = false): Promise<SubAccount[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<SubAccount[]>({
       type: InfoType.SUB_ACCOUNTS,
       user,
     });
@@ -215,12 +227,12 @@ export class GeneralInfoAPI {
       params.user = user;
     }
 
-    const response = await this.httpApi.makeRequest(params);
+    const response = await this.httpApi.makeRequest<VaultDetails>(params);
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 
   async getUserVaultEquities(user: string, rawResponse: boolean = false): Promise<VaultEquity[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<VaultEquity[]>({
       type: InfoType.USER_VAULT_EQUITIES,
       user,
     });
@@ -228,7 +240,7 @@ export class GeneralInfoAPI {
   }
 
   async getUserRole(user: string, rawResponse: boolean = false): Promise<UserRole> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<UserRole>({
       type: InfoType.USER_ROLE,
       user,
     });
@@ -236,7 +248,7 @@ export class GeneralInfoAPI {
   }
 
   async getDelegations(user: string, rawResponse: boolean = false): Promise<Delegation[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<Delegation[]>({
       type: InfoType.DELEGATIONS,
       user,
     });
@@ -244,7 +256,7 @@ export class GeneralInfoAPI {
   }
 
   async getDelegatorSummary(user: string, rawResponse: boolean = false): Promise<DelegatorSummary> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<DelegatorSummary>({
       type: InfoType.DELEGATOR_SUMMARY,
       user,
     });
@@ -255,7 +267,7 @@ export class GeneralInfoAPI {
     user: string,
     rawResponse: boolean = false
   ): Promise<DelegatorHistoryEntry[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<DelegatorHistoryEntry[]>({
       type: InfoType.DELEGATOR_HISTORY,
       user,
     });
@@ -266,7 +278,7 @@ export class GeneralInfoAPI {
     user: string,
     rawResponse: boolean = false
   ): Promise<DelegatorReward[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<DelegatorReward[]>({
       type: InfoType.DELEGATOR_REWARDS,
       user,
     });
@@ -274,21 +286,21 @@ export class GeneralInfoAPI {
   }
 
   async validatorSummaries(rawResponse: boolean = false): Promise<ValidatorSummary[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<ValidatorSummary[]>({
       type: InfoType.VALIDATOR_SUMMARIES,
     });
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 
   async vaultSummaries(rawResponse: boolean = false): Promise<VaultSummary[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<VaultSummary[]>({
       type: InfoType.VAULT_SUMMARIES,
     });
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 
   async userFees(user: string, rawResponse: boolean = false): Promise<UserFees> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<UserFees>({
       type: InfoType.USER_FEES,
       user,
     });
@@ -296,7 +308,7 @@ export class GeneralInfoAPI {
   }
 
   async portfolio(user: string, rawResponse: boolean = false): Promise<PortfolioPeriods> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<PortfolioPeriods>({
       type: InfoType.PORTFOLIO,
       user,
     });
@@ -308,7 +320,7 @@ export class GeneralInfoAPI {
     source: string,
     rawResponse: boolean = false
   ): Promise<PreTransferCheck> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<PreTransferCheck>({
       type: InfoType.PRE_TRANSFER_CHECK,
       user,
       source,
@@ -317,7 +329,7 @@ export class GeneralInfoAPI {
   }
 
   async referral(user: string, rawResponse: boolean = false): Promise<Referral> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<Referral>({
       type: InfoType.REFERRAL,
       user,
     });
@@ -325,7 +337,7 @@ export class GeneralInfoAPI {
   }
 
   async extraAgents(user: string, rawResponse: boolean = false): Promise<ExtraAgent[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<ExtraAgent[]>({
       type: InfoType.EXTRA_AGENTS,
       user,
     });
@@ -333,7 +345,7 @@ export class GeneralInfoAPI {
   }
 
   async isVip(user: string, rawResponse: boolean = false): Promise<boolean> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<boolean>({
       type: InfoType.IS_VIP,
       user,
     });
@@ -341,7 +353,7 @@ export class GeneralInfoAPI {
   }
 
   async legalCheck(user: string, rawResponse: boolean = false): Promise<LegalCheck> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<LegalCheck>({
       type: InfoType.LEGAL_CHECK,
       user,
     });
@@ -364,12 +376,12 @@ export class GeneralInfoAPI {
     if (endTime !== undefined) params.endTime = endTime;
     if (aggregateByTime !== undefined) params.aggregateByTime = aggregateByTime;
 
-    const response = await this.httpApi.makeRequest(params);
+    const response = await this.httpApi.makeRequest<TwapSliceFill[]>(params);
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 
   async twapHistory(user: string, rawResponse: boolean = false): Promise<TwapHistory[]> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<TwapHistory[]>({
       type: InfoType.TWAP_HISTORY,
       user,
     });
@@ -380,10 +392,43 @@ export class GeneralInfoAPI {
     user: string,
     rawResponse: boolean = false
   ): Promise<MultiSigSigners | null> {
-    const response = await this.httpApi.makeRequest({
+    const response = await this.httpApi.makeRequest<MultiSigSigners | null>({
       type: InfoType.USER_TO_MULTI_SIG_SIGNERS,
       user,
     });
+    return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+  }
+
+  async getBuilderFeeApproval(
+    user: string,
+    builderAddress: string,
+    rawResponse: boolean = false
+  ): Promise<BuilderFeeApproval> {
+    const response = await this.httpApi.makeRequest<BuilderFeeApproval>({
+      type: InfoType.BUILDER_FEE_APPROVAL,
+      user,
+      builderAddress,
+    });
+    return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+  }
+
+  async getUserOrderHistory(
+    user: string,
+    startTime: number,
+    endTime?: number,
+    rawResponse: boolean = false
+  ): Promise<UserOrderHistory> {
+    const params: any = {
+      type: InfoType.USER_ORDER_HISTORY,
+      user,
+      startTime: Math.round(startTime),
+    };
+
+    if (endTime !== undefined) {
+      params.endTime = Math.round(endTime);
+    }
+
+    const response = await this.httpApi.makeRequest<UserOrderHistory>(params, 20);
     return rawResponse ? response : await this.symbolConversion.convertResponse(response);
   }
 }

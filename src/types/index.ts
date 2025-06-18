@@ -1137,3 +1137,32 @@ export interface ReserveRequestWeightResponse {
     type: string;
   };
 }
+
+export interface BuilderFeeApproval {
+  maxFeeRate: string;
+}
+
+export interface UserOrderHistoryEntry {
+  order: {
+    coin: string;
+    side: string;
+    limitPx: string;
+    sz: string;
+    oid: number;
+    timestamp: number;
+    triggerCondition: string;
+    isTrigger: boolean;
+    triggerPx: string;
+    children: any[];
+    isPositionTpsl: boolean;
+    reduceOnly: boolean;
+    orderType: string;
+    origSz: string;
+    tif: string;
+    cloid: string | null;
+  };
+  status: 'filled' | 'open' | 'canceled' | 'triggered' | 'rejected' | 'marginCanceled';
+  statusTimestamp: number;
+}
+
+export type UserOrderHistory = UserOrderHistoryEntry[];

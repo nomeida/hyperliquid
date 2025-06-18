@@ -27,14 +27,15 @@
     "prebuild": "npm run format",
     "build": "tsup",
     "test": "jest",
-    "prepare": "husky install && npm run build",
+    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production' && require('fs').existsSync('.git')) { require('child_process').execSync('npm run build', {stdio: 'inherit'}) }\"",
     "test:node": "node examples/node-test.js",
     "test:browser": "npx serve -s . -p 3000",
     "test:all": "npm run build && npm run test:node && echo '\nTo test in browser, run: npm run test:browser and visit http://localhost:3000/examples/browser-test.html'",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx}\"",
     "format:all": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "postinstall": "husky install"
+    "postinstall": "node -e \"if (process.env.NODE_ENV !== 'production' && require('fs').existsSync('.git')) { try { require('husky').install() } catch (e) { console.log('Husky setup skipped') } }\"",
+    "dev:setup": "husky install"
   },
   "keywords": [
     "hyperliquid",
@@ -53,6 +54,7 @@
   "dependencies": {
     "@msgpack/msgpack": "^3.0.0-beta2",
     "axios": "^1.7.2",
+    "dotenv": "^16.5.0",
     "ethers": "^6.13.2"
   },
   "devDependencies": {

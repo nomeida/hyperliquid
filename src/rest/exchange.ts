@@ -751,6 +751,23 @@ export class ExchangeAPI {
     }
   }
 
+  async registerReferrer(code: string): Promise<any> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.REGISTER_REFERRER,
+        code,
+      };
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+
+      const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async modifyUserEvm(usingBigBlocks: boolean): Promise<any> {
     await this.parent.ensureInitialized();
     try {

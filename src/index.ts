@@ -17,6 +17,8 @@ export interface HyperliquidConfig {
   walletAddress?: string;
   vaultAddress?: string;
   maxReconnectAttempts?: number;
+  disableAssetMapRefresh?: boolean;
+  assetMapRefreshIntervalMs?: number;
 }
 
 export class Hyperliquid {
@@ -47,6 +49,8 @@ export class Hyperliquid {
       walletAddress,
       vaultAddress,
       maxReconnectAttempts,
+      disableAssetMapRefresh = false,
+      assetMapRefreshIntervalMs = 60000,
     } = params;
 
     // Browser-specific security warnings
@@ -65,7 +69,12 @@ export class Hyperliquid {
     this.baseUrl = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
     this.enableWs = enableWs;
     this.rateLimiter = new RateLimiter();
-    this.symbolConversion = new SymbolConversion(this.baseUrl, this.rateLimiter);
+    this.symbolConversion = new SymbolConversion(
+      this.baseUrl,
+      this.rateLimiter,
+      disableAssetMapRefresh,
+      assetMapRefreshIntervalMs
+    );
     this.walletAddress = walletAddress || null;
     this.vaultAddress = vaultAddress || null;
 
@@ -122,8 +131,8 @@ export class Hyperliquid {
     if (this._initialized) return;
 
     try {
-      // Initialize symbol conversion first
-      await this.symbolConversion.initialize();
+      // Note: SymbolConversion will be initialized lazily when first needed
+      // This prevents unnecessary API calls for users who don't need symbol conversion
 
       // Connect WebSocket if enabled
       if (this.enableWs) {
@@ -258,7 +267,33 @@ export class Hyperliquid {
   public getRateLimiter(): RateLimiter {
     return this.rateLimiter;
   }
+
+  // Asset map refresh control methods
+  public enableAssetMapRefresh(): void {
+    this.symbolConversion.enablePeriodicRefresh();
+  }
+
+  public disableAssetMapRefresh(): void {
+    this.symbolConversion.disablePeriodicRefresh();
+  }
+
+  public isAssetMapRefreshEnabled(): boolean {
+    return this.symbolConversion.isRefreshEnabled();
+  }
+
+  public getAssetMapRefreshInterval(): number {
+    return this.symbolConversion.getRefreshInterval();
+  }
+
+  public setAssetMapRefreshInterval(intervalMs: number): void {
+    this.symbolConversion.setRefreshInterval(intervalMs);
+  }
+
+  public async refreshAssetMapsNow(): Promise<void> {
+    await this.symbolConversion.initialize();
+  }
 }
 
 export * from './types';
 export * from './utils/signing';
+export * from './types/constants';
