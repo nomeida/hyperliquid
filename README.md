@@ -348,17 +348,27 @@ testWebSocketSubscriptions();
 
 #### WebSocket POST Requests
 
-You can also use WebSocket to send POST requests instead of using HTTP. This is useful for high-frequency trading or when you need to minimize latency.
+The SDK supports sending POST requests via WebSocket instead of HTTP, which provides lower latency and is ideal for high-frequency trading applications. The SDK includes a comprehensive WebSocket POST system with dynamic payload generation for all exchange methods.
+
+##### Key Features
+
+- **Dynamic Payload Generation**: All exchange methods can be executed via WebSocket POST with automatic payload generation
+- **Lower Latency**: WebSocket connections provide faster response times compared to HTTP requests
+- **Unified Interface**: Same method signatures as REST API but executed over WebSocket
+- **Automatic Authentication**: Handles signing and nonce generation automatically for authorized requests
+- **Error Handling**: Comprehensive error handling with detailed response information
+
+##### Basic Usage
 
 ```typescript
 const { Hyperliquid } = require('hyperliquid');
 
 async function testWebSocketPostRequests() {
-  // Create a new Hyperliquid instance
+  // Create a new Hyperliquid instance with WebSocket enabled
   const sdk = new Hyperliquid({
     enableWs: true,
-    // Include privateKey for authorized requests
-    privateKey: 'your_private_key', // Optional, only needed for authorized requests
+    privateKey: 'your_private_key', // Required for exchange methods
+    testnet: false, // Set to true for testnet
   });
 
   try {
@@ -366,38 +376,27 @@ async function testWebSocketPostRequests() {
     await sdk.connect();
     console.log('Connected to WebSocket');
 
-    // Wait a moment to ensure connection is fully established
+    // Wait for connection to be fully established
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Example 1: Unauthorized POST request (info endpoint)
-    const l2BookResponse = await sdk.subscriptions.postRequest('info', {
-      type: 'l2Book',
-      coin: 'BTC',
+    // Example 1: Place Order via WebSocket POST
+    const orderResponse = await sdk.wsPayloads.placeOrder({
+      coin: 'BTC-PERP',
+      is_buy: true,
+      sz: '0.001',
+      limit_px: '50000', // Far from market price for safety
+      order_type: { limit: { tif: 'Gtc' } },
+      reduce_only: false,
     });
-    console.log('L2 Book Response:', l2BookResponse);
+    console.log('Place Order Response:', orderResponse);
 
-    // Example 2: Authorized POST request (exchange endpoint)
-    // Only works if privateKey is provided
-    if (sdk.isAuthenticated()) {
-      // Generate order payload
-      const orderPayload = await sdk.exchange.getOrderPayload({
-        coin: 'BTC',
-        is_buy: true,
-        sz: '0.001',
-        limit_px: '50000', // Far from market price for safety
-        order_type: { limit: { tif: 'Gtc' } },
-        reduce_only: false,
-      });
+    // Example 2: Cancel All Orders via WebSocket POST
+    const cancelAllResponse = await sdk.wsPayloads.cancelAllOrders();
+    console.log('Cancel All Orders Response:', cancelAllResponse);
 
-      // Send the order via WebSocket
-      const orderResponse = await sdk.subscriptions.postRequest('action', orderPayload);
-      console.log('Place Order Response:', orderResponse);
-
-      // Cancel all orders
-      const cancelAllPayload = await sdk.exchange.getCancelAllPayload();
-      const cancelAllResponse = await sdk.subscriptions.postRequest('action', cancelAllPayload);
-      console.log('Cancel All Orders Response:', cancelAllResponse);
-    }
+    // Example 3: Transfer Between Spot and Perp via WebSocket POST
+    const transferResponse = await sdk.wsPayloads.transferBetweenSpotAndPerp(1.0, true);
+    console.log('Transfer Response:', transferResponse);
   } catch (error) {
     console.error('Error:', error);
   } finally {
@@ -409,10 +408,94 @@ async function testWebSocketPostRequests() {
 testWebSocketPostRequests();
 ```
 
-**Notes:**
+##### Available WebSocket POST Methods
 
-- The WebSocket connection must be fully established before sending POST requests. It's recommended to add a short delay after connecting before sending the first request.
-- For authorized requests, the SDK will use the wallet address as the vault address if no vault address is explicitly provided. If you're using a specific vault, make sure to provide the vault address when initializing the SDK.
+The SDK provides WebSocket POST support for all exchange methods:
+
+**Order Management:**
+
+- `wsPayloads.placeOrder(orderParams)` - Place single or multiple orders
+- `wsPayloads.cancelOrder(cancelParams)` - Cancel a specific order
+- `wsPayloads.cancelAllOrders(symbol?)` - Cancel all orders (optionally for a specific symbol)
+- `wsPayloads.modifyOrder(modifyParams)` - Modify an existing order
+- `wsPayloads.batchModifyOrders(modifyParams[])` - Modify multiple orders
+
+**TWAP Orders:**
+
+- `wsPayloads.placeTwapOrder(twapParams)` - Place a TWAP order
+- `wsPayloads.cancelTwapOrder(twapId)` - Cancel a TWAP order
+
+**Account Management:**
+
+- `wsPayloads.updateLeverage(coin, leverageMode, leverage)` - Update leverage
+- `wsPayloads.updateIsolatedMargin(coin, isBuy, ntli)` - Update isolated margin
+
+**Transfers:**
+
+- `wsPayloads.transferBetweenSpotAndPerp(amount, toPerp)` - Transfer between spot and perp
+- `wsPayloads.usdTransfer(destination, amount)` - Transfer USD to another address
+- `wsPayloads.spotTransfer(destination, token, amount)` - Transfer spot tokens
+- `wsPayloads.initiateWithdrawal(destination, amount)` - Initiate withdrawal
+- `wsPayloads.vaultTransfer(vaultAddress, isDeposit, usd)` - Vault transfers
+
+**Advanced Features:**
+
+- `wsPayloads.approveAgent(agentAddress, agentName?)` - Approve trading agent
+- `wsPayloads.approveBuilderFee(builder, maxFeeRate)` - Approve builder fees
+- `wsPayloads.scheduleCancel(time)` - Schedule order cancellation
+- `wsPayloads.setReferrer(code)` - Set referrer code
+
+##### Advanced Usage with Custom Payloads
+
+For advanced users, you can also generate and execute custom payloads:
+
+```typescript
+// Generate a custom payload
+const customPayload = await sdk.wsPayloads.generatePayload('placeOrder', {
+  orders: [
+    {
+      coin: 'ETH-PERP',
+      is_buy: true,
+      sz: '0.1',
+      limit_px: '3000',
+      order_type: { limit: { tif: 'Gtc' } },
+      reduce_only: false,
+    },
+  ],
+});
+
+// Execute the custom payload
+const response = await sdk.wsPayloads.executeCustomMethod('placeOrder', {
+  orders: [
+    {
+      coin: 'ETH-PERP',
+      is_buy: true,
+      sz: '0.1',
+      limit_px: '3000',
+      order_type: { limit: { tif: 'Gtc' } },
+      reduce_only: false,
+    },
+  ],
+});
+```
+
+##### Testing and Examples
+
+For comprehensive testing and examples of all WebSocket POST methods, see the [WebSocket Exchange Testing Example](examples/websocket_exchange_testing.js). This file demonstrates:
+
+- All available WebSocket POST methods
+- Proper error handling
+- Response parsing
+- Real-world usage patterns
+- Safety considerations for live trading
+
+**⚠️ Important Notes:**
+
+- WebSocket POST requests require a private key for authentication
+- The WebSocket connection must be fully established before sending requests
+- All exchange methods that cost real money include safety warnings in the examples
+- Test on testnet first before using on mainnet
+- The SDK automatically handles nonce generation, signing, and payload formatting
 
 ## Automatic Handling of Trailing Zeros
 

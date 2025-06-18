@@ -135,7 +135,7 @@ async function testCustomExchangeAPI() {
 
 async function testExchangeAPI() {
   // Initialize the SDK (replace with your actual private key and other necessary parameters)
-  const private_key = process.env.priv_key;
+  const private_key = "";
   const user_address = ""
   const testnet = false// false for mainnet, true for testnet
   const vaultAddress = null // or your vault address
@@ -172,6 +172,11 @@ async function testExchangeAPI() {
     //   reduce_only: false,
     //   cloid: cloid
     // };
+
+    const reg_ref = await sdk.exchange.registerReferrer("");
+    console.log('Register Referrer:', reg_ref);
+
+    await waitForUserInput("Press Enter to continue to Place Order...");
 
     await sdk.initialize();
     const state = await sdk.info.perpetuals.getClearinghouseState(user_address);
@@ -374,5 +379,77 @@ async function testExchangeAPI() {
   await waitForUserInput("Press Enter to continue to Deposit to Staking...");
 }
 
-testCustomExchangeAPI();
-// testExchangeAPI();
+async function testNewInfoAPIMethods() {
+  console.log("=== Testing New Info API Methods ===");
+
+  // Initialize the SDK
+  const private_key = process.env.priv_key;
+  const user_address = process.env.user_address || ""; // Add your user address to .env file
+  const testnet = false;
+  const vaultAddress = null;
+
+  if (!user_address) {
+    console.log("WARNING: user_address not set in .env file. Using empty string for testing.");
+    console.log("Please set user_address in your .env file for proper testing.");
+  }
+
+  const sdk = new Hyperliquid({
+    privateKey: private_key,
+    testnet: testnet,
+    walletAddress: user_address,
+    vaultAddress: vaultAddress
+  });
+
+  try {
+    await sdk.initialize();
+    console.log("Testing newly implemented Info API methods:");
+
+    // Test 1: getBuilderFeeApproval
+    console.log("\n1. Testing getBuilderFeeApproval...");
+    const builderAddress = "0x0000000000000000000000000000000000000000"; // Example builder address
+
+    try {
+      const builderFeeApproval = await sdk.info.getBuilderFeeApproval(
+        user_address || "0x0000000000000000000000000000000000000000",
+        builderAddress
+      );
+      console.log("✅ Builder Fee Approval Result:", builderFeeApproval);
+    } catch (error) {
+      console.log("❌ Builder Fee Approval Error:", error.message);
+      console.log("This might be expected if the builder address is not approved");
+    }
+
+    await waitForUserInput("Press Enter to continue to User Order History test...");
+
+    // Test 2: getUserOrderHistory
+    console.log("\n2. Testing getUserOrderHistory...");
+    const endTime = Date.now();
+    const startTime = endTime - (7 * 24 * 60 * 60 * 1000); // 7 days ago
+
+    try {
+      const orderHistory = await sdk.info.getUserOrderHistory(
+        user_address || "0x0000000000000000000000000000000000000000",
+        startTime,
+        endTime
+      );
+      console.log(`✅ User Order History: Found ${orderHistory.length} orders`);
+      if (orderHistory.length > 0) {
+        console.log("Sample order:", JSON.stringify(orderHistory[0], null, 2));
+      }
+    } catch (error) {
+      console.log("❌ User Order History Error:", error.message);
+      console.log("This might be expected if there are no orders in the time range");
+    }
+
+    console.log("\n✅ New Info API methods testing completed!");
+
+  } catch (error) {
+    console.error("❌ Error testing new Info API methods:", error);
+  } finally {
+    rl.close();
+  }
+}
+
+// testCustomExchangeAPI();
+testExchangeAPI();
+// testNewInfoAPIMethods(); // Uncomment to test the new Info API methods

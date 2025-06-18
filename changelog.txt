@@ -1,3 +1,14 @@
+# Version 1.7.6
+## Improvements
+- Added registerReferrer method
+- Added option to disable or change the refresh interval for asset maps (useful when using multiple SDK instances on the same IP to avoid rate limiting)
+- Added support for Websocket post requests with auth
+
+## Bug fixes
+- Fixed issue with Husky in install script, removed it except in dev environments so installing package works as normal again
+
+
+
 # Version 1.7.5
 
 ## Improvements:
