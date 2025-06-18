@@ -16,7 +16,11 @@ export class SpotInfoAPI {
     const response = await this.httpApi.makeRequest({ type: InfoType.SPOT_META });
     return rawResponse
       ? response
-      : await this.symbolConversion.convertResponse(response, ['name', 'coin', 'symbol'], 'SPOT');
+      : ((await this.symbolConversion.convertResponse(
+          response,
+          ['name', 'coin', 'symbol'],
+          'SPOT'
+        )) as SpotMeta);
   }
 
   async getSpotClearinghouseState(
@@ -29,12 +33,18 @@ export class SpotInfoAPI {
     });
     return rawResponse
       ? response
-      : await this.symbolConversion.convertResponse(response, ['name', 'coin', 'symbol'], 'SPOT');
+      : ((await this.symbolConversion.convertResponse(
+          response,
+          ['name', 'coin', 'symbol'],
+          'SPOT'
+        )) as SpotClearinghouseState);
   }
 
   async getSpotMetaAndAssetCtxs(rawResponse: boolean = false): Promise<SpotMetaAndAssetCtxs> {
     const response = await this.httpApi.makeRequest({ type: InfoType.SPOT_META_AND_ASSET_CTXS });
-    return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    return rawResponse
+      ? response
+      : ((await this.symbolConversion.convertResponse(response)) as SpotMetaAndAssetCtxs);
   }
 
   async getTokenDetails(tokenId: string, rawResponse: boolean = false): Promise<any> {
