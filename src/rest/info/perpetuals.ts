@@ -27,15 +27,23 @@ export class PerpetualsInfoAPI {
   async getMeta(rawResponse: boolean = false): Promise<Meta> {
     const response = await this.httpApi.makeRequest({ type: InfoType.META });
     return rawResponse
-      ? response
-      : await this.symbolConversion.convertResponse(response, ['name', 'coin', 'symbol'], 'PERP');
+      ? (response as Meta)
+      : ((await this.symbolConversion.convertResponse(
+          response,
+          ['name', 'coin', 'symbol'],
+          'PERP'
+        )) as Meta);
   }
 
   async getMetaAndAssetCtxs(rawResponse: boolean = false): Promise<MetaAndAssetCtxs> {
     const response = await this.httpApi.makeRequest({ type: InfoType.PERPS_META_AND_ASSET_CTXS });
     return rawResponse
-      ? response
-      : await this.symbolConversion.convertResponse(response, ['name', 'coin', 'symbol'], 'PERP');
+      ? (response as MetaAndAssetCtxs)
+      : ((await this.symbolConversion.convertResponse(
+          response,
+          ['name', 'coin', 'symbol'],
+          'PERP'
+        )) as MetaAndAssetCtxs);
   }
 
   async getClearinghouseState(
@@ -46,7 +54,9 @@ export class PerpetualsInfoAPI {
       type: InfoType.PERPS_CLEARINGHOUSE_STATE,
       user: user,
     });
-    return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    return rawResponse
+      ? (response as ClearinghouseState)
+      : ((await this.symbolConversion.convertResponse(response)) as ClearinghouseState);
   }
 
   async getUserFunding(
@@ -64,7 +74,9 @@ export class PerpetualsInfoAPI {
       },
       20
     );
-    return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    return rawResponse
+      ? (response as UserFunding)
+      : ((await this.symbolConversion.convertResponse(response)) as UserFunding);
   }
 
   async getUserNonFundingLedgerUpdates(
@@ -82,7 +94,9 @@ export class PerpetualsInfoAPI {
       },
       20
     );
-    return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    return rawResponse
+      ? (response as UserNonFundingLedgerUpdates)
+      : ((await this.symbolConversion.convertResponse(response)) as UserNonFundingLedgerUpdates);
   }
 
   async getFundingHistory(
@@ -101,7 +115,9 @@ export class PerpetualsInfoAPI {
       },
       20
     );
-    return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    return rawResponse
+      ? (response as FundingHistory)
+      : ((await this.symbolConversion.convertResponse(response)) as FundingHistory);
   }
 
   async getPredictedFundings(rawResponse: boolean = false): Promise<PredictedFundings> {
@@ -112,7 +128,9 @@ export class PerpetualsInfoAPI {
       20
     );
 
-    return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    return rawResponse
+      ? (response as PredictedFundings)
+      : ((await this.symbolConversion.convertResponse(response)) as PredictedFundings);
   }
 
   async getPerpsAtOpenInterestCap(rawResponse: boolean = false): Promise<PerpsAtOpenInterestCap> {
