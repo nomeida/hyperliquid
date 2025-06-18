@@ -270,18 +270,7 @@ export interface L2Book {
   ];
 }
 
-export type CandleSnapshot = {
-  T: number;
-  c: string;
-  h: string;
-  i: string;
-  l: string;
-  n: number;
-  o: string;
-  s: string;
-  t: number;
-  v: string;
-}[];
+export type CandleSnapshot = Candle[];
 
 export type AssetCtx = {
   dayBaseVlm: string;
@@ -443,14 +432,12 @@ export interface Candle {
   T: number; // close time
   s: string; // symbol
   i: string; // interval
-  o: string; // open
-  c: string; // close
-  h: string; // high
-  l: string; // low
-  v: string; // volume
+  o: number; // open
+  c: number; // close
+  h: number; // high
+  l: number; // low
+  v: number; // volume
   n: number; // number of trades
-  coin: string;
-  interval: string;
 }
 
 export interface WsUserFill {
