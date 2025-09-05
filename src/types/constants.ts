@@ -69,6 +69,7 @@ export enum InfoType {
   USER_TO_MULTI_SIG_SIGNERS = 'userToMultiSigSigners',
   BUILDER_FEE_APPROVAL = 'builderFeeApproval',
   USER_ORDER_HISTORY = 'userOrderHistory',
+  PERP_DEX_LIMITS = 'perpDexLimits',
 }
 
 export enum ExchangeType {
@@ -105,6 +106,7 @@ export enum ExchangeType {
   SUB_ACCOUNT_SPOT_TRANSFER = 'subAccountSpotTransfer',
   SUB_ACCOUNT_TRANSFER = 'subAccountTransfer',
   RESERVE_REQUEST_WEIGHT = 'reserveRequestWeight',
+  NOOP = 'noop',
 }
 
 export const WEBSOCKET = {

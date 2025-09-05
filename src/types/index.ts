@@ -114,6 +114,12 @@ export type UserFills = {
   startPosition: string;
   sz: string;
   time: number;
+  fee: string;
+  feeToken: string;
+  tid: number;
+  builderFee?: string; // Optional, only present if not 0
+  liquidationMarkPx?: string; // Optional, only present for liquidation fills
+  twapId?: number; // Optional, present for TWAP fills
 }[];
 
 export interface OrderResponse {
@@ -1153,3 +1159,19 @@ export interface UserOrderHistoryEntry {
 }
 
 export type UserOrderHistory = UserOrderHistoryEntry[];
+
+// PerpDexLimits types
+export interface PerpDexLimits {
+  totalOiCap: string;
+  oiSzCapPerPerp: string;
+  maxTransferNtl: string;
+  coinToOiCap: [string, string][];
+}
+
+// Noop response type
+export interface NoopResponse {
+  status: string;
+  response: {
+    type: string;
+  };
+}

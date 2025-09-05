@@ -7,6 +7,7 @@ import {
   FundingHistory,
   PredictedFundings,
   PerpsAtOpenInterestCap,
+  PerpDexLimits,
 } from '../../types';
 import { HttpApi } from '../../utils/helpers';
 import { InfoType } from '../../types/constants';
@@ -146,6 +147,37 @@ export class PerpetualsInfoAPI {
     const convertedResponse = await Promise.all(
       response.map((symbol: string) => this.symbolConversion.convertSymbol(symbol, '', 'PERP'))
     );
+
+    return convertedResponse;
+  }
+
+  async getPerpDexLimits(dex: string, rawResponse: boolean = false): Promise<PerpDexLimits> {
+    const response = await this.httpApi.makeRequest({
+      type: InfoType.PERP_DEX_LIMITS,
+      dex: dex,
+    });
+
+    if (rawResponse) {
+      return response as PerpDexLimits;
+    }
+
+    // Convert coin symbols in coinToOiCap array if needed
+    const responseData = response as PerpDexLimits;
+    const convertedResponse: PerpDexLimits = {
+      totalOiCap: responseData.totalOiCap,
+      oiSzCapPerPerp: responseData.oiSzCapPerPerp,
+      maxTransferNtl: responseData.maxTransferNtl,
+      coinToOiCap: responseData.coinToOiCap,
+    };
+
+    if (convertedResponse.coinToOiCap) {
+      convertedResponse.coinToOiCap = await Promise.all(
+        convertedResponse.coinToOiCap.map(async ([coin, cap]) => [
+          await this.symbolConversion.convertSymbol(coin, '', 'PERP'),
+          cap,
+        ])
+      );
+    }
 
     return convertedResponse;
   }

@@ -44,6 +44,7 @@ import {
   SubAccountTransferResponse,
   ReserveRequestWeightRequest,
   ReserveRequestWeightResponse,
+  NoopResponse,
 } from '../types/index';
 
 import { ExchangeType, ENDPOINTS, CHAIN_IDS } from '../types/constants';
@@ -402,7 +403,26 @@ export class ExchangeAPI {
       throw error;
     }
   }
-  //Transfer SPOT assets i.e PURR to another wallet (doesn't touch bridge, so no fees)
+  /**
+   * Transfer SPOT assets to another wallet (doesn't touch bridge, so no fees)
+   * @param destination - Destination wallet address
+   * @param token - Token in format "TOKEN_NAME:TOKEN_ADDRESS" (e.g., "PURR:0xeb62eee3685fc4c43992febcd9e75443")
+   * @param amount - Amount to transfer as string
+   * @returns Promise with transfer result
+   *
+   * @example
+   * // Get available tokens first
+   * const spotMeta = await sdk.info.spot.getSpotMeta();
+   * const purrToken = spotMeta.tokens.find(t => t.name === 'PURR');
+   * const tokenFormat = `${purrToken.name}:${purrToken.tokenId}`;
+   *
+   * // Transfer tokens
+   * await sdk.exchange.spotTransfer(
+   *   '0x1234567890123456789012345678901234567890',
+   *   tokenFormat, // "PURR:0xeb62eee3685fc4c43992febcd9e75443"
+   *   '1.0'
+   * );
+   */
   async spotTransfer(destination: string, token: string, amount: string): Promise<any> {
     await this.parent.ensureInitialized();
     try {
@@ -1157,6 +1177,35 @@ export class ExchangeAPI {
       const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Invalidate pending nonce (noop)
+   * This endpoint can be used to invalidate pending nonces
+   * @returns Response indicating success or failure
+   */
+  async noop(): Promise<NoopResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const vaultAddress = this.getVaultAddress();
+      const action = {
+        type: ExchangeType.NOOP,
+      };
+
+      const nonce = this.generateUniqueNonce();
+      const signature = await signL1Action(
+        this.wallet,
+        action,
+        vaultAddress,
+        nonce,
+        this.IS_MAINNET
+      );
+
+      const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
       throw error;

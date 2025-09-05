@@ -1,3 +1,10 @@
+# Version 1.7.7
+## Improvements
+- Added support for perpDexLimits and noop operations
+- Add support for new userFills response fields
+
+
+
 # Version 1.7.6
 ## Improvements
 - Added registerReferrer method
