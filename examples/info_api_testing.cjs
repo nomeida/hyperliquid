@@ -224,7 +224,16 @@ async function testPerpetualsInfoAPI(sdk) {
 
     console.log("getPerpsAtOpenInterestCap:");
     console.log(await sdk.info.perpetuals.getPerpsAtOpenInterestCap(raw_mode));
-    await waitForInput("Press Enter to continue...")
+    await waitForInput("Press Enter to continue...");
+
+    console.log("getPerpDexLimits:");
+    try {
+        // Example with a test dex name - replace with actual dex name
+        console.log(await sdk.info.perpetuals.getPerpDexLimits("test", raw_mode));
+    } catch (error) {
+        console.log("Error (expected if dex doesn't exist):", error.message);
+    }
+    await waitForInput("Press Enter to continue...");
 }
 
 async function main() {

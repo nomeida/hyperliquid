@@ -264,7 +264,93 @@ sdk.exchange
   .catch(error => {
     console.error('Error transferring funds:', error);
   });
+
+// Transfer spot tokens to another address
+// IMPORTANT: Token format must be "TOKEN_NAME:TOKEN_ADDRESS"
+sdk.exchange
+  .spotTransfer(
+    '0x1234567890123456789012345678901234567890', // destination address
+    'PURR:0xeb62eee3685fc4c43992febcd9e75443', // token format: "NAME:ADDRESS"
+    '1.0' // amount as string
+  )
+  .then(transferResult => {
+    console.log(transferResult);
+  })
+  .catch(error => {
+    console.error('Error transferring spot tokens:', error);
+  });
 ```
+
+## 📋 Token Format Requirements
+
+### Spot Token Format
+
+When using `spotTransfer` or other spot token operations, the token parameter must follow the format:
+
+```
+"TOKEN_NAME:TOKEN_ADDRESS"
+```
+
+**Examples:**
+
+- `"PURR:0xeb62eee3685fc4c43992febcd9e75443"` - PURR token
+- `"USDC:0xaf88d065e77c8cc2239327c5edb3a432268e5831"` - USDC token
+
+**How to get token addresses:**
+
+1. Use the `sdk.info.spot.getSpotMeta()` method to get all available spot tokens
+2. Each token object contains the `tokenId` field which is the address to use
+3. Format: `"${token.name}:${token.tokenId}"`
+
+**Common mistakes:**
+
+- ❌ `"PURR-SPOT"` - Incorrect format
+- ❌ `"PURR"` - Missing address
+- ❌ `"0xeb62eee3685fc4c43992febcd9e75443"` - Missing token name
+- ✅ `"PURR:0xeb62eee3685fc4c43992febcd9e75443"` - Correct format
+  Transfer spot tokens to another address
+  // IMPORTANT: Token format must be "TOKEN_NAME:TOKEN_ADDRESS"
+  sdk.exchange
+  .spotTransfer(
+  '0x1234567890123456789012345678901234567890', // destination address
+  'PURR:0xeb62eee3685fc4c43992febcd9e75443', // token format: "NAME:ADDRESS"
+  '1.0' // amount as string
+  )
+  .then(transferResult => {
+  console.log(transferResult);
+  })
+  .catch(error => {
+  console.error('Error transferring spot tokens:', error);
+  });
+
+```
+
+## 📋 Token Format Requirements
+
+### Spot Token Format
+
+When using `spotTransfer` or other spot token operations, the token parameter must follow the format:
+
+```
+
+"TOKEN_NAME:TOKEN_ADDRESS"
+
+````
+
+**Examples:**
+- `"PURR:0xeb62eee3685fc4c43992febcd9e75443"` - PURR token
+- `"USDC:0xaf88d065e77c8cc2239327c5edb3a432268e5831"` - USDC token
+
+**How to get token addresses:**
+1. Use the `sdk.info.spot.getSpotMeta()` method to get all available spot tokens
+2. Each token object contains the `tokenId` field which is the address to use
+3. Format: `"${token.name}:${token.tokenId}"`
+
+**Common mistakes:**
+- ❌ `"PURR-SPOT"` - Incorrect format
+- ❌ `"PURR"` - Missing address
+- ❌ `"0xeb62eee3685fc4c43992febcd9e75443"` - Missing token name
+- ✅ `"PURR:0xeb62eee3685fc4c43992febcd9e75443"` - Correct format
 
 All methods supported can be found here: [Hyperliquid Exchange Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)
 
@@ -300,7 +386,7 @@ sdk.info
   .catch(error => {
     console.error('Error getting L2 book:', error);
   });
-```
+````
 
 All methods supported can be found here: [Hyperliquid Info Endpoint API Documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 

@@ -1,6 +1,6 @@
 {
   "name": "hyperliquid",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "SDK for Hyperliquid API",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

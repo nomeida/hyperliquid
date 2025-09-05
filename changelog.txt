@@ -3,6 +3,9 @@
 - Added support for perpDexLimits and noop operations
 - Add support for new userFills response fields
 
+## Bug Fixes
+- Fixed Websocket connection issues
+
 
 
 # Version 1.7.6
