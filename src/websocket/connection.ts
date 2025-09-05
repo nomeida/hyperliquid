@@ -29,8 +29,20 @@ export class WebSocketClient {
       this.WebSocketImpl = WebSocket;
     } else if (environment.isNode) {
       try {
-        // Try to load ws package
-        this.WebSocketImpl = (globalThis as any).require('ws');
+        // Try to load ws package using different methods
+        let ws;
+        if (typeof require !== 'undefined') {
+          ws = require('ws');
+        } else if ((globalThis as any).require) {
+          ws = (globalThis as any).require('ws');
+        } else {
+          // Try to access require from global or process
+          const req = (global as any)?.require || (process as any)?.mainModule?.require;
+          if (req) {
+            ws = req('ws');
+          }
+        }
+        this.WebSocketImpl = ws;
       } catch (error) {
         this.WebSocketImpl = null;
       }
@@ -60,9 +72,17 @@ export class WebSocketClient {
       try {
         if (!this.WebSocketImpl) {
           if (environment.isNode) {
-            throw new Error(
-              'This SDK requires Node.js version 22 or higher as earlier versions do not have support for the NodeJS native websockets.'
-            );
+            const nodeVersion = process.versions.node;
+            const major = parseInt(nodeVersion.split('.')[0], 10);
+            if (major >= 23) {
+              throw new Error(
+                'WebSocket implementation not found. This should not happen with Node.js 23+. Please report this issue.'
+              );
+            } else {
+              throw new Error(
+                `WebSocket support requires Node.js version 23 or higher (current: ${nodeVersion}) or the 'ws' package. Please upgrade Node.js or install the ws package: npm install ws`
+              );
+            }
           } else {
             throw new Error('WebSocket support is not available in this environment.');
           }

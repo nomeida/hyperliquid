@@ -36,8 +36,19 @@ export const environment = {
     // For Node.js without native support, try to load ws package
     if (this.isNode) {
       try {
-        // Dynamic require to avoid bundling ws package in browser builds
-        const WebSocket = (globalThis as any).require?.('ws');
+        // Try different methods to load ws package
+        let WebSocket;
+        if (typeof require !== 'undefined') {
+          WebSocket = require('ws');
+        } else if ((globalThis as any).require) {
+          WebSocket = (globalThis as any).require('ws');
+        } else {
+          // Try to access require from global or process
+          const req = (global as any)?.require || (process as any)?.mainModule?.require;
+          if (req) {
+            WebSocket = req('ws');
+          }
+        }
         return typeof WebSocket === 'function';
       } catch {
         return false;

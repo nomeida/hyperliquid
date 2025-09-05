@@ -140,8 +140,8 @@ export class Hyperliquid {
       // Note: SymbolConversion will be initialized lazily when first needed
       // This prevents unnecessary API calls for users who don't need symbol conversion
 
-      // Connect WebSocket if enabled
-      if (this.enableWs) {
+      // Connect WebSocket if enabled and available
+      if (this.enableWs && this.ws && typeof this.ws.connect === 'function') {
         try {
           await this.ws.connect();
         } catch (wsError: unknown) {
@@ -153,6 +153,10 @@ export class Hyperliquid {
           }
           // Don't throw here - we want to continue initialization even if WebSocket fails
         }
+      } else if (this.enableWs) {
+        // WebSocket was requested but not available
+        console.warn('WebSocket was enabled but is not available in this environment');
+        this.enableWs = false;
       }
 
       this._initialized = true;
@@ -258,12 +262,19 @@ export class Hyperliquid {
 
   // Modify existing methods to check initialization
   public isAuthenticated(): boolean {
-    this.ensureInitialized();
+    // Don't call ensureInitialized() here as it can cause issues during construction
+    // The authentication state is set during construction and doesn't require async initialization
     return this.isValidPrivateKey;
   }
 
   public isWebSocketConnected(): boolean {
-    return this.ws?.isConnected() ?? false;
+    return this.enableWs && this.ws && typeof this.ws.isConnected === 'function'
+      ? this.ws.isConnected()
+      : false;
+  }
+
+  public isWebSocketEnabled(): boolean {
+    return this.enableWs && this.ws && typeof this.ws.connect === 'function';
   }
 
   disconnect(): void {
