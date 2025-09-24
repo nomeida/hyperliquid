@@ -7,3 +7,5 @@ src/**/*.js
 .vscode/
 /dist
 *.env
+.DS_Store
+.idea
