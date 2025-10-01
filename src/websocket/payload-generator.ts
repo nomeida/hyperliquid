@@ -16,6 +16,7 @@ import {
   orderToWire,
   removeTrailingZeros,
 } from '../utils/signing';
+import { SymbolConversion } from '../utils/symbolConversion';
 
 export interface PayloadMethodConfig {
   /** Exchange method type */
@@ -276,7 +277,7 @@ export const EXCHANGE_METHOD_CONFIGS: Record<string, PayloadMethodConfig> = {
     includeChainInfo: true,
     signatureTypes: [
       { name: 'hyperliquidChain', type: 'string' },
-      { name: 'wei', type: 'string' },
+      { name: 'wei', type: 'uint64' },
       { name: 'nonce', type: 'uint64' },
     ],
     primaryType: 'HyperliquidTransaction:CDeposit',
@@ -284,7 +285,7 @@ export const EXCHANGE_METHOD_CONFIGS: Record<string, PayloadMethodConfig> = {
       type: ExchangeType.C_DEPOSIT,
       hyperliquidChain: context.isMainnet ? 'Mainnet' : 'Testnet',
       signatureChainId: context.isMainnet ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
-      wei: params.wei.toString(),
+      wei: SymbolConversion.convertToUint64(params.wei),
       nonce: context.generateNonce(),
     }),
   },
@@ -295,7 +296,7 @@ export const EXCHANGE_METHOD_CONFIGS: Record<string, PayloadMethodConfig> = {
     includeChainInfo: true,
     signatureTypes: [
       { name: 'hyperliquidChain', type: 'string' },
-      { name: 'wei', type: 'string' },
+      { name: 'wei', type: 'uint64' },
       { name: 'nonce', type: 'uint64' },
     ],
     primaryType: 'HyperliquidTransaction:CWithdraw',
@@ -303,7 +304,30 @@ export const EXCHANGE_METHOD_CONFIGS: Record<string, PayloadMethodConfig> = {
       type: ExchangeType.C_WITHDRAW,
       hyperliquidChain: context.isMainnet ? 'Mainnet' : 'Testnet',
       signatureChainId: context.isMainnet ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
-      wei: params.wei.toString(),
+      wei: SymbolConversion.convertToUint64(params.wei),
+      nonce: context.generateNonce(),
+    }),
+  },
+
+  tokenDelegate: {
+    type: ExchangeType.TOKEN_DELEGATE,
+    signingMethod: 'userSignedAction',
+    includeChainInfo: true,
+    signatureTypes: [
+      { name: 'hyperliquidChain', type: 'string' },
+      { name: 'validator', type: 'address' },
+      { name: 'wei', type: 'uint64' },
+      { name: 'isUndelegate', type: 'bool' },
+      { name: 'nonce', type: 'uint64' },
+    ],
+    primaryType: 'HyperliquidTransaction:TokenDelegate',
+    payloadTransformer: (params, context) => ({
+      type: ExchangeType.TOKEN_DELEGATE,
+      hyperliquidChain: context.isMainnet ? 'Mainnet' : 'Testnet',
+      signatureChainId: context.isMainnet ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
+      validator: params.validator,
+      isUndelegate: params.isUndelegate,
+      wei: SymbolConversion.convertToUint64(params.wei),
       nonce: context.generateNonce(),
     }),
   },
@@ -313,7 +337,7 @@ export const EXCHANGE_METHOD_CONFIGS: Record<string, PayloadMethodConfig> = {
  * Dynamic payload generator class
  */
 export class PayloadGenerator {
-  constructor(private context: PayloadGenerationContext) {}
+  constructor(private context: PayloadGenerationContext) { }
 
   /**
    * Generate a signed payload for any exchange method

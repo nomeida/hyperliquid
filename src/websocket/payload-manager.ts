@@ -238,6 +238,13 @@ export class WebSocketPayloadManager {
     return this.executeMethod('cWithdraw', { wei });
   }
 
+  /**
+ * Delegate/Undelegate for staking via WebSocket POST
+ */
+  async tokenDelegate(wei: bigint, validator: string, isUndelegate: boolean): Promise<any> {
+    return this.executeMethod('tokenDelegate', { wei, validator, isUndelegate });
+  }
+
   // ==================== CUSTOM MARKET OPERATIONS ====================
 
   /**
