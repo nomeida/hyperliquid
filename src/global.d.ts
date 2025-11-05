@@ -14,5 +14,8 @@ declare global {
   var AbortSignal: AbortSignalConstructor;
 }
 
+declare module 'ws';
+declare module 'ws/wrapper.mjs';
+
 // This file is a module, so we need an export
 export {};

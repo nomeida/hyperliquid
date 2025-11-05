@@ -1,3 +1,5 @@
+import { loadWsImplementation } from './nodeRequire';
+
 export const environment = {
   isBrowser: typeof window !== 'undefined' && typeof window.document !== 'undefined',
   isNode:
@@ -35,24 +37,14 @@ export const environment = {
 
     // For Node.js without native support, try to load ws package
     if (this.isNode) {
-      try {
-        // Try different methods to load ws package
-        let WebSocket;
-        if (typeof require !== 'undefined') {
-          WebSocket = require('ws');
-        } else if ((globalThis as any).require) {
-          WebSocket = (globalThis as any).require('ws');
-        } else {
-          // Try to access require from global or process
-          const req = (global as any)?.require || (process as any)?.mainModule?.require;
-          if (req) {
-            WebSocket = req('ws');
-          }
-        }
-        return typeof WebSocket === 'function';
-      } catch {
-        return false;
+      const WebSocketImpl = loadWsImplementation();
+      if (typeof WebSocketImpl === 'function') {
+        return true;
       }
+
+      // We may be running in an ESM context where require is not available.
+      // Defer the actual availability check to runtime where we can use dynamic import.
+      return true;
     }
 
     return false;

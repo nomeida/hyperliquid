@@ -1,5 +1,6 @@
 import * as CONSTANTS from '../types/constants';
 import { environment } from '../utils/environment';
+import { cacheWsImplementation, loadWsImplementation } from '../utils/nodeRequire';
 
 export class WebSocketClient {
   private ws: WebSocket | any = null; // 'any' to support both native WebSocket and ws package
@@ -28,25 +29,45 @@ export class WebSocketClient {
     if (environment.hasNativeWebSocket()) {
       this.WebSocketImpl = WebSocket;
     } else if (environment.isNode) {
-      try {
-        // Try to load ws package using different methods
-        let ws;
-        if (typeof require !== 'undefined') {
-          ws = require('ws');
-        } else if ((globalThis as any).require) {
-          ws = (globalThis as any).require('ws');
-        } else {
-          // Try to access require from global or process
-          const req = (global as any)?.require || (process as any)?.mainModule?.require;
-          if (req) {
-            ws = req('ws');
-          }
-        }
-        this.WebSocketImpl = ws;
-      } catch (error) {
-        this.WebSocketImpl = null;
-      }
+      this.WebSocketImpl = loadWsImplementation();
     }
+  }
+
+  private async ensureWebSocketImplementation(): Promise<typeof WebSocket | null> {
+    if (this.WebSocketImpl) {
+      return this.WebSocketImpl;
+    }
+
+    if (environment.hasNativeWebSocket()) {
+      this.WebSocketImpl = WebSocket;
+      cacheWsImplementation(this.WebSocketImpl);
+      return this.WebSocketImpl;
+    }
+
+    if (!environment.isNode) {
+      return null;
+    }
+
+    const syncImplementation = loadWsImplementation();
+    if (syncImplementation) {
+      this.WebSocketImpl = syncImplementation;
+      return this.WebSocketImpl;
+    }
+
+    try {
+      // @ts-ignore - dynamic import used to support ESM consumers where require is unavailable
+      const wsModule: any = await import('ws');
+      const WebSocketCtor = wsModule?.default || wsModule?.WebSocket || wsModule;
+      if (typeof WebSocketCtor === 'function') {
+        this.WebSocketImpl = WebSocketCtor as typeof WebSocket;
+        cacheWsImplementation(this.WebSocketImpl);
+        return this.WebSocketImpl;
+      }
+    } catch {
+      // Swallow errors so that callers can handle lack of implementation uniformly
+    }
+
+    return null;
   }
 
   isConnected(): boolean {
@@ -57,20 +78,20 @@ export class WebSocketClient {
     // Reset the manualDisconnect flag when connecting
     this.manualDisconnect = false;
 
-    // If already connected, return immediately
     if (this.isConnected()) {
       return Promise.resolve();
     }
 
-    // If connection is in progress, return existing promise
     if (this.connecting && this.connectionPromise) {
       return this.connectionPromise;
     }
 
     this.connecting = true;
-    this.connectionPromise = new Promise((resolve, reject) => {
+    const connectionAttempt = (async () => {
       try {
-        if (!this.WebSocketImpl) {
+        const WebSocketImpl = await this.ensureWebSocketImplementation();
+
+        if (!WebSocketImpl) {
           if (environment.isNode) {
             const nodeVersion = process.versions.node;
             const major = parseInt(nodeVersion.split('.')[0], 10);
@@ -83,76 +104,83 @@ export class WebSocketClient {
                 `WebSocket support requires Node.js version 23 or higher (current: ${nodeVersion}) or the 'ws' package. Please upgrade Node.js or install the ws package: npm install ws`
               );
             }
-          } else {
-            throw new Error('WebSocket support is not available in this environment.');
           }
+
+          throw new Error('WebSocket support is not available in this environment.');
         }
 
-        this.ws = new this.WebSocketImpl(this.url);
-
-        this.ws.onopen = () => {
-          console.log('WebSocket connected');
-          this.connected = true;
-          this.connecting = false;
-          this.reconnectAttempts = 0;
-          this.lastPongReceived = Date.now();
-          this.startPingInterval();
-          this.emit('open');
-          resolve();
-        };
-
-        this.ws.onmessage = (event: MessageEvent) => {
+        await new Promise<void>((resolve, reject) => {
           try {
-            const message = JSON.parse(event.data);
-
-            // Debug log for post responses
-            if (message.channel === 'post') {
-              console.log('Received WebSocket post response:', JSON.stringify(message));
-            }
-
-            // Handle pong responses
-            if (message.channel === 'pong') {
-              this.lastPongReceived = Date.now();
-            }
-
-            this.emit('message', message);
+            this.ws = new WebSocketImpl(this.url);
           } catch (error) {
-            console.error('Error processing WebSocket message:', error);
-            console.error('Raw message data:', event.data);
+            reject(error);
+            return;
           }
-        };
 
-        this.ws.onerror = (event: Event) => {
-          console.error('WebSocket error:', event);
-          this.emit('error', event);
-          if (!this.connected) {
+          this.ws.onopen = () => {
+            console.log('WebSocket connected');
+            this.connected = true;
             this.connecting = false;
-            reject(event);
-          }
-        };
+            this.reconnectAttempts = 0;
+            this.lastPongReceived = Date.now();
+            this.startPingInterval();
+            this.emit('open');
+            resolve();
+          };
 
-        this.ws.onclose = () => {
-          console.log('WebSocket disconnected');
-          this.connected = false;
-          this.connecting = false;
-          this.stopPingInterval();
-          this.emit('close');
+          this.ws.onmessage = (event: MessageEvent) => {
+            try {
+              const message = JSON.parse(event.data);
 
-          // Only attempt to reconnect if not manually disconnected
-          if (!this.manualDisconnect) {
-            this.reconnect();
-          } else {
-            console.log('Manual disconnect detected, not attempting to reconnect');
-            this.emit('manualDisconnect');
-          }
-        };
-      } catch (error) {
-        this.connecting = false;
-        reject(error);
+              // Debug log for post responses
+              if (message.channel === 'post') {
+                console.log('Received WebSocket post response:', JSON.stringify(message));
+              }
+
+              // Handle pong responses
+              if (message.channel === 'pong') {
+                this.lastPongReceived = Date.now();
+              }
+
+              this.emit('message', message);
+            } catch (error) {
+              console.error('Error processing WebSocket message:', error);
+              console.error('Raw message data:', event.data);
+            }
+          };
+
+          this.ws.onerror = (event: Event) => {
+            console.error('WebSocket error:', event);
+            this.emit('error', event);
+            if (!this.connected) {
+              this.connecting = false;
+              reject(event);
+            }
+          };
+
+          this.ws.onclose = () => {
+            console.log('WebSocket disconnected');
+            this.connected = false;
+            this.connecting = false;
+            this.stopPingInterval();
+            this.emit('close');
+
+            // Only attempt to reconnect if not manually disconnected
+            if (!this.manualDisconnect) {
+              this.reconnect();
+            } else {
+              console.log('Manual disconnect detected, not attempting to reconnect');
+              this.emit('manualDisconnect');
+            }
+          };
+        });
+      } finally {
+        this.connectionPromise = null;
       }
-    });
+    })();
 
-    return this.connectionPromise;
+    this.connectionPromise = connectionAttempt;
+    return connectionAttempt;
   }
 
   private reconnect(): void {
