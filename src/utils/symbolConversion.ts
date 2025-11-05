@@ -295,6 +295,10 @@ export class SymbolConversion {
     return value;
   }
 
+  static convertToUint64(value: bigint): number {
+    return Number(value & ((1n << 64n) - 1n));
+  }
+
   async convertResponse(
     response: any,
     symbolsFields: string[] = ['coin', 'symbol'],

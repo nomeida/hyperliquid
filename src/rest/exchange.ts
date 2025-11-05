@@ -100,7 +100,7 @@ export class ExchangeAPI {
       setTimeout(() => {
         try {
           this.setReferrer();
-        } catch {}
+        } catch { }
       });
     }
     return index;
@@ -1020,7 +1020,7 @@ export class ExchangeAPI {
         type: ExchangeType.C_DEPOSIT,
         hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
         signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
-        wei: wei.toString(),
+        wei: SymbolConversion.convertToUint64(wei),
         nonce,
       };
 
@@ -1029,7 +1029,7 @@ export class ExchangeAPI {
         action,
         [
           { name: 'hyperliquidChain', type: 'string' },
-          { name: 'wei', type: 'string' },
+          { name: 'wei', type: 'uint64' },
           { name: 'nonce', type: 'uint64' },
         ],
         'HyperliquidTransaction:CDeposit',
@@ -1052,7 +1052,7 @@ export class ExchangeAPI {
         type: ExchangeType.C_WITHDRAW,
         hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
         signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
-        wei: wei.toString(),
+        wei: SymbolConversion.convertToUint64(wei),
         nonce,
       };
 
@@ -1061,7 +1061,7 @@ export class ExchangeAPI {
         action,
         [
           { name: 'hyperliquidChain', type: 'string' },
-          { name: 'wei', type: 'string' },
+          { name: 'wei', type: 'uint64' },
           { name: 'nonce', type: 'uint64' },
         ],
         'HyperliquidTransaction:CWithdraw',
@@ -1086,14 +1086,27 @@ export class ExchangeAPI {
       const nonce = this.generateUniqueNonce();
       const action = {
         type: ExchangeType.TOKEN_DELEGATE,
+        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+        signatureChainId: this.IS_MAINNET ? CHAIN_IDS.ARBITRUM_MAINNET : CHAIN_IDS.ARBITRUM_TESTNET,
         validator,
         isUndelegate,
-        wei: wei.toString(),
+        wei: SymbolConversion.convertToUint64(wei),
         nonce,
       };
 
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
-
+      const signature = await signUserSignedAction(
+        this.wallet,
+        action,
+        [
+          { name: 'hyperliquidChain', type: 'string' },
+          { name: 'validator', type: 'address' },
+          { name: 'wei', type: 'uint64' },
+          { name: 'isUndelegate', type: 'bool' },
+          { name: 'nonce', type: 'uint64' },
+        ],
+        'HyperliquidTransaction:TokenDelegate',
+        this.IS_MAINNET
+      );
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
